@@ -13,7 +13,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
-        value: "3.13.2"
+        value: "3.11.8"
 
 databases:
   - name: instascope-db
