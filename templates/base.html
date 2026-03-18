@@ -65,6 +65,9 @@
                 <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                 <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                 <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                {% if current_user.is_authenticated and not current_user.is_pro %}
+                <a href="/pricing" class="text-sm text-yellow-400 hover:text-yellow-300 transition font-semibold">Upgrade</a>
+                {% endif %}
                 {% if current_user.is_authenticated and current_user.role == 'admin' %}
                 <a href="/admin" class="text-sm text-red-400 hover:text-red-300 transition">Admin</a>
                 {% endif %}

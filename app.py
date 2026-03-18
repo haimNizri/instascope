@@ -105,6 +105,20 @@ def api_can_view_account(f):
     return decorated
 
 
+def pro_required(feature_name):
+    """Decorator: checks if user can use a pro feature."""
+    def decorator(f):
+        @wraps(f)
+        @login_required
+        def decorated(*args, **kwargs):
+            allowed, reason = current_user.can_use_feature(feature_name)
+            if not allowed:
+                return jsonify({"error": reason, "upgrade": True}), 403
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
 OUTPUT_DIR = "output"
 HISTORY_FILE = Path(OUTPUT_DIR) / "history.json"
 tasks = {}  # task_id -> {status, progress, result, error}
@@ -832,7 +846,7 @@ def run_lurker_scan(task_id, username, post_limit=20,
 
 
 @app.post("/api/lurkers/scan")
-@login_required
+@pro_required("lurkers")
 def api_lurker_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -982,7 +996,7 @@ def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=Non
 
 
 @app.post("/api/advisor/scan")
-@login_required
+@pro_required("advisor")
 def api_advisor_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -1012,6 +1026,125 @@ def api_advisor(username):
         return jsonify({"error": "No advisor report found. Run a scan first."}), 404
     with open(report_path) as f:
         return jsonify(json.load(f))
+
+
+# ── Billing / Subscription ───────────────────────────────────────────────────
+
+LEMONSQUEEZY_CHECKOUT_URL = os.environ.get("LEMONSQUEEZY_CHECKOUT_URL", "")
+LEMONSQUEEZY_WEBHOOK_SECRET = os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET", "")
+
+
+@app.route("/pricing")
+def pricing_page():
+    return render_template("pricing.html")
+
+
+@app.get("/api/billing/checkout")
+@login_required
+def api_billing_checkout():
+    """Return the LemonSqueezy checkout URL with user email prefilled."""
+    if not LEMONSQUEEZY_CHECKOUT_URL:
+        return jsonify({"error": "Billing not configured"}), 500
+    # Append user email and custom data to checkout URL
+    checkout = LEMONSQUEEZY_CHECKOUT_URL
+    sep = "&" if "?" in checkout else "?"
+    checkout += f"{sep}checkout[email]={current_user.email}&checkout[custom][user_id]={current_user.id}"
+    return jsonify({"url": checkout})
+
+
+@app.get("/api/billing/status")
+@login_required
+def api_billing_status():
+    """Return current user's subscription status."""
+    return jsonify({
+        "tier": current_user.subscription_tier,
+        "status": current_user.subscription_status,
+        "is_pro": current_user.is_pro,
+        "trial_used": current_user.trial_used or {},
+    })
+
+
+@app.post("/api/billing/webhook")
+def api_billing_webhook():
+    """LemonSqueezy webhook handler for subscription events."""
+    import hashlib, hmac
+
+    # Verify webhook signature
+    if LEMONSQUEEZY_WEBHOOK_SECRET:
+        signature = request.headers.get("X-Signature", "")
+        payload = request.get_data()
+        expected = hmac.new(
+            LEMONSQUEEZY_WEBHOOK_SECRET.encode(), payload, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            return jsonify({"error": "Invalid signature"}), 403
+
+    data = request.json or {}
+    event_name = data.get("meta", {}).get("event_name", "")
+    attrs = data.get("data", {}).get("attributes", {})
+
+    # Get user ID from custom data
+    custom = data.get("meta", {}).get("custom_data", {})
+    user_id = custom.get("user_id")
+    user_email = attrs.get("user_email", "")
+
+    # Find user
+    user = None
+    if user_id:
+        user = db.session.get(User, int(user_id))
+    if not user and user_email:
+        user = User.query.filter_by(email=user_email.lower()).first()
+
+    if not user:
+        return jsonify({"ok": True, "note": "User not found"})
+
+    subscription_id = str(data.get("data", {}).get("id", ""))
+
+    if event_name == "subscription_created":
+        user.subscription_tier = "pro"
+        user.subscription_status = "active"
+        user.subscription_id = subscription_id
+        db.session.commit()
+
+    elif event_name == "subscription_updated":
+        status = attrs.get("status", "")
+        if status == "active":
+            user.subscription_tier = "pro"
+            user.subscription_status = "active"
+        elif status in ("cancelled", "expired", "past_due"):
+            user.subscription_status = status
+        user.subscription_id = subscription_id
+        db.session.commit()
+
+    elif event_name in ("subscription_cancelled", "subscription_expired"):
+        user.subscription_status = "cancelled"
+        user.subscription_tier = "free"
+        db.session.commit()
+
+    elif event_name == "subscription_payment_success":
+        user.subscription_status = "active"
+        user.subscription_tier = "pro"
+        db.session.commit()
+
+    return jsonify({"ok": True})
+
+
+# ── User subscription info endpoint ─────────────────────────────────────────
+
+@app.get("/api/me")
+@login_required
+def api_me():
+    """Return current user info including subscription."""
+    return jsonify({
+        "id": current_user.id,
+        "email": current_user.email,
+        "display_name": current_user.display_name,
+        "role": current_user.role,
+        "is_pro": current_user.is_pro,
+        "subscription_tier": current_user.subscription_tier,
+        "instagram_username": current_user.instagram_username,
+        "trial_used": current_user.trial_used or {},
+    })
 
 
 if __name__ == "__main__":

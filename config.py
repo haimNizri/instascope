@@ -19,3 +19,7 @@ class Config:
     # Fix for Render/Neon: they provide postgres:// but SQLAlchemy needs postgresql://
     if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
+
+    # LemonSqueezy
+    LEMONSQUEEZY_CHECKOUT_URL = os.environ.get("LEMONSQUEEZY_CHECKOUT_URL", "")
+    LEMONSQUEEZY_WEBHOOK_SECRET = os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET", "")

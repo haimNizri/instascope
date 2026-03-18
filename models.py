@@ -24,6 +24,10 @@ class User(UserMixin, db.Model):
     # Which Instagram accounts this user can view (comma-separated usernames, or '*' for all)
     allowed_accounts = db.Column(db.Text, default="")
     instagram_username = db.Column(db.String(64))  # their own IG username
+    subscription_tier = db.Column(db.String(16), default="free")  # 'free' or 'pro'
+    subscription_id = db.Column(db.String(128))  # LemonSqueezy subscription ID
+    subscription_status = db.Column(db.String(32))  # 'active', 'cancelled', 'expired'
+    trial_used = db.Column(db.JSON, default=dict)  # tracks which free features were used {"relationships": true, "unfollowers": true}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -31,6 +35,49 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return bcrypt.checkpw(password.encode(), self.password_hash.encode())
+
+    @property
+    def is_pro(self):
+        """Check if user has an active pro subscription."""
+        if self.role == "admin":
+            return True
+        return self.subscription_tier == "pro" and self.subscription_status == "active"
+
+    def has_used_trial(self, feature):
+        """Check if user already used their free trial for a feature."""
+        used = self.trial_used or {}
+        return used.get(feature, False)
+
+    def mark_trial_used(self, feature):
+        """Mark a free trial feature as used."""
+        used = self.trial_used or {}
+        used[feature] = True
+        self.trial_used = used
+
+    def can_use_feature(self, feature):
+        """Check if user can use a feature. Returns (allowed, reason)."""
+        if self.role == "admin":
+            return True, "admin"
+        if self.is_pro:
+            return True, "pro"
+
+        # Free tier limits
+        free_features = {
+            "relationships_basic": True,  # always allowed, view only
+            "relationships_full": False,  # gender analysis etc — pro only
+            "unfollowers_first": not self.has_used_trial("unfollowers"),  # one-time
+            "unfollowers_scan": False,  # re-scan — pro only
+            "lurkers": False,
+            "advisor": False,
+            "analysis_deep": False,
+        }
+
+        allowed = free_features.get(feature, False)
+        if not allowed:
+            if feature == "unfollowers_first" and self.has_used_trial("unfollowers"):
+                return False, "You've used your free unfollower scan. Upgrade to Pro for unlimited scans."
+            return False, "This feature requires a Pro subscription ($5.50/month)."
+        return True, "free"
 
     def can_view(self, ig_username):
         """Check if this user can view a given Instagram account."""
@@ -53,6 +100,9 @@ class User(UserMixin, db.Model):
             "is_active": self.is_active,
             "allowed_accounts": self.allowed_accounts,
             "instagram_username": self.instagram_username,
+            "subscription_tier": self.subscription_tier,
+            "subscription_status": self.subscription_status,
+            "is_pro": self.is_pro,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
