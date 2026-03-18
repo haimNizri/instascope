@@ -7,8 +7,10 @@ instance/
 .DS_Store
 *.jpg
 *.jpeg
-*.png
 *.mp4
+# Allow extension icons and logo
+!extension/*.png
+!static/logo.png
 haimnizri/
 manuellenuphar/
 mayanbarlia/
