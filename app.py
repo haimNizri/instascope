@@ -378,16 +378,38 @@ def api_set_session():
     if not username:
         return jsonify({"error": "Invalid or expired sessionid"}), 401
 
-    save_session_id(session_id)
+    # Save to file (local dev)
+    try:
+        save_session_id(session_id)
+    except Exception:
+        pass
+
+    # Save to DB (cloud)
+    account = db_get_or_create_account(username)
+    account.session_id = session_id
+    db.session.commit()
+
     return jsonify({"ok": True, "username": username})
 
 
 @app.get("/api/session")
 def api_get_session():
     """Check if a saved session exists."""
-    sid = load_saved_session_id()
+    # Try DB first (cloud), then file (local)
+    sid = None
+    db_username = None
+
+    accounts = Account.query.filter(Account.session_id.isnot(None)).order_by(Account.updated_at.desc()).first()
+    if accounts and accounts.session_id:
+        sid = accounts.session_id
+        db_username = accounts.username
+
+    if not sid:
+        sid = load_saved_session_id()
+
     if not sid:
         return jsonify({"logged_in": False})
+
     # Quick verify
     import instaloader as _il
     L = _il.Instaloader()

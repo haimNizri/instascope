@@ -32,11 +32,24 @@ def save_session_id(session_id):
 
 
 def load_saved_session_id():
-    """Load previously saved sessionid."""
+    """Load previously saved sessionid from file or database."""
+    # Try file first
     if SESSION_FILE.exists():
         with open(SESSION_FILE) as f:
             data = json.load(f)
-            return data.get("sessionid")
+            sid = data.get("sessionid")
+            if sid:
+                return sid
+
+    # Try database
+    try:
+        from models import Account, db
+        account = Account.query.filter(Account.session_id.isnot(None)).order_by(Account.updated_at.desc()).first()
+        if account and account.session_id:
+            return account.session_id
+    except Exception:
+        pass
+
     return None
 
 
