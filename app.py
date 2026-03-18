@@ -378,6 +378,13 @@ def run_analysis(task_id, username, post_limit=50, deep=False,
         with open(report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
+        # Persist to database (survives Render restarts)
+        try:
+            with app.app_context():
+                db_save_report(username, 'analysis', report)
+        except Exception:
+            pass  # file save is the fallback
+
         add_to_history(username, profile_data, auth)
 
         tasks[task_id]["status"] = "done"
@@ -614,13 +621,18 @@ def api_analyze():
 def api_status(task_id):
     task = tasks.get(task_id)
     if not task:
-        return jsonify({"error": "Task not found"}), 404
+        return jsonify({"error": "Task not found", "lost": True}), 404
     return jsonify(task)
 
 
 @app.get("/api/report/<username>")
 @api_can_view_account
 def api_report(username):
+    # Try database first (survives Render restarts)
+    db_data = db_get_report(username, 'analysis')
+    if db_data:
+        return jsonify(db_data)
+    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "analysis.json"
     if not report_path.exists():
         return jsonify({"error": "No report found"}), 404
@@ -822,6 +834,13 @@ def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None):
         with open(report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
+        # Persist to database (survives Render restarts)
+        try:
+            with app.app_context():
+                db_save_report(username, 'unfollowers', report)
+        except Exception:
+            pass  # file save is the fallback
+
         tasks[task_id]["status"] = "done"
         tasks[task_id]["result"] = report
 
@@ -859,6 +878,11 @@ def api_unfollower_scan():
 @app.get("/api/unfollowers/<username>")
 @api_can_view_account
 def api_unfollowers(username):
+    # Try database first (survives Render restarts)
+    db_data = db_get_report(username, 'unfollowers')
+    if db_data:
+        return jsonify(db_data)
+    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "unfollowers.json"
     if not report_path.exists():
         return jsonify({"error": "No unfollower report found. Run a scan first."}), 404
@@ -918,6 +942,13 @@ def run_lurker_scan(task_id, username, post_limit=20,
         with open(report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
+        # Persist to database (survives Render restarts)
+        try:
+            with app.app_context():
+                db_save_report(username, 'lurkers', report)
+        except Exception:
+            pass  # file save is the fallback
+
         tasks[task_id]["status"] = "done"
         tasks[task_id]["result"] = report
 
@@ -956,6 +987,11 @@ def api_lurker_scan():
 @app.get("/api/lurkers/<username>")
 @api_can_view_account
 def api_lurkers(username):
+    # Try database first (survives Render restarts)
+    db_data = db_get_report(username, 'lurkers')
+    if db_data:
+        return jsonify(db_data)
+    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "lurkers.json"
     if not report_path.exists():
         return jsonify({"error": "No lurker report found. Run a scan first."}), 404
@@ -992,6 +1028,13 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None):
         report_path.parent.mkdir(parents=True, exist_ok=True)
         with open(report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
+
+        # Persist to database (survives Render restarts)
+        try:
+            with app.app_context():
+                db_save_report(username, 'relationships', report)
+        except Exception:
+            pass  # file save is the fallback
 
         tasks[task_id]["status"] = "done"
         tasks[task_id]["result"] = report
@@ -1030,6 +1073,11 @@ def api_relationship_scan():
 @app.get("/api/relationships/<username>")
 @api_can_view_account
 def api_relationships(username):
+    # Try database first (survives Render restarts)
+    db_data = db_get_report(username, 'relationships')
+    if db_data:
+        return jsonify(db_data)
+    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "relationships.json"
     if not report_path.exists():
         return jsonify({"error": "No relationship report found. Run a scan first."}), 404
@@ -1076,6 +1124,13 @@ def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=Non
         with open(report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
+        # Persist to database (survives Render restarts)
+        try:
+            with app.app_context():
+                db_save_report(username, 'advisor', report)
+        except Exception:
+            pass  # file save is the fallback
+
         tasks[task_id]["status"] = "done"
         tasks[task_id]["result"] = report
 
@@ -1114,6 +1169,11 @@ def api_advisor_scan():
 @app.get("/api/advisor/<username>")
 @api_can_view_account
 def api_advisor(username):
+    # Try database first (survives Render restarts)
+    db_data = db_get_report(username, 'advisor')
+    if db_data:
+        return jsonify(db_data)
+    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "advisor.json"
     if not report_path.exists():
         return jsonify({"error": "No advisor report found. Run a scan first."}), 404

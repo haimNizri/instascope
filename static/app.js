@@ -84,19 +84,12 @@ function pollStatus(taskId) {
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
-            if (data.error && !data.status) {
-                showError(data.error);
-                return;
-            }
+            if (data.lost) { loadReport(USERNAME); return; }
+            if (data.error && !data.status) { showError(data.error); return; }
             document.getElementById('progressText').textContent = data.progress || 'Working...';
-
-            if (data.status === 'done') {
-                renderDashboard(data.result);
-            } else if (data.status === 'error') {
-                showError(data.error);
-            } else {
-                setTimeout(() => pollStatus(taskId), 1500);
-            }
+            if (data.status === 'done') renderDashboard(data.result);
+            else if (data.status === 'error') showError(data.error);
+            else setTimeout(() => pollStatus(taskId), 1500);
         })
         .catch(() => setTimeout(() => pollStatus(taskId), 3000));
 }
@@ -541,20 +534,13 @@ function pollUnfollowerStatus(taskId) {
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
-            if (data.error && !data.status) {
-                showUnfollowerError(data.error);
-                return;
-            }
+            if (data.lost) { loadUnfollowerReport(USERNAME); return; }
+            if (data.error && !data.status) { showUnfollowerError(data.error); return; }
             const progress = document.getElementById('progressText');
             if (progress) progress.textContent = data.progress || 'Working...';
-
-            if (data.status === 'done') {
-                renderUnfollowerDashboard(data.result);
-            } else if (data.status === 'error') {
-                showUnfollowerError(data.error);
-            } else {
-                setTimeout(() => pollUnfollowerStatus(taskId), 2000);
-            }
+            if (data.status === 'done') renderUnfollowerDashboard(data.result);
+            else if (data.status === 'error') showUnfollowerError(data.error);
+            else setTimeout(() => pollUnfollowerStatus(taskId), 2000);
         })
         .catch(() => setTimeout(() => pollUnfollowerStatus(taskId), 3000));
 }
@@ -945,20 +931,13 @@ function pollLurkerStatus(taskId) {
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
-            if (data.error && !data.status) {
-                showLurkerError(data.error);
-                return;
-            }
+            if (data.lost) { loadLurkerReport(USERNAME); return; }
+            if (data.error && !data.status) { showLurkerError(data.error); return; }
             const progress = document.getElementById('progressText');
             if (progress) progress.textContent = data.progress || 'Working...';
-
-            if (data.status === 'done') {
-                renderLurkerDashboard(data.result);
-            } else if (data.status === 'error') {
-                showLurkerError(data.error);
-            } else {
-                setTimeout(() => pollLurkerStatus(taskId), 2000);
-            }
+            if (data.status === 'done') renderLurkerDashboard(data.result);
+            else if (data.status === 'error') showLurkerError(data.error);
+            else setTimeout(() => pollLurkerStatus(taskId), 2000);
         })
         .catch(() => setTimeout(() => pollLurkerStatus(taskId), 3000));
 }
@@ -1272,6 +1251,7 @@ function pollRelStatus(taskId) {
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
+            if (data.lost) { loadRelReport(USERNAME); return; }
             if (data.error && !data.status) { showRelError(data.error); return; }
             const p = document.getElementById('progressText');
             if (p) p.textContent = data.progress || 'Working...';
@@ -1444,6 +1424,7 @@ function pollAdvisorStatus(taskId) {
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
+            if (data.lost) { loadAdvisorReport(USERNAME); return; }
             if (data.error && !data.status) { showAdvisorError(data.error); return; }
             const p = document.getElementById('progressText');
             if (p) p.textContent = data.progress || 'Working...';
