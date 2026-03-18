@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "InstaScope Connect",
+  "version": "1.0",
+  "description": "Connect your Instagram account to InstaScope with one click",
+  "permissions": ["cookies", "activeTab", "storage"],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://instascope-824d.onrender.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
