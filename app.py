@@ -1014,27 +1014,6 @@ def api_advisor(username):
         return jsonify(json.load(f))
 
 
-@app.get("/api/setup-admin")
-def setup_admin():
-    """One-time setup: reset admin account. Remove this after first use."""
-    email = "haim1221@gmail.com"
-    # Delete all existing users and start fresh
-    User.query.delete()
-    db.session.commit()
-    user = User(
-        email=email,
-        display_name="Haim",
-        role="admin",
-        is_active=True,
-        instagram_username="haimnizri",
-        allowed_accounts="*",
-    )
-    user.set_password("admin123")
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({"ok": True, "message": "Admin created. Login with haim1221@gmail.com / admin123. CHANGE YOUR PASSWORD."})
-
-
 if __name__ == "__main__":
     Path(OUTPUT_DIR).mkdir(exist_ok=True)
     print("\n  InstaScope running at http://localhost:8080\n")
