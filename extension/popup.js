@@ -155,6 +155,10 @@ async function connectInstagram() {
         `Connected as <span class="username">@${data.username}</span>`;
       setStatus("Connected! You can now use all features.", "success");
       btn.textContent = "Reconnect Instagram";
+    } else if (resp.status === 403) {
+      // Username mismatch
+      setStatus(data.error || "Instagram account doesn't match your registration.", "error");
+      btn.textContent = "Connect Instagram";
     } else {
       setStatus(data.error || "Failed to connect", "error");
       btn.textContent = "Connect Instagram";

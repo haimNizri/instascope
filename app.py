@@ -625,9 +625,23 @@ def api_set_session():
     L.context._session.cookies.set(
         "sessionid", session_id, domain=".instagram.com", path="/"
     )
-    username = L.test_login()
-    if not username:
+    ig_username = L.test_login()
+    if not ig_username:
         return jsonify({"error": "Invalid or expired sessionid"}), 401
+
+    # If logged-in user is not admin, verify the IG account matches their registration
+    if current_user.is_authenticated and current_user.role != "admin":
+        if current_user.instagram_username:
+            if ig_username.lower() != current_user.instagram_username.lower():
+                return jsonify({
+                    "error": f"This Instagram session belongs to @{ig_username}, but your account is registered with @{current_user.instagram_username}. Please log into the correct Instagram account."
+                }), 403
+
+        # Auto-set instagram_username if not set yet
+        if not current_user.instagram_username:
+            current_user.instagram_username = ig_username
+            current_user.allowed_accounts = ig_username
+            db.session.commit()
 
     # Save to file (local dev)
     try:
@@ -636,11 +650,11 @@ def api_set_session():
         pass
 
     # Save to DB (cloud)
-    account = db_get_or_create_account(username)
+    account = db_get_or_create_account(ig_username)
     account.session_id = session_id
     db.session.commit()
 
-    return jsonify({"ok": True, "username": username})
+    return jsonify({"ok": True, "username": ig_username})
 
 
 # CORS preflight for bookmarklet cross-origin requests
