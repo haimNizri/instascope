@@ -161,11 +161,12 @@
             if (e.key === 'Enter') saveSession();
         });
 
-        // Set bookmarklet href dynamically
+        // Set bookmarklet href dynamically with auth token
         const baseUrl = window.location.origin;
+        const appToken = "{{ config.SECRET_KEY }}";
         const bmLink = document.getElementById('bookmarkletLink');
         if (bmLink) {
-            bmLink.href = `javascript:void(function(){var s=document.cookie.match(/sessionid=([^;]+)/);if(s){fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:s[1]})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Connected as @'+d.username+'!');else alert('Error: '+d.error)}).catch(e=>alert('Error: '+e))}else{alert('No sessionid found. Make sure you are logged into Instagram.')}})()`;
+            bmLink.href = `javascript:void(function(){var s=document.cookie.match(/sessionid=([^;]+)/);if(s){fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:s[1],token:'${appToken}'})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Connected as @'+d.username+'!');else alert('Error: '+d.error)}).catch(e=>alert('Error: '+e))}else{alert('No sessionid found. Make sure you are logged into Instagram.')}})()`;
         }
 
         function autoConnect() {
@@ -178,7 +179,7 @@
             const overlay = document.createElement('div');
             overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[100]';
             overlay.id = 'autoConnectOverlay';
-            const cmd = `fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:document.cookie.match(/sessionid=([^;]+)/)[1]})}).then(r=>r.json()).then(d=>alert(d.ok?'Connected as @'+d.username+'!':'Error: '+d.error))`;
+            const cmd = `fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:document.cookie.match(/sessionid=([^;]+)/)[1],token:'${appToken}'})}).then(r=>r.json()).then(d=>alert(d.ok?'Connected as @'+d.username+'!':'Error: '+d.error))`;
             overlay.innerHTML = `
                 <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 max-w-lg mx-4">
                     <h3 class="text-lg font-bold text-white mb-3">Almost there! One quick step:</h3>

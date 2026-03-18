@@ -570,13 +570,18 @@ def api_delete_history(username):
 
 
 @app.post("/api/session")
-@login_required
 def api_set_session():
-    """Save Instagram sessionid (from browser DevTools) — no password needed."""
+    """Save Instagram sessionid. Works via logged-in user OR secret token for bookmarklet."""
     data = request.json or {}
     session_id = data.get("session_id", "").strip()
     if not session_id:
         return jsonify({"error": "session_id required"}), 400
+
+    # Auth check: either logged in, or provide the app secret key
+    token = data.get("token", "")
+    if not current_user.is_authenticated:
+        if token != app.config["SECRET_KEY"]:
+            return jsonify({"error": "Login required or invalid token"}), 401
 
     # Verify it works
     import instaloader as _il
@@ -600,6 +605,25 @@ def api_set_session():
     db.session.commit()
 
     return jsonify({"ok": True, "username": username})
+
+
+# CORS preflight for bookmarklet cross-origin requests
+@app.route("/api/session", methods=["OPTIONS"])
+def api_session_options():
+    resp = app.make_default_options_response()
+    resp.headers["Access-Control-Allow-Origin"] = "https://www.instagram.com"
+    resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return resp
+
+
+@app.after_request
+def add_cors_for_session(response):
+    """Add CORS headers for the session endpoint (bookmarklet needs it)."""
+    if request.path == "/api/session":
+        response.headers["Access-Control-Allow-Origin"] = "https://www.instagram.com"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
 
 
 @app.get("/api/session")
