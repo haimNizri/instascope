@@ -60,11 +60,22 @@
                 <span class="bg-gradient-to-r from-accent-400 to-pink-400 bg-clip-text text-transparent">InstaScope</span>
             </a>
             <div class="flex items-center gap-4">
-                <a href="/" class="text-sm text-gray-400 hover:text-white transition">Search</a>
-                <a href="#" onclick="promptNav('unfollowers')" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
-                <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
-                <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
-                <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                <a href="/" class="text-sm text-gray-400 hover:text-white transition">Home</a>
+                {% if current_user.is_authenticated and current_user.instagram_username %}
+                    {% if current_user.role == 'admin' %}
+                    <a href="#" onclick="promptNav('unfollowers')" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
+                    <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
+                    <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
+                    <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                    {% else %}
+                    <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
+                    <a href="/unfollowers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
+                    {% if current_user.is_pro %}
+                    <a href="/lurkers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
+                    <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                    {% endif %}
+                    {% endif %}
+                {% endif %}
                 {% if current_user.is_authenticated and not current_user.is_pro %}
                 <a href="/pricing" class="text-sm text-yellow-400 hover:text-yellow-300 transition font-semibold">Upgrade</a>
                 {% elif current_user.is_authenticated and current_user.is_pro and current_user.role != 'admin' %}
