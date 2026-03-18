@@ -4,9 +4,57 @@ InstaScope Database Models — PostgreSQL via SQLAlchemy
 
 from datetime import datetime
 
+import bcrypt
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+
+class User(UserMixin, db.Model):
+    """Application user with role-based access."""
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(256), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    display_name = db.Column(db.String(128))
+    role = db.Column(db.String(16), nullable=False, default="user")  # 'admin' or 'user'
+    is_active = db.Column(db.Boolean, default=False)  # admin must approve
+    # Which Instagram accounts this user can view (comma-separated usernames, or '*' for all)
+    allowed_accounts = db.Column(db.Text, default="")
+    instagram_username = db.Column(db.String(64))  # their own IG username
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode(), self.password_hash.encode())
+
+    def can_view(self, ig_username):
+        """Check if this user can view a given Instagram account."""
+        if self.role == "admin":
+            return True
+        if self.allowed_accounts == "*":
+            return True
+        allowed = [a.strip().lower() for a in (self.allowed_accounts or "").split(",") if a.strip()]
+        # Always allow their own account
+        if self.instagram_username and ig_username.lower() == self.instagram_username.lower():
+            return True
+        return ig_username.lower() in allowed
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "display_name": self.display_name,
+            "role": self.role,
+            "is_active": self.is_active,
+            "allowed_accounts": self.allowed_accounts,
+            "instagram_username": self.instagram_username,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 
 class Account(db.Model):

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}InstaScope — Admin Panel{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold">
+        <span class="bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">Admin Panel</span>
+    </h1>
+    <p class="text-gray-400 mt-1">Manage users and permissions</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="text-xs text-gray-500 uppercase mb-1">Total Users</div>
+        <div class="text-accent-400 font-bold text-2xl">{{ users|length }}</div>
+    </div>
+    <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="text-xs text-gray-500 uppercase mb-1">Active</div>
+        <div class="text-green-400 font-bold text-2xl">{{ users|selectattr('is_active')|list|length }}</div>
+    </div>
+    <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="text-xs text-gray-500 uppercase mb-1">Pending</div>
+        <div class="text-yellow-400 font-bold text-2xl">{{ users|rejectattr('is_active')|list|length }}</div>
+    </div>
+    <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="text-xs text-gray-500 uppercase mb-1">Admins</div>
+        <div class="text-red-400 font-bold text-2xl">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</div>
+    </div>
+</div>
+
+<!-- User list -->
+<div class="bg-dark-800 rounded-2xl border border-gray-800 overflow-hidden">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-gray-500 border-b border-gray-700 text-left">
+                <th class="py-3 px-4">User</th>
+                <th class="py-3 px-4">Instagram</th>
+                <th class="py-3 px-4">Role</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Allowed Accounts</th>
+                <th class="py-3 px-4">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="userTable">
+            {% for user in users %}
+            <tr class="border-b border-gray-800 hover:bg-dark-900/50" id="user-row-{{ user.id }}">
+                <td class="py-3 px-4">
+                    <div class="font-semibold text-white">{{ user.display_name or user.email }}</div>
+                    <div class="text-xs text-gray-500">{{ user.email }}</div>
+                </td>
+                <td class="py-3 px-4">
+                    {% if user.instagram_username %}
+                    <span class="text-accent-400">@{{ user.instagram_username }}</span>
+                    {% else %}
+                    <span class="text-gray-600">—</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 px-4">
+                    <select onchange="updateUser({{ user.id }}, {role: this.value})"
+                        class="bg-dark-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
+                        <option value="user" {{ 'selected' if user.role == 'user' }}>User</option>
+                        <option value="admin" {{ 'selected' if user.role == 'admin' }}>Admin</option>
+                    </select>
+                </td>
+                <td class="py-3 px-4">
+                    {% if user.is_active %}
+                    <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">Active</span>
+                    {% else %}
+                    <span class="px-2 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400">Pending</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 px-4">
+                    <input type="text" value="{{ user.allowed_accounts or '' }}"
+                        onchange="updateUser({{ user.id }}, {allowed_accounts: this.value})"
+                        placeholder="username1, username2 or *"
+                        class="bg-dark-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white w-40">
+                </td>
+                <td class="py-3 px-4">
+                    <div class="flex gap-2">
+                        {% if not user.is_active %}
+                        <button onclick="updateUser({{ user.id }}, {is_active: true})"
+                            class="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/30 transition">
+                            Approve
+                        </button>
+                        {% else %}
+                        <button onclick="updateUser({{ user.id }}, {is_active: false})"
+                            class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-500/30 transition">
+                            Disable
+                        </button>
+                        {% endif %}
+                        {% if user.id != current_user.id %}
+                        <button onclick="deleteUser({{ user.id }})"
+                            class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition">
+                            Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateUser(userId, data) {
+    fetch(`/api/admin/users/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) location.reload();
+            else alert(d.error || 'Error');
+        });
+}
+
+function deleteUser(userId) {
+    if (!confirm('Delete this user?')) return;
+    fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) document.getElementById('user-row-' + userId).remove();
+            else alert(d.error || 'Error');
+        });
+}
+</script>
+{% endblock %}

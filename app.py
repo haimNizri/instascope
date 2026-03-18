@@ -10,12 +10,14 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for, flash
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user
+from functools import wraps
 
 from config import Config
 from models import (
     db, Account, FollowerSnapshot, FollowEvent,
-    PostData, Report, ScanLog, StoryViewer,
+    PostData, Report, ScanLog, StoryViewer, User,
 )
 
 from analyzer import (
@@ -50,9 +52,58 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 
+# Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = ""
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
+
 # Create tables on first run
 with app.app_context():
     db.create_all()
+
+
+# ── Auth decorators ─────────────────────────────────────────────────────────
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != "admin":
+            return jsonify({"error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
+def can_view_account(f):
+    """Decorator: checks user can view the <username> in the URL."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        username = kwargs.get("username", "")
+        if not current_user.can_view(username):
+            flash("You don't have permission to view this account.")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def api_can_view_account(f):
+    """Decorator for API endpoints: checks auth + account permission."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        username = kwargs.get("username", "")
+        if not current_user.can_view(username):
+            return jsonify({"error": "Permission denied"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
 
 OUTPUT_DIR = "output"
 HISTORY_FILE = Path(OUTPUT_DIR) / "history.json"
@@ -273,34 +324,157 @@ def run_analysis(task_id, username, post_limit=50, deep=False,
         tasks[task_id]["error"] = str(e)
 
 
+# ── Auth Routes ──────────────────────────────────────────────────────────────
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
+            flash("Invalid email or password.")
+            return render_template("login.html")
+        if not user.is_active:
+            flash("Your account is pending admin approval.")
+            return render_template("login.html")
+        login_user(user, remember=True)
+        return redirect(request.args.get("next") or url_for("index"))
+    return render_template("login.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        display_name = request.form.get("display_name", "").strip()
+        ig_username = request.form.get("instagram_username", "").strip().lstrip("@")
+
+        if not email or not password:
+            flash("Email and password required.")
+            return render_template("register.html")
+        if len(password) < 6:
+            flash("Password must be at least 6 characters.")
+            return render_template("register.html")
+        if User.query.filter_by(email=email).first():
+            flash("Email already registered.")
+            return render_template("register.html")
+
+        # First user becomes admin and auto-approved
+        is_first = User.query.count() == 0
+        user = User(
+            email=email,
+            display_name=display_name or email.split("@")[0],
+            role="admin" if is_first else "user",
+            is_active=True if is_first else False,
+            instagram_username=ig_username,
+            allowed_accounts=ig_username if ig_username else "",
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        if is_first:
+            login_user(user, remember=True)
+            flash("Welcome! You are the admin.")
+            return redirect(url_for("index"))
+        else:
+            flash("Account created. Waiting for admin approval.")
+            return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
+
+# ── Admin Panel ──────────────────────────────────────────────────────────────
+
+@app.route("/admin")
+@login_required
+@admin_required
+def admin_panel():
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template("admin.html", users=users)
+
+
+@app.post("/api/admin/users/<int:user_id>")
+@login_required
+@admin_required
+def admin_update_user(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    data = request.json or {}
+    if "is_active" in data:
+        user.is_active = data["is_active"]
+    if "role" in data and data["role"] in ("admin", "user"):
+        user.role = data["role"]
+    if "allowed_accounts" in data:
+        user.allowed_accounts = data["allowed_accounts"]
+    if "instagram_username" in data:
+        user.instagram_username = data["instagram_username"]
+    db.session.commit()
+    return jsonify({"ok": True, "user": user.to_dict()})
+
+
+@app.delete("/api/admin/users/<int:user_id>")
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user.id == current_user.id:
+        return jsonify({"error": "Cannot delete yourself"}), 400
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
+@login_required
 def index():
     return render_template("index.html")
 
 
 @app.route("/dashboard/<username>")
+@can_view_account
 def dashboard(username):
     return render_template("dashboard.html", username=username)
 
 
 @app.route("/unfollowers/<username>")
+@can_view_account
 def unfollowers_page(username):
     return render_template("unfollowers.html", username=username)
 
 
 @app.route("/lurkers/<username>")
+@can_view_account
 def lurkers_page(username):
     return render_template("lurkers.html", username=username)
 
 
 @app.route("/relationships/<username>")
+@can_view_account
 def relationships_page(username):
     return render_template("relationships.html", username=username)
 
 
 @app.route("/advisor/<username>")
+@can_view_account
 def advisor_page(username):
     return render_template("advisor.html", username=username)
 
@@ -308,6 +482,7 @@ def advisor_page(username):
 # ── API ──────────────────────────────────────────────────────────────────────
 
 @app.post("/api/analyze")
+@login_required
 def api_analyze():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -339,6 +514,7 @@ def api_status(task_id):
 
 
 @app.get("/api/report/<username>")
+@api_can_view_account
 def api_report(username):
     report_path = Path(OUTPUT_DIR) / username / "analysis.json"
     if not report_path.exists():
@@ -348,6 +524,7 @@ def api_report(username):
 
 
 @app.get("/api/history")
+@login_required
 def api_history():
     return jsonify(load_history())
 
@@ -361,6 +538,7 @@ def api_delete_history(username):
 
 
 @app.post("/api/session")
+@login_required
 def api_set_session():
     """Save Instagram sessionid (from browser DevTools) — no password needed."""
     data = request.json or {}
@@ -393,6 +571,7 @@ def api_set_session():
 
 
 @app.get("/api/session")
+@login_required
 def api_get_session():
     """Check if a saved session exists."""
     # Try DB first (cloud), then file (local)
@@ -505,6 +684,7 @@ def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None):
 
 
 @app.post("/api/unfollowers/scan")
+@login_required
 def api_unfollower_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -526,6 +706,7 @@ def api_unfollower_scan():
 
 
 @app.get("/api/unfollowers/<username>")
+@api_can_view_account
 def api_unfollowers(username):
     report_path = Path(OUTPUT_DIR) / username / "unfollowers.json"
     if not report_path.exists():
@@ -535,6 +716,7 @@ def api_unfollowers(username):
 
 
 @app.get("/api/unfollowers/<username>/snapshots")
+@api_can_view_account
 def api_snapshots(username):
     snapshots = load_follower_snapshots(username, OUTPUT_DIR)
     # Return metadata only (not full follower lists)
@@ -594,6 +776,7 @@ def run_lurker_scan(task_id, username, post_limit=20,
 
 
 @app.post("/api/lurkers/scan")
+@login_required
 def api_lurker_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -616,6 +799,7 @@ def api_lurker_scan():
 
 
 @app.get("/api/lurkers/<username>")
+@api_can_view_account
 def api_lurkers(username):
     report_path = Path(OUTPUT_DIR) / username / "lurkers.json"
     if not report_path.exists():
@@ -663,6 +847,7 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None):
 
 
 @app.post("/api/relationships/scan")
+@login_required
 def api_relationship_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -684,6 +869,7 @@ def api_relationship_scan():
 
 
 @app.get("/api/relationships/<username>")
+@api_can_view_account
 def api_relationships(username):
     report_path = Path(OUTPUT_DIR) / username / "relationships.json"
     if not report_path.exists():
@@ -740,6 +926,7 @@ def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=Non
 
 
 @app.post("/api/advisor/scan")
+@login_required
 def api_advisor_scan():
     data = request.json or {}
     username = data.get("username", "").strip().lstrip("@")
@@ -762,6 +949,7 @@ def api_advisor_scan():
 
 
 @app.get("/api/advisor/<username>")
+@api_can_view_account
 def api_advisor(username):
     report_path = Path(OUTPUT_DIR) / username / "advisor.json"
     if not report_path.exists():

@@ -78,7 +78,14 @@
                 <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                 <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                 <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <a href="/admin" class="text-sm text-red-400 hover:text-red-300 transition">Admin</a>
+                {% endif %}
                 <span id="sessionStatus" class="text-xs px-2 py-1 rounded-full"></span>
+                {% if current_user.is_authenticated %}
+                <span class="text-xs text-gray-500">{{ current_user.display_name or current_user.email }}</span>
+                <a href="/logout" class="text-xs text-gray-500 hover:text-white transition">Logout</a>
+                {% endif %}
             </div>
         </div>
     </nav>
