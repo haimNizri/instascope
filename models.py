@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
     subscription_tier = db.Column(db.String(16), default="free")  # 'free' or 'pro'
     subscription_id = db.Column(db.String(128))  # LemonSqueezy subscription ID
     subscription_status = db.Column(db.String(32))  # 'active', 'cancelled', 'expired'
+    customer_portal_url = db.Column(db.Text)  # LemonSqueezy customer portal for managing subscription
     trial_used = db.Column(db.JSON, default=dict)  # tracks which free features were used {"relationships": true, "unfollowers": true}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

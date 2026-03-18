@@ -1039,6 +1039,12 @@ def pricing_page():
     return render_template("pricing.html")
 
 
+@app.route("/billing")
+@login_required
+def billing_page():
+    return render_template("billing.html")
+
+
 @app.get("/api/billing/checkout")
 @login_required
 def api_billing_checkout():
@@ -1099,6 +1105,12 @@ def api_billing_webhook():
         return jsonify({"ok": True, "note": "User not found"})
 
     subscription_id = str(data.get("data", {}).get("id", ""))
+
+    # Save customer portal URL if available
+    urls = attrs.get("urls", {})
+    portal_url = urls.get("customer_portal", "")
+    if portal_url:
+        user.customer_portal_url = portal_url
 
     if event_name == "subscription_created":
         user.subscription_tier = "pro"
