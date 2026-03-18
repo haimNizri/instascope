@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}InstaScope — @{{ username }}{% endblock %}
+
+{% block content %}
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="flex flex-col items-center justify-center py-32">
+    <div class="relative mb-6">
+        <div class="w-16 h-16 border-4 border-gray-700 border-t-accent-500 rounded-full animate-spin"></div>
+    </div>
+    <p id="progressText" class="text-lg text-gray-400 animate-pulse">Connecting...</p>
+</div>
+
+<!-- Error state -->
+<div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
+    <div class="text-5xl mb-4">⚠️</div>
+    <p id="errorText" class="text-xl text-red-400"></p>
+    <a href="/" class="mt-4 text-accent-400 hover:underline">← Try another profile</a>
+</div>
+
+<!-- Dashboard (hidden until loaded) -->
+<div id="dashboard" class="hidden">
+
+    <!-- Profile Header -->
+    <div id="profileHeader" class="bg-dark-800 rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-center gap-6 border border-gray-800">
+        <img id="profilePic" src="" alt="Profile" class="w-24 h-24 rounded-full border-2 border-accent-500 object-cover bg-gray-700">
+        <div class="flex-1 text-center sm:text-left">
+            <div class="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                <h1 id="profileUsername" class="text-2xl font-bold"></h1>
+                <span id="verifiedBadge" class="hidden text-blue-400 text-xl" title="Verified">✓</span>
+            </div>
+            <p id="profileName" class="text-gray-400"></p>
+            <p id="profileBio" class="text-gray-300 mt-2 text-sm max-w-xl"></p>
+            <a id="profileUrl" href="#" target="_blank" class="hidden text-accent-400 text-sm hover:underline mt-1 inline-block"></a>
+        </div>
+        <div class="flex gap-6 text-center">
+            <div>
+                <div id="statPosts" class="text-2xl font-bold">—</div>
+                <div class="text-xs text-gray-500 uppercase">Posts</div>
+            </div>
+            <div>
+                <div id="statFollowers" class="text-2xl font-bold">—</div>
+                <div class="text-xs text-gray-500 uppercase">Followers</div>
+            </div>
+            <div>
+                <div id="statFollowing" class="text-2xl font-bold">—</div>
+                <div class="text-xs text-gray-500 uppercase">Following</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authenticity Score -->
+    <div class="bg-dark-800 rounded-2xl p-6 mb-6 border border-gray-800">
+        <h2 class="text-lg font-semibold mb-4">Authenticity Score</h2>
+        <div class="flex flex-col lg:flex-row items-center gap-8">
+            <div class="relative w-48 h-48 flex-shrink-0">
+                <canvas id="authGauge"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="authScore" class="text-4xl font-extrabold">—</span>
+                    <span class="text-xs text-gray-500 uppercase">/ 100</span>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div id="authVerdict" class="text-xl font-bold mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-green-400 mb-2">Positive Signals</h3>
+                        <ul id="authPositives" class="space-y-1 text-sm text-gray-300"></ul>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-red-400 mb-2">Red Flags</h3>
+                        <ul id="authFlags" class="space-y-1 text-sm text-gray-300"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Age + Demographics row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Age Distribution -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+            <h2 class="text-lg font-semibold mb-1">Estimated Audience Age</h2>
+            <p id="ageMethod" class="text-xs text-gray-500 mb-4"></p>
+            <div class="h-56">
+                <canvas id="ageChart"></canvas>
+            </div>
+            <p class="text-center mt-2 text-sm text-gray-400">Primary: <span id="primaryAge" class="text-accent-400 font-semibold"></span></p>
+        </div>
+
+        <!-- Demographics -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+            <h2 class="text-lg font-semibold mb-4">Demographics</h2>
+            <div id="demoContent">
+                <div id="demoPlaceholder" class="text-gray-500 text-sm py-12 text-center">
+                    Run with <span class="text-accent-400 font-mono">--deep</span> and login to get gender & geographic demographics
+                </div>
+                <div id="demoCharts" class="hidden">
+                    <div class="h-48 mb-4">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                    <div id="countriesList" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Insights -->
+    <div class="bg-dark-800 rounded-2xl p-6 mb-6 border border-gray-800">
+        <h2 class="text-lg font-semibold mb-4">Business Insights</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="bizMetrics"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-400 mb-3">Content Mix</h3>
+                <div class="h-48">
+                    <canvas id="contentMixChart"></canvas>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-400 mb-3">Posting Calendar</h3>
+                <div class="h-48">
+                    <canvas id="calendarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campaigns -->
+    <div class="bg-dark-800 rounded-2xl p-6 mb-6 border border-gray-800">
+        <h2 class="text-lg font-semibold mb-4">Campaign & Sponsorship Analysis</h2>
+        <div class="grid grid-cols-3 gap-4 mb-6" id="campMetrics"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-400 mb-3">Brand Partners</h3>
+                <div id="brandPartners" class="space-y-2"></div>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-400 mb-3">Top Hashtags</h3>
+                <div id="topHashtags" class="flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+        <!-- Sponsored posts table -->
+        <div id="sponsoredTable" class="mt-6 hidden">
+            <h3 class="text-sm font-semibold text-gray-400 mb-3">Detected Sponsored Posts</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-500 border-b border-gray-700">
+                            <th class="text-left py-2 px-3">Date</th>
+                            <th class="text-left py-2 px-3">Post</th>
+                            <th class="text-left py-2 px-3">Signals</th>
+                            <th class="text-left py-2 px-3">Mentions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sponsoredBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Posts -->
+    <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+        <h2 class="text-lg font-semibold mb-4">Top Performing Posts</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="topPosts"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const USERNAME = "{{ username }}";
+    const params = new URLSearchParams(window.location.search);
+    const taskId = params.get("task");
+
+    if (taskId) {
+        pollStatus(taskId);
+    } else {
+        loadReport(USERNAME);
+    }
+</script>
+{% endblock %}

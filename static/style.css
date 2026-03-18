@@ -1,0 +1,53 @@
+/* InstaScope — minimal overrides */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f0f1a;
+}
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
+
+/* Fade in animation for dashboard sections */
+#dashboard > div {
+    animation: fadeUp 0.4s ease-out both;
+}
+#dashboard > div:nth-child(2) { animation-delay: 0.05s; }
+#dashboard > div:nth-child(3) { animation-delay: 0.10s; }
+#dashboard > div:nth-child(4) { animation-delay: 0.15s; }
+#dashboard > div:nth-child(5) { animation-delay: 0.20s; }
+#dashboard > div:nth-child(6) { animation-delay: 0.25s; }
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Smooth spinner */
+.animate-spin {
+    animation: spin 0.8s linear infinite;
+}
+
+/* Input focus glow */
+input:focus {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* Active filter button */
+.filter-btn.active {
+    background-color: #7c3aed;
+    color: white;
+}

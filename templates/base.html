@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}InstaScope{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        dark: { 800: '#1a1a2e', 900: '#0f0f1a', 950: '#080812' },
+                        accent: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-dark-950 text-gray-100 font-sans min-h-screen">
+    <!-- Session banner -->
+    <div id="sessionBanner" class="hidden bg-yellow-500/10 border-b border-yellow-500/30">
+        <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 flex-wrap">
+            <span class="text-sm text-yellow-400" id="sessionMsg">Instagram session needed for follower tracking</span>
+            <div class="flex items-center gap-2">
+                <button onclick="autoConnect()" id="autoConnectBtn"
+                    class="px-4 py-1.5 bg-accent-600 text-white rounded-lg text-xs font-semibold hover:bg-accent-500 transition">
+                    Auto Connect
+                </button>
+                <span class="text-gray-600 text-xs">or</span>
+                <input type="text" id="sessionInput" placeholder="Paste sessionid cookie"
+                    class="px-3 py-1.5 bg-dark-900 border border-yellow-500/30 rounded-lg text-white text-xs w-48
+                           placeholder-gray-500 focus:outline-none focus:border-yellow-400">
+                <button onclick="saveSession()" id="sessionBtn"
+                    class="px-4 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs font-semibold hover:bg-yellow-500/30 transition">
+                    Connect
+                </button>
+                <a href="#" onclick="document.getElementById('sessionHelp').classList.toggle('hidden'); return false;"
+                   class="text-xs text-yellow-500/60 hover:text-yellow-400 transition">Help</a>
+            </div>
+        </div>
+        <div id="sessionHelp" class="hidden max-w-7xl mx-auto px-4 pb-3">
+            <div class="bg-dark-900 rounded-lg p-3 text-xs text-gray-400 space-y-2">
+                <p class="font-semibold text-white">Option 1: One-click bookmarklet (easiest)</p>
+                <p>1. Drag this button to your <strong class="text-white">bookmarks bar</strong>:
+                    <a href="javascript:void(function(){var s=document.cookie.match(/sessionid=([^;]+)/);if(s){fetch('http://localhost:8080/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:s[1]})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Connected as @'+d.username+'!');else alert('Error: '+d.error)}).catch(e=>alert('Error: '+e))}else{alert('No sessionid found. Make sure you are logged into Instagram.')}}())"
+                       class="inline-block px-3 py-1 bg-gradient-to-r from-accent-500 to-pink-500 text-white rounded-lg font-bold cursor-grab no-underline hover:brightness-110"
+                       onclick="event.preventDefault(); alert('Drag this to your bookmarks bar, then click it while on instagram.com');">
+                       &#128279; Connect InstaScope
+                    </a>
+                </p>
+                <p>2. Go to <strong class="text-white">instagram.com</strong> and click the bookmarklet. Done!</p>
+
+                <p class="font-semibold text-white mt-3">Option 2: Manual paste</p>
+                <p>1. Open <strong class="text-white">instagram.com</strong> &rarr; press <strong class="text-white">F12</strong> &rarr; <strong class="text-white">Application</strong> &rarr; <strong class="text-white">Cookies</strong> &rarr; copy <strong class="text-white">sessionid</strong> value</p>
+                <p>2. Paste it above and click Connect</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="border-b border-gray-800 bg-dark-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-xl font-bold">
+                <span class="text-2xl">🔍</span>
+                <span class="bg-gradient-to-r from-accent-400 to-pink-400 bg-clip-text text-transparent">InstaScope</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-sm text-gray-400 hover:text-white transition">Search</a>
+                <a href="#" onclick="promptNav('unfollowers')" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
+                <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
+                <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
+                <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                <span id="sessionStatus" class="text-xs px-2 py-1 rounded-full"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-gray-800 mt-16 py-6 text-center text-gray-600 text-sm">
+        InstaScope — Instagram Profile Analyzer
+    </footer>
+
+    <script src="/static/app.js"></script>
+    <script>
+        function promptNav(feature) {
+            const labels = { unfollowers: 'track unfollowers', lurkers: 'detect ghost followers & lurkers', relationships: 'analyze follow relationships', advisor: 'get content recommendations' };
+            const u = prompt('Enter Instagram username to ' + (labels[feature] || feature) + ':');
+            if (u) window.location.href = '/' + feature + '/' + u.trim().replace(/^@/, '');
+        }
+
+        // Check session on page load
+        fetch('/api/session').then(r => r.json()).then(data => {
+            const banner = document.getElementById('sessionBanner');
+            const status = document.getElementById('sessionStatus');
+            if (data.logged_in) {
+                banner.classList.add('hidden');
+                status.textContent = '@' + data.username;
+                status.className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400';
+            } else {
+                banner.classList.remove('hidden');
+                status.textContent = 'Not connected';
+                status.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400';
+            }
+        }).catch(() => {});
+
+        function saveSession() {
+            const sid = document.getElementById('sessionInput').value.trim();
+            if (!sid) return;
+            const btn = document.getElementById('sessionBtn');
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            fetch('/api/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sid }),
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        document.getElementById('sessionMsg').textContent = 'Connected as @' + data.username;
+                        document.getElementById('sessionBanner').className = 'bg-green-500/10 border-b border-green-500/30';
+                        document.getElementById('sessionInput').classList.add('hidden');
+                        btn.classList.add('hidden');
+                        document.getElementById('sessionStatus').textContent = '@' + data.username;
+                        document.getElementById('sessionStatus').className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400';
+                        setTimeout(() => document.getElementById('sessionBanner').classList.add('hidden'), 2000);
+                    } else {
+                        document.getElementById('sessionMsg').textContent = data.error || 'Invalid session';
+                        btn.textContent = 'Connect';
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('sessionMsg').textContent = 'Error: ' + err.message;
+                    btn.textContent = 'Connect';
+                    btn.disabled = false;
+                });
+        }
+
+        // Allow Enter key in session input
+        document.getElementById('sessionInput')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') saveSession();
+        });
+
+        function autoConnect() {
+            const btn = document.getElementById('autoConnectBtn');
+            btn.textContent = 'Opening Instagram...';
+            btn.disabled = true;
+
+            // Open instagram.com — user is already logged in
+            // Then show instructions to paste one line in the console
+            const w = window.open('https://www.instagram.com/', '_blank', 'width=500,height=400');
+
+            // Show a modal with the console command
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[100]';
+            overlay.id = 'autoConnectOverlay';
+            const cmd = `fetch('http://localhost:8080/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:document.cookie.match(/sessionid=([^;]+)/)[1]})}).then(r=>r.json()).then(d=>alert(d.ok?'Connected as @'+d.username+'!':'Error: '+d.error))`;
+            overlay.innerHTML = `
+                <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 max-w-lg mx-4">
+                    <h3 class="text-lg font-bold text-white mb-3">Almost there! One quick step:</h3>
+                    <ol class="text-sm text-gray-300 space-y-2 mb-4">
+                        <li>1. In the Instagram tab that just opened, press <strong class="text-white">F12</strong> (or Cmd+Option+J)</li>
+                        <li>2. Click the <strong class="text-white">Console</strong> tab</li>
+                        <li>3. Paste this command and press Enter:</li>
+                    </ol>
+                    <div class="relative">
+                        <pre class="bg-dark-950 rounded-lg p-3 text-xs text-green-400 overflow-x-auto select-all cursor-pointer" onclick="navigator.clipboard.writeText(this.textContent); this.nextElementSibling.classList.remove('hidden'); setTimeout(()=>this.nextElementSibling.classList.add('hidden'),1500)">${cmd}</pre>
+                        <span class="hidden absolute top-1 right-2 text-xs text-green-400 bg-dark-950 px-2 py-1 rounded">Copied!</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Click the code above to copy it</p>
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="document.getElementById('autoConnectOverlay').remove(); location.reload();"
+                            class="flex-1 px-4 py-2 bg-accent-600 text-white rounded-lg font-semibold hover:bg-accent-500 transition">
+                            Done — Refresh
+                        </button>
+                        <button onclick="document.getElementById('autoConnectOverlay').remove(); document.getElementById('autoConnectBtn').textContent='Auto Connect'; document.getElementById('autoConnectBtn').disabled=false;"
+                            class="px-4 py-2 bg-dark-900 text-gray-400 rounded-lg hover:text-white transition">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

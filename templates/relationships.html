@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}InstaScope — Follow Relationships — @{{ username }}{% endblock %}
+
+{% block content %}
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
+    <div class="relative mb-6">
+        <div class="w-16 h-16 border-4 border-gray-700 border-t-accent-500 rounded-full animate-spin"></div>
+    </div>
+    <p id="progressText" class="text-lg text-gray-400 animate-pulse">Scanning...</p>
+</div>
+
+<!-- Error state -->
+<div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
+    <div class="text-5xl mb-4">&#9888;&#65039;</div>
+    <p id="errorText" class="text-xl text-red-400"></p>
+    <a href="/" class="mt-4 text-accent-400 hover:underline">&larr; Back to home</a>
+</div>
+
+<div id="relDashboard">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <span class="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">Follow Relationships</span>
+            </h1>
+            <p class="text-gray-400 mt-1">@{{ username }}</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="startRelScan()" id="scanBtn"
+                class="px-6 py-3 bg-accent-600 hover:bg-accent-500 text-white font-semibold rounded-xl transition
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+                Scan Now
+            </button>
+        </div>
+    </div>
+
+    <!-- First time -->
+    <div id="firstTimeMsg" class="hidden bg-dark-800 rounded-2xl p-8 border border-gray-800 text-center">
+        <div class="text-4xl mb-4">&#128101;</div>
+        <h2 class="text-xl font-semibold mb-2">Analyze Follow Relationships</h2>
+        <p class="text-gray-400 mb-4 max-w-lg mx-auto">
+            Find out who follows you but you don't follow back (your fans),
+            and who you follow but doesn't follow you back.
+        </p>
+        <button onclick="startRelScan()"
+            class="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400
+                   text-white font-semibold rounded-xl transition">
+            Start Scan
+        </button>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="hidden">
+        <!-- Summary cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="summaryCards"></div>
+
+        <!-- Two main columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Not following you back -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-lg font-semibold text-red-400">Don't Follow You Back</h2>
+                    <span id="nfbBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-400"></span>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">You follow them but they don't follow you</p>
+
+                <!-- Gender chart -->
+                <div class="h-32 mb-3">
+                    <canvas id="nfbGenderChart"></canvas>
+                </div>
+
+                <!-- Filter -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="filterNfb('all')" class="nfb-filter active px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="all">All</button>
+                    <button onclick="filterNfb('female')" class="nfb-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="female">Female</button>
+                    <button onclick="filterNfb('male')" class="nfb-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="male">Male</button>
+                    <button onclick="filterNfb('unknown')" class="nfb-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="unknown">Unknown</button>
+                </div>
+
+                <div id="nfbList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+
+            <!-- Your fans (follow you but you don't follow back) -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-lg font-semibold text-green-400">Your Fans</h2>
+                    <span id="fansBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500/20 text-green-400"></span>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">They follow you but you don't follow them back</p>
+
+                <!-- Gender chart -->
+                <div class="h-32 mb-3">
+                    <canvas id="fansGenderChart"></canvas>
+                </div>
+
+                <!-- Filter -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="filterFans('all')" class="fans-filter active px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="all">All</button>
+                    <button onclick="filterFans('female')" class="fans-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="female">Female</button>
+                    <button onclick="filterFans('male')" class="fans-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="male">Male</button>
+                    <button onclick="filterFans('unknown')" class="fans-filter px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300" data-filter="unknown">Unknown</button>
+                </div>
+
+                <div id="fansList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Mutual follows -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-accent-400">Mutual Follows</h2>
+                    <p class="text-xs text-gray-500">You follow each other</p>
+                </div>
+                <span id="mutualBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-accent-500/20 text-accent-400"></span>
+            </div>
+            <div id="mutualList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const USERNAME = "{{ username }}";
+    const params = new URLSearchParams(window.location.search);
+    const taskId = params.get("task");
+
+    if (taskId) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        pollRelStatus(taskId);
+    } else {
+        loadRelReport(USERNAME);
+    }
+</script>
+{% endblock %}
