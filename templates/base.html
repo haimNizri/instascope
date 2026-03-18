@@ -50,7 +50,7 @@
             <div class="bg-dark-900 rounded-lg p-3 text-xs text-gray-400 space-y-2">
                 <p class="font-semibold text-white">Option 1: One-click bookmarklet (easiest)</p>
                 <p>1. Drag this button to your <strong class="text-white">bookmarks bar</strong>:
-                    <a href="javascript:void(function(){var s=document.cookie.match(/sessionid=([^;]+)/);if(s){fetch('http://localhost:8080/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:s[1]})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Connected as @'+d.username+'!');else alert('Error: '+d.error)}).catch(e=>alert('Error: '+e))}else{alert('No sessionid found. Make sure you are logged into Instagram.')}}())"
+                    <a id="bookmarkletLink" href="#"
                        class="inline-block px-3 py-1 bg-gradient-to-r from-accent-500 to-pink-500 text-white rounded-lg font-bold cursor-grab no-underline hover:brightness-110"
                        onclick="event.preventDefault(); alert('Drag this to your bookmarks bar, then click it while on instagram.com');">
                        &#128279; Connect InstaScope
@@ -154,20 +154,24 @@
             if (e.key === 'Enter') saveSession();
         });
 
+        // Set bookmarklet href dynamically
+        const baseUrl = window.location.origin;
+        const bmLink = document.getElementById('bookmarkletLink');
+        if (bmLink) {
+            bmLink.href = `javascript:void(function(){var s=document.cookie.match(/sessionid=([^;]+)/);if(s){fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:s[1]})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Connected as @'+d.username+'!');else alert('Error: '+d.error)}).catch(e=>alert('Error: '+e))}else{alert('No sessionid found. Make sure you are logged into Instagram.')}})()`;
+        }
+
         function autoConnect() {
             const btn = document.getElementById('autoConnectBtn');
             btn.textContent = 'Opening Instagram...';
             btn.disabled = true;
 
-            // Open instagram.com — user is already logged in
-            // Then show instructions to paste one line in the console
             const w = window.open('https://www.instagram.com/', '_blank', 'width=500,height=400');
 
-            // Show a modal with the console command
             const overlay = document.createElement('div');
             overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[100]';
             overlay.id = 'autoConnectOverlay';
-            const cmd = `fetch('http://localhost:8080/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:document.cookie.match(/sessionid=([^;]+)/)[1]})}).then(r=>r.json()).then(d=>alert(d.ok?'Connected as @'+d.username+'!':'Error: '+d.error))`;
+            const cmd = `fetch('${baseUrl}/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:document.cookie.match(/sessionid=([^;]+)/)[1]})}).then(r=>r.json()).then(d=>alert(d.ok?'Connected as @'+d.username+'!':'Error: '+d.error))`;
             overlay.innerHTML = `
                 <div class="bg-dark-800 border border-gray-700 rounded-2xl p-6 max-w-lg mx-4">
                     <h3 class="text-lg font-bold text-white mb-3">Almost there! One quick step:</h3>
