@@ -390,6 +390,36 @@ def register():
     return render_template("register.html")
 
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        new_password = request.form.get("new_password", "")
+        admin_code = request.form.get("admin_code", "")
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash("No account found with that email.")
+            return render_template("forgot_password.html")
+
+        # Admin reset: admin can set a reset code in env var, or use default for first setup
+        reset_code = os.environ.get("RESET_CODE", "instascope-reset-2026")
+        if admin_code != reset_code:
+            flash("Invalid reset code. Contact the admin for help.")
+            return render_template("forgot_password.html")
+
+        if len(new_password) < 6:
+            flash("Password must be at least 6 characters.")
+            return render_template("forgot_password.html")
+
+        user.set_password(new_password)
+        db.session.commit()
+        flash("Password reset successfully. You can now log in.")
+        return redirect(url_for("login"))
+
+    return render_template("forgot_password.html")
+
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -423,6 +453,8 @@ def admin_update_user(user_id):
         user.allowed_accounts = data["allowed_accounts"]
     if "instagram_username" in data:
         user.instagram_username = data["instagram_username"]
+    if "new_password" in data and len(data["new_password"]) >= 6:
+        user.set_password(data["new_password"])
     db.session.commit()
     return jsonify({"ok": True, "user": user.to_dict()})
 

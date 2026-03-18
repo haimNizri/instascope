@@ -89,6 +89,10 @@
                             Disable
                         </button>
                         {% endif %}
+                        <button onclick="resetPassword({{ user.id }})"
+                            class="px-3 py-1 bg-accent-500/20 text-accent-400 rounded-lg text-xs hover:bg-accent-500/30 transition">
+                            Reset PW
+                        </button>
                         {% if user.id != current_user.id %}
                         <button onclick="deleteUser({{ user.id }})"
                             class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition">
@@ -117,6 +121,13 @@ function updateUser(userId, data) {
             if (d.ok) location.reload();
             else alert(d.error || 'Error');
         });
+}
+
+function resetPassword(userId) {
+    const pw = prompt('Enter new password for this user (min 6 chars):');
+    if (!pw || pw.length < 6) { alert('Password must be at least 6 characters'); return; }
+    updateUser(userId, { new_password: pw });
+    alert('Password reset successfully');
 }
 
 function deleteUser(userId) {
