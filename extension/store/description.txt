@@ -1,0 +1,49 @@
+InstaScope Connect — Instagram Analytics & Insights
+
+Connect your Instagram account to InstaScope with one click. Get powerful analytics, track unfollowers, discover ghost followers, and optimize your content strategy.
+
+FEATURES:
+
+🔍 Unfollower Tracker
+Track who unfollowed you with detailed analysis — gender breakdown, account types, and historical trends.
+
+👻 Ghost Follower Detection
+Find followers who never engage with your content. Identify secret fans who interact but don't follow.
+
+📊 Follow Relationships
+See who follows you but you don't follow back (your fans), and who you follow but doesn't follow you back.
+
+💡 Content Advisor
+Get personalized recommendations: best posting times, top-performing hashtags, optimal caption length, and content type analysis.
+
+📈 Story Viewer Tracking
+Track non-followers who view your stories regularly.
+
+HOW IT WORKS:
+
+1. Install the extension
+2. Create an account at InstaScope
+3. Go to instagram.com
+4. Click the extension icon → "Connect Instagram"
+5. That's it! Your analytics dashboard is ready.
+
+PRIVACY:
+• We never access your Instagram password
+• We never post, like, or take actions on your account
+• We never sell your data
+• Read-only access to your public profile data
+
+FREE PLAN:
+• Follow relationships (basic view)
+• One-time unfollower scan
+
+PRO PLAN ($5.50/month):
+• Unlimited scans & tracking
+• Gender & demographic analysis
+• Ghost followers & lurkers
+• Content advisor with recommendations
+• Automatic daily scans
+• Full analytics history
+
+Website: https://instascope-824d.onrender.com
+Support: haim1221@gmail.com

@@ -451,6 +451,11 @@ def forgot_password():
     return render_template("forgot_password.html")
 
 
+@app.route("/privacy")
+def privacy_page():
+    return render_template("privacy.html")
+
+
 @app.route("/logout")
 @login_required
 def logout():
