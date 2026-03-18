@@ -64,9 +64,26 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
-# Create tables on first run
+# Create/update tables on first run
 with app.app_context():
     db.create_all()
+    # Add missing columns if they don't exist (migration-lite)
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'users' in inspector.get_table_names():
+        existing = [c['name'] for c in inspector.get_columns('users')]
+        with db.engine.connect() as conn:
+            if 'subscription_tier' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN subscription_tier VARCHAR(16) DEFAULT 'free'"))
+            if 'subscription_id' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN subscription_id VARCHAR(128)"))
+            if 'subscription_status' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN subscription_status VARCHAR(32)"))
+            if 'customer_portal_url' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN customer_portal_url TEXT"))
+            if 'trial_used' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN trial_used JSON"))
+            conn.commit()
 
 
 # ── Auth decorators ─────────────────────────────────────────────────────────
