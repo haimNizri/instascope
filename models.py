@@ -24,6 +24,7 @@ class User(UserMixin, db.Model):
     # Which Instagram accounts this user can view (comma-separated usernames, or '*' for all)
     allowed_accounts = db.Column(db.Text, default="")
     instagram_username = db.Column(db.String(64))  # their own IG username
+    instagram_verified = db.Column(db.Boolean, default=False)  # confirmed via session cookie
     subscription_tier = db.Column(db.String(16), default="free")  # 'free' or 'pro'
     subscription_id = db.Column(db.String(128))  # LemonSqueezy subscription ID
     subscription_status = db.Column(db.String(32))  # 'active', 'cancelled', 'expired'
@@ -81,16 +82,16 @@ class User(UserMixin, db.Model):
         return True, "free"
 
     def can_view(self, ig_username):
-        """Check if this user can view a given Instagram account."""
+        """Check if this user can view a given Instagram account.
+        Regular users can ONLY see their own verified account. Period."""
         if self.role == "admin":
             return True
-        if self.allowed_accounts == "*":
-            return True
-        allowed = [a.strip().lower() for a in (self.allowed_accounts or "").split(",") if a.strip()]
-        # Always allow their own account
-        if self.instagram_username and ig_username.lower() == self.instagram_username.lower():
-            return True
-        return ig_username.lower() in allowed
+        # Regular users: must be verified and can only see their own account
+        if not self.instagram_verified:
+            return False
+        if not self.instagram_username:
+            return False
+        return ig_username.lower() == self.instagram_username.lower()
 
     def to_dict(self):
         return {

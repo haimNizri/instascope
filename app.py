@@ -83,6 +83,8 @@ with app.app_context():
                 conn.execute(text("ALTER TABLE users ADD COLUMN customer_portal_url TEXT"))
             if 'trial_used' not in existing:
                 conn.execute(text("ALTER TABLE users ADD COLUMN trial_used JSON"))
+            if 'instagram_verified' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN instagram_verified BOOLEAN DEFAULT FALSE"))
             conn.commit()
 
 
@@ -97,11 +99,28 @@ def admin_required(f):
     return decorated
 
 
+def ig_verified_required(f):
+    """Decorator: ensures user has verified their Instagram account."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.role == "admin":
+            return f(*args, **kwargs)
+        if not current_user.instagram_verified:
+            flash("Please connect your Instagram account first using the Chrome extension.")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 def can_view_account(f):
     """Decorator: checks user can view the <username> in the URL."""
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
+        if current_user.role != "admin" and not current_user.instagram_verified:
+            flash("Please connect your Instagram account first using the Chrome extension.")
+            return redirect(url_for("index"))
         username = kwargs.get("username", "")
         if not current_user.can_view(username):
             flash("You don't have permission to view this account.")
@@ -137,6 +156,20 @@ def pro_required(feature_name):
 
 
 OUTPUT_DIR = "output"
+
+
+def validate_scan_username(username):
+    """Validate that the current user is allowed to scan this username.
+    Returns (ok, error_response) tuple."""
+    if current_user.role == "admin":
+        return True, None
+    if not current_user.instagram_verified:
+        return False, (jsonify({"error": "Connect your Instagram account first"}), 403)
+    if not current_user.instagram_username:
+        return False, (jsonify({"error": "No Instagram account linked"}), 403)
+    if username.lower() != current_user.instagram_username.lower():
+        return False, (jsonify({"error": "You can only scan your own account"}), 403)
+    return True, None
 HISTORY_FILE = Path(OUTPUT_DIR) / "history.json"
 tasks = {}  # task_id -> {status, progress, result, error}
 
@@ -557,6 +590,10 @@ def api_analyze():
     if not username:
         return jsonify({"error": "Username required"}), 400
 
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
+
     task_id = str(uuid.uuid4())[:8]
     post_limit = data.get("post_limit", 50)
     deep = data.get("deep", False)
@@ -636,11 +673,15 @@ def api_set_session():
                 return jsonify({
                     "error": f"This Instagram session belongs to @{ig_username}, but your account is registered with @{current_user.instagram_username}. Please log into the correct Instagram account."
                 }), 403
+            # Mark as verified — this IS their account
+            current_user.instagram_verified = True
+            db.session.commit()
 
-        # Auto-set instagram_username if not set yet
+        # Auto-set instagram_username if not set yet during registration
         if not current_user.instagram_username:
             current_user.instagram_username = ig_username
             current_user.allowed_accounts = ig_username
+            current_user.instagram_verified = True
             db.session.commit()
 
     # Save to file (local dev)
@@ -797,6 +838,10 @@ def api_unfollower_scan():
     if not username:
         return jsonify({"error": "Username required"}), 400
 
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
+
     task_id = str(uuid.uuid4())[:8]
     ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
     ig_pass = data.get("ig_password") or os.environ.get("IG_PASSWORD")
@@ -889,6 +934,10 @@ def api_lurker_scan():
     if not username:
         return jsonify({"error": "Username required"}), 400
 
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
+
     task_id = str(uuid.uuid4())[:8]
     post_limit = data.get("post_limit", 20)
     ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
@@ -959,6 +1008,10 @@ def api_relationship_scan():
     username = data.get("username", "").strip().lstrip("@")
     if not username:
         return jsonify({"error": "Username required"}), 400
+
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
 
     task_id = str(uuid.uuid4())[:8]
     ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
@@ -1038,6 +1091,10 @@ def api_advisor_scan():
     username = data.get("username", "").strip().lstrip("@")
     if not username:
         return jsonify({"error": "Username required"}), 400
+
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
 
     task_id = str(uuid.uuid4())[:8]
     post_limit = data.get("post_limit", 50)
