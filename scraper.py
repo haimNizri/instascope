@@ -145,29 +145,106 @@ def save_json(data, filepath):
 
 # ── scrape functions ─────────────────────────────────────────────────────────
 
-def scrape_profile_fast(session_id, target, output_dir):
-    """Fast profile scrape using Instagram private API."""
+def _get_ig_session(session_id):
+    """Create a requests session with Instagram auth and optional proxy."""
     import requests as _req
 
     session = _req.Session()
     session.cookies.set("sessionid", session_id, domain=".instagram.com")
     session.headers.update({
         "x-ig-app-id": "936619743392459",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "User-Agent": "Instagram 317.0.0.0.62 Android (26/8.0.0; 480dpi; 1080x1920; samsung; SM-G950F; dreamlte; samsungexynos8895; en_US; 556062177)",
     })
 
-    resp = session.get(
-        "https://i.instagram.com/api/v1/users/web_profile_info/",
-        params={"username": target},
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        raise Exception(f"Profile API returned {resp.status_code}")
+    # Optional proxy support
+    proxy = os.environ.get("PROXY_URL")
+    if proxy:
+        session.proxies = {"http": proxy, "https": proxy}
 
-    user = resp.json().get("data", {}).get("user", {})
-    if not user:
-        raise Exception(f"Profile '{target}' not found")
+    return session
+
+
+def scrape_profile_fast(session_id, target, output_dir):
+    """Fast profile scrape using Instagram private API."""
+    session = _get_ig_session(session_id)
+
+    # Try mobile API first (less blocked)
+    try:
+        resp = session.get(
+            f"https://i.instagram.com/api/v1/users/web_profile_info/",
+            params={"username": target},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            user = resp.json().get("data", {}).get("user", {})
+            if user:
+                info = _parse_web_profile(user, target)
+                save_json(info, f"{output_dir}/{target}/profile.json")
+                print(f"[+] Fast profile scraped: {target} ({info['followers']} followers)")
+                return info
+    except Exception as e:
+        print(f"[!] Web profile API failed: {e}")
+
+    # Fallback: search API
+    try:
+        resp = session.get(
+            "https://i.instagram.com/api/v1/users/search/",
+            params={"q": target, "count": 1},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            users = resp.json().get("users", [])
+            if users and users[0].get("username", "").lower() == target.lower():
+                u = users[0]
+                user_id = u["pk"]
+                # Get full profile
+                resp2 = session.get(
+                    f"https://i.instagram.com/api/v1/users/{user_id}/info/",
+                    timeout=10,
+                )
+                if resp2.status_code == 200:
+                    u2 = resp2.json().get("user", {})
+                    info = {
+                        "username": u2.get("username", target),
+                        "full_name": u2.get("full_name", ""),
+                        "biography": u2.get("biography", ""),
+                        "external_url": u2.get("external_url", ""),
+                        "followers": u2.get("follower_count", 0),
+                        "following": u2.get("following_count", 0),
+                        "posts_count": u2.get("media_count", 0),
+                        "is_private": u2.get("is_private", False),
+                        "is_verified": u2.get("is_verified", False),
+                        "profile_pic_url": u2.get("hd_profile_pic_url_info", {}).get("url", u2.get("profile_pic_url", "")),
+                        "business_category": u2.get("category", ""),
+                        "user_id": str(user_id),
+                        "scraped_at": datetime.now().isoformat(),
+                    }
+                    save_json(info, f"{output_dir}/{target}/profile.json")
+                    print(f"[+] Fast profile scraped (v2): {target} ({info['followers']} followers)")
+                    return info
+    except Exception as e:
+        print(f"[!] Search/info API failed: {e}")
+
+    raise Exception(f"Could not fetch profile for {target} — Instagram may be blocking this server's IP")
+
+
+def _parse_web_profile(user, target):
+    """Parse web_profile_info response into our profile dict."""
+    return {
+        "username": user.get("username", target),
+        "full_name": user.get("full_name", ""),
+        "biography": user.get("biography", ""),
+        "external_url": user.get("external_url", ""),
+        "followers": user.get("edge_followed_by", {}).get("count", 0),
+        "following": user.get("edge_follow", {}).get("count", 0),
+        "posts_count": user.get("edge_owner_to_timeline_media", {}).get("count", 0),
+        "is_private": user.get("is_private", False),
+        "is_verified": user.get("is_verified", False),
+        "profile_pic_url": user.get("profile_pic_url_hd", user.get("profile_pic_url", "")),
+        "business_category": user.get("category_name", ""),
+        "user_id": user.get("id", ""),
+        "scraped_at": datetime.now().isoformat(),
+    }
 
     info = {
         "username": user.get("username", target),
@@ -336,15 +413,7 @@ def scrape_comments(L, profile, output_dir, limit=None):
 
 def scrape_followers_fast(session_id, user_id, output_dir, username):
     """Fast follower fetch using Instagram's private API (up to 200 per request)."""
-    import requests as _req
-
-    session = _req.Session()
-    session.cookies.set("sessionid", session_id, domain=".instagram.com")
-    session.headers.update({
-        "x-ig-app-id": "936619743392459",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    })
+    session = _get_ig_session(session_id)
 
     followers = []
     max_id = None
@@ -479,15 +548,7 @@ def compare_follower_snapshots(old_snapshot, new_snapshot):
 
 def scrape_following_fast(session_id, user_id, output_dir, username):
     """Fast following fetch using Instagram's private API."""
-    import requests as _req
-
-    session = _req.Session()
-    session.cookies.set("sessionid", session_id, domain=".instagram.com")
-    session.headers.update({
-        "x-ig-app-id": "936619743392459",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    })
+    session = _get_ig_session(session_id)
 
     following = []
     max_id = None
