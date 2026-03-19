@@ -158,6 +158,17 @@ def pro_required(feature_name):
 OUTPUT_DIR = "output"
 
 
+def get_ig_session_id():
+    """Get Instagram session_id from DB (must be called with app context)."""
+    try:
+        account = Account.query.filter(Account.session_id.isnot(None)).order_by(Account.updated_at.desc()).first()
+        if account and account.session_id:
+            return account.session_id
+    except Exception:
+        pass
+    return load_saved_session_id()
+
+
 def validate_scan_username(username):
     """Validate that the current user is allowed to scan this username.
     Returns (ok, error_response) tuple."""
@@ -305,11 +316,11 @@ def db_update_account_profile(username, profile_data):
 # ── Background worker ────────────────────────────────────────────────────────
 
 def run_analysis(task_id, username, post_limit=50, deep=False,
-                 ig_user=None, ig_pass=None):
+                 ig_user=None, ig_pass=None, session_id=None):
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
         tasks[task_id]["progress"] = "Connecting to Instagram..."
-        L = get_loader(ig_user, ig_pass)
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
 
         tasks[task_id]["progress"] = "Scraping profile info..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
@@ -609,7 +620,7 @@ def api_analyze():
 
     thread = threading.Thread(
         target=run_analysis,
-        args=(task_id, username, post_limit, deep, ig_user, ig_pass),
+        args=(task_id, username, post_limit, deep, ig_user, ig_pass, get_ig_session_id()),
         daemon=True,
     )
     thread.start()
@@ -760,12 +771,12 @@ def api_get_session():
     return jsonify({"logged_in": False, "reason": "Session expired"})
 
 
-def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None):
+def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None, session_id=None):
     """Background worker: scrape followers, save snapshot, compare with previous."""
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
         tasks[task_id]["progress"] = "Connecting to Instagram..."
-        L = get_loader(ig_user, ig_pass)
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
 
         tasks[task_id]["progress"] = "Loading profile..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
@@ -867,7 +878,7 @@ def api_unfollower_scan():
 
     thread = threading.Thread(
         target=run_unfollower_scan,
-        args=(task_id, username, ig_user, ig_pass),
+        args=(task_id, username, ig_user, ig_pass, get_ig_session_id()),
         daemon=True,
     )
     thread.start()
@@ -902,12 +913,12 @@ def api_snapshots(username):
 
 
 def run_lurker_scan(task_id, username, post_limit=20,
-                    ig_user=None, ig_pass=None):
+                    ig_user=None, ig_pass=None, session_id=None):
     """Background worker: scrape followers + engagement + stories, then analyze lurkers."""
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
         tasks[task_id]["progress"] = "Connecting to Instagram..."
-        L = get_loader(ig_user, ig_pass)
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
 
         tasks[task_id]["progress"] = "Loading profile..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
@@ -976,7 +987,7 @@ def api_lurker_scan():
 
     thread = threading.Thread(
         target=run_lurker_scan,
-        args=(task_id, username, post_limit, ig_user, ig_pass),
+        args=(task_id, username, post_limit, ig_user, ig_pass, get_ig_session_id()),
         daemon=True,
     )
     thread.start()
@@ -999,12 +1010,12 @@ def api_lurkers(username):
         return jsonify(json.load(f))
 
 
-def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None):
+def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session_id=None):
     """Background worker: scrape followers + following, compare relationships."""
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
         tasks[task_id]["progress"] = "Connecting to Instagram..."
-        L = get_loader(ig_user, ig_pass)
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
 
         tasks[task_id]["progress"] = "Loading profile..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
@@ -1062,7 +1073,7 @@ def api_relationship_scan():
 
     thread = threading.Thread(
         target=run_relationship_scan,
-        args=(task_id, username, ig_user, ig_pass),
+        args=(task_id, username, ig_user, ig_pass, get_ig_session_id()),
         daemon=True,
     )
     thread.start()
@@ -1085,12 +1096,12 @@ def api_relationships(username):
         return jsonify(json.load(f))
 
 
-def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=None):
+def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=None, session_id=None):
     """Background worker: scrape posts and analyze content performance."""
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
         tasks[task_id]["progress"] = "Connecting to Instagram..."
-        L = get_loader(ig_user, ig_pass)
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
 
         tasks[task_id]["progress"] = "Loading profile..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
@@ -1158,7 +1169,7 @@ def api_advisor_scan():
 
     thread = threading.Thread(
         target=run_advisor_scan,
-        args=(task_id, username, post_limit, ig_user, ig_pass),
+        args=(task_id, username, post_limit, ig_user, ig_pass, get_ig_session_id()),
         daemon=True,
     )
     thread.start()
