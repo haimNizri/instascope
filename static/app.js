@@ -80,6 +80,21 @@ function addProLock(elementId, featureName) {
     el.appendChild(overlay);
 }
 
+function appendUpgradeButton(containerId, totalCount) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const btn = document.createElement('div');
+    btn.className = 'mt-3 text-center py-4 border-t border-gray-800';
+    btn.innerHTML = `
+        <div class="text-xs text-gray-500 mb-2">Showing 20 of ${totalCount}</div>
+        <button onclick="showUpgradePopup('Upgrade to Pro to see all ${totalCount} users and unlock gender analysis.')"
+            class="px-6 py-2.5 bg-gradient-to-r from-accent-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-sm">
+            See All ${totalCount} &mdash; Upgrade to Pro
+        </button>
+    `;
+    el.appendChild(btn);
+}
+
 function addProBadge(elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
@@ -1372,7 +1387,7 @@ function renderRelDashboard(report) {
         { label: 'Following', value: report.following_count, color: 'text-purple-400' },
         { label: 'Mutual', value: report.mutual_count, color: 'text-accent-400' },
         { label: "Don't Follow Back", value: report.not_following_back_count, color: 'text-red-400' },
-        { label: 'Your Fans', value: report.fans_count, color: 'text-green-400' },
+        { label: 'One-Way Followers', value: report.fans_count, color: 'text-green-400' },
     ].map(m => `
         <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
@@ -1412,8 +1427,13 @@ function renderRelDashboard(report) {
     document.getElementById('mutualBadge').textContent = report.mutual_count;
 
     renderProfileList('nfbList', allNfbProfiles, 'text-red-400');
+    if (report.not_following_back_truncated) appendUpgradeButton('nfbList', report.not_following_back_count);
+
     renderProfileList('fansList', allFansProfiles, 'text-green-400');
+    if (report.fans_truncated) appendUpgradeButton('fansList', report.fans_count);
+
     renderProfileList('mutualList', report.mutual || [], 'text-accent-400');
+    if (report.mutual_truncated) appendUpgradeButton('mutualList', report.mutual_count);
 }
 
 function renderRelGenderChart(canvasId, genderData) {

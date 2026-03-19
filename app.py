@@ -1121,15 +1121,20 @@ def api_relationships(username):
         with open(report_path) as f:
             data = json.load(f)
 
-    # Free users: strip gender analysis data
+    # Free users: strip gender analysis data + limit lists to 20
     if current_user.role != "admin" and not current_user.is_pro:
         data.pop("fans_gender", None)
         data.pop("not_following_back_gender", None)
         data.pop("mutual_gender", None)
-        # Strip gender from individual profiles
+        # Strip gender from individual profiles and cap at 20
+        FREE_LIST_LIMIT = 20
         for key in ["fans", "not_following_back", "mutual"]:
             for p in data.get(key, []):
                 p.pop("gender", None)
+            full_list = data.get(key, [])
+            if len(full_list) > FREE_LIST_LIMIT:
+                data[key] = full_list[:FREE_LIST_LIMIT]
+                data[f"{key}_truncated"] = True
         data["is_free"] = True
 
     return jsonify(data)
