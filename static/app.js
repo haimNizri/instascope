@@ -1,5 +1,59 @@
 // ── InstaScope Frontend ─────────────────────────────────────────────────────
 
+// ── Upgrade Popup ──────────────────────────────────────────────────────────
+
+function showUpgradePopup(message) {
+    // Remove existing popup if any
+    const existing = document.getElementById('upgradeOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'upgradeOverlay';
+    overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[100]';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+        <div class="bg-dark-800 border border-accent-500/30 rounded-2xl p-8 max-w-md mx-4 text-center animate-[fadeUp_0.3s_ease-out]">
+            <div class="text-5xl mb-4">&#128274;</div>
+            <h2 class="text-xl font-bold text-white mb-2">Upgrade to Pro</h2>
+            <p class="text-gray-400 mb-6">${message || 'This feature requires a Pro subscription.'}</p>
+            <div class="bg-dark-900 rounded-xl p-4 mb-6">
+                <div class="text-3xl font-bold text-white mb-1">$5.50<span class="text-lg text-gray-400 font-normal">/month</span></div>
+                <ul class="text-sm text-gray-300 text-left space-y-2 mt-4">
+                    <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Unlimited scans & tracking</li>
+                    <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Gender & demographic analysis</li>
+                    <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Ghost followers & lurkers</li>
+                    <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Content advisor & recommendations</li>
+                    <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Automatic daily scans</li>
+                </ul>
+            </div>
+            <div class="flex gap-3">
+                <a href="/pricing" class="flex-1 py-3 bg-gradient-to-r from-accent-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-center">
+                    View Plans
+                </a>
+                <button onclick="document.getElementById('upgradeOverlay').remove()"
+                    class="px-6 py-3 bg-dark-900 text-gray-400 rounded-xl hover:text-white transition">
+                    Later
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function handleApiResponse(data, btn, defaultBtnText) {
+    if (data.upgrade) {
+        showUpgradePopup(data.error);
+        if (btn) { btn.disabled = false; btn.textContent = defaultBtnText; }
+        return true;
+    }
+    if (data.error) {
+        alert(data.error);
+        if (btn) { btn.disabled = false; btn.textContent = defaultBtnText; }
+        return true;
+    }
+    return false;
+}
+
 const chartDefaults = {
     color: '#9ca3af',
     borderColor: 'transparent',
@@ -510,12 +564,7 @@ function startScan() {
     })
         .then(r => r.json())
         .then(data => {
-            if (data.error) {
-                alert(data.error);
-                btn.disabled = false;
-                btn.textContent = 'Scan Followers Now';
-                return;
-            }
+            if (handleApiResponse(data, btn, 'Scan Followers Now')) return;
             // Show loading and start polling
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('firstTimeMsg').classList.add('hidden');
@@ -909,12 +958,7 @@ function startLurkerScan() {
     })
         .then(r => r.json())
         .then(data => {
-            if (data.error) {
-                alert(data.error);
-                btn.disabled = false;
-                btn.textContent = 'Scan Now';
-                return;
-            }
+            if (handleApiResponse(data, btn, 'Scan Now')) return;
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('firstTimeMsg').classList.add('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
@@ -1238,7 +1282,7 @@ function startRelScan() {
     })
         .then(r => r.json())
         .then(data => {
-            if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Scan Now'; return; }
+            if (handleApiResponse(data, btn, 'Scan Now')) return;
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('firstTimeMsg').classList.add('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
@@ -1411,7 +1455,7 @@ function startAdvisorScan() {
     })
         .then(r => r.json())
         .then(data => {
-            if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Analyze Content'; return; }
+            if (handleApiResponse(data, btn, 'Analyze Content')) return;
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('firstTimeMsg').classList.add('hidden');
             document.getElementById('resultsSection').classList.add('hidden');
