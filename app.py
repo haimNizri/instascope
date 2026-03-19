@@ -502,6 +502,12 @@ def forgot_password():
     return render_template("forgot_password.html")
 
 
+@app.route("/connect")
+@login_required
+def connect_page():
+    return render_template("connect.html")
+
+
 @app.route("/privacy")
 def privacy_page():
     return render_template("privacy.html")
