@@ -43,10 +43,8 @@
                     {% else %}
                     <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                     <a href="/unfollowers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
-                    {% if current_user.is_pro %}
                     <a href="/lurkers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                     <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
-                    {% endif %}
                     {% endif %}
                 {% endif %}
                 {% if current_user.is_authenticated and not current_user.is_pro %}
