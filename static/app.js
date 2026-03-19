@@ -17,7 +17,7 @@ function showUpgradePopup(message) {
             <h2 class="text-xl font-bold text-white mb-2">Upgrade to Pro</h2>
             <p class="text-gray-400 mb-6">${message || 'This feature requires a Pro subscription.'}</p>
             <div class="bg-dark-900 rounded-xl p-4 mb-6">
-                <div class="text-3xl font-bold text-white mb-1">$5.50<span class="text-lg text-gray-400 font-normal">/month</span></div>
+                <div class="text-3xl font-bold text-white mb-1">$6<span class="text-lg text-gray-400 font-normal">/month</span></div>
                 <ul class="text-sm text-gray-300 text-left space-y-2 mt-4">
                     <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Unlimited scans & tracking</li>
                     <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Gender & demographic analysis</li>

@@ -882,7 +882,7 @@ def api_unfollower_scan():
     if current_user.role != "admin" and not current_user.is_pro:
         if current_user.has_used_trial("unfollowers"):
             return jsonify({
-                "error": "You've used your free unfollower scan. Upgrade to Pro ($5.50/mo) for unlimited scans.",
+                "error": "You've used your free unfollower scan. Upgrade to Pro ($6/mo) for unlimited scans.",
                 "upgrade": True
             }), 403
         # Mark trial as used
@@ -1088,7 +1088,7 @@ def api_relationship_scan():
     if current_user.role != "admin" and not current_user.is_pro:
         if current_user.has_used_trial("relationships"):
             return jsonify({
-                "error": "You've used your free relationships scan. Upgrade to Pro ($5.50/mo) for unlimited scans.",
+                "error": "You've used your free relationships scan. Upgrade to Pro ($6/mo) for unlimited scans.",
                 "upgrade": True
             }), 403
         current_user.mark_trial_used("relationships")

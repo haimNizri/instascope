@@ -78,7 +78,7 @@ class User(UserMixin, db.Model):
         if not allowed:
             if feature == "unfollowers_first" and self.has_used_trial("unfollowers"):
                 return False, "You've used your free unfollower scan. Upgrade to Pro for unlimited scans."
-            return False, "This feature requires a Pro subscription ($5.50/month)."
+            return False, "This feature requires a Pro subscription ($6/month)."
         return True, "free"
 
     def can_view(self, ig_username):
