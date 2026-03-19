@@ -54,6 +54,42 @@ function handleApiResponse(data, btn, defaultBtnText) {
     return false;
 }
 
+function addProLock(elementId, featureName) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.style.position = 'relative';
+    el.style.overflow = 'hidden';
+    // Blur the content
+    const children = el.children;
+    for (let i = 0; i < children.length; i++) {
+        children[i].style.filter = 'blur(6px)';
+        children[i].style.pointerEvents = 'none';
+        children[i].style.userSelect = 'none';
+    }
+    // Add lock overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer';
+    overlay.onclick = () => showUpgradePopup(`Unlock ${featureName} with Pro subscription.`);
+    overlay.innerHTML = `
+        <div class="bg-dark-900/80 backdrop-blur-sm rounded-xl px-6 py-4 text-center border border-accent-500/30 shadow-lg">
+            <div class="text-2xl mb-1">&#128274;</div>
+            <div class="text-sm font-semibold text-accent-400">Pro Feature</div>
+            <div class="text-xs text-gray-400 mt-1">Click to upgrade</div>
+        </div>
+    `;
+    el.appendChild(overlay);
+}
+
+function addProBadge(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const badge = document.createElement('span');
+    badge.className = 'ml-2 px-2 py-0.5 bg-accent-500/20 text-accent-400 rounded-full text-xs font-bold cursor-pointer';
+    badge.textContent = 'PRO';
+    badge.onclick = () => showUpgradePopup();
+    el.appendChild(badge);
+}
+
 const chartDefaults = {
     color: '#9ca3af',
     borderColor: 'transparent',
@@ -1328,6 +1364,8 @@ function renderRelDashboard(report) {
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Scan Now'; }
 
+    const isFree = report.is_free;
+
     // Summary cards
     document.getElementById('summaryCards').innerHTML = [
         { label: 'Followers', value: report.followers_count, color: 'text-blue-400' },
@@ -1342,9 +1380,22 @@ function renderRelDashboard(report) {
         </div>
     `).join('');
 
-    // Gender charts
-    renderRelGenderChart('nfbGenderChart', report.not_following_back_gender);
-    renderRelGenderChart('fansGenderChart', report.fans_gender);
+    // Gender charts — show fake data for free users (blurred)
+    if (isFree) {
+        // Render fake gender data so it looks enticing behind the blur
+        renderRelGenderChart('nfbGenderChart', {female: {percentage: 45}, male: {percentage: 38}, unknown: {percentage: 17}});
+        renderRelGenderChart('fansGenderChart', {female: {percentage: 52}, male: {percentage: 31}, unknown: {percentage: 17}});
+        // Add pro lock overlays
+        setTimeout(() => {
+            addProLock('nfbGenderSection', 'Gender Analysis');
+            addProLock('fansGenderSection', 'Gender Analysis');
+            addProLock('nfbFilterSection', 'Gender Filter');
+            addProLock('fansFilterSection', 'Gender Filter');
+        }, 100);
+    } else {
+        renderRelGenderChart('nfbGenderChart', report.not_following_back_gender);
+        renderRelGenderChart('fansGenderChart', report.fans_gender);
+    }
 
     // Lists
     allNfbProfiles = report.not_following_back || [];
@@ -1352,6 +1403,12 @@ function renderRelDashboard(report) {
 
     document.getElementById('nfbBadge').textContent = allNfbProfiles.length;
     document.getElementById('fansBadge').textContent = allFansProfiles.length;
+
+    // Show upgrade teaser for free users
+    if (isFree) {
+        const teaser = document.getElementById('upgradeTeaser');
+        if (teaser) teaser.classList.remove('hidden');
+    }
     document.getElementById('mutualBadge').textContent = report.mutual_count;
 
     renderProfileList('nfbList', allNfbProfiles, 'text-red-400');
