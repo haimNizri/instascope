@@ -145,8 +145,73 @@ def save_json(data, filepath):
 
 # ── scrape functions ─────────────────────────────────────────────────────────
 
+def scrape_profile_fast(session_id, target, output_dir):
+    """Fast profile scrape using Instagram private API."""
+    import requests as _req
+
+    session = _req.Session()
+    session.cookies.set("sessionid", session_id, domain=".instagram.com")
+    session.headers.update({
+        "x-ig-app-id": "936619743392459",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    })
+
+    resp = session.get(
+        "https://i.instagram.com/api/v1/users/web_profile_info/",
+        params={"username": target},
+        timeout=15,
+    )
+    if resp.status_code != 200:
+        raise Exception(f"Profile API returned {resp.status_code}")
+
+    user = resp.json().get("data", {}).get("user", {})
+    if not user:
+        raise Exception(f"Profile '{target}' not found")
+
+    info = {
+        "username": user.get("username", target),
+        "full_name": user.get("full_name", ""),
+        "biography": user.get("biography", ""),
+        "external_url": user.get("external_url", ""),
+        "followers": user.get("edge_followed_by", {}).get("count", 0),
+        "following": user.get("edge_follow", {}).get("count", 0),
+        "posts_count": user.get("edge_owner_to_timeline_media", {}).get("count", 0),
+        "is_private": user.get("is_private", False),
+        "is_verified": user.get("is_verified", False),
+        "profile_pic_url": user.get("profile_pic_url_hd", user.get("profile_pic_url", "")),
+        "business_category": user.get("category_name", ""),
+        "user_id": user.get("id", ""),
+        "scraped_at": datetime.now().isoformat(),
+    }
+    save_json(info, f"{output_dir}/{target}/profile.json")
+    print(f"[+] Fast profile scraped: {target} ({info['followers']} followers)")
+    return info
+
+
 def scrape_profile(L, target, output_dir):
-    """Scrape basic profile information."""
+    """Scrape basic profile information. Uses fast API first, falls back to instaloader."""
+    session_id = load_saved_session_id()
+    if session_id:
+        try:
+            info = scrape_profile_fast(session_id, target, output_dir)
+            # Return a minimal object with needed attributes for compatibility
+            class ProfileProxy:
+                def __init__(self, data):
+                    self.username = data["username"]
+                    self.full_name = data["full_name"]
+                    self.followers = data["followers"]
+                    self.followees = data["following"]
+                    self.mediacount = data["posts_count"]
+                    self.is_private = data["is_private"]
+                    self.is_verified = data["is_verified"]
+                    self.userid = data.get("user_id", "")
+                    self.followed_by_viewer = True  # assume accessible if we got data
+                    self.profile_pic_url = data["profile_pic_url"]
+            return ProfileProxy(info)
+        except Exception as e:
+            print(f"[!] Fast profile API failed ({e}), falling back to instaloader...")
+
     profile = instaloader.Profile.from_username(L.context, target)
     info = {
         "username": profile.username,
