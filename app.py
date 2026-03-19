@@ -878,6 +878,17 @@ def api_unfollower_scan():
     if not ok:
         return err
 
+    # Free users: only one scan allowed
+    if current_user.role != "admin" and not current_user.is_pro:
+        if current_user.has_used_trial("unfollowers"):
+            return jsonify({
+                "error": "You've used your free unfollower scan. Upgrade to Pro ($5.50/mo) for unlimited scans.",
+                "upgrade": True
+            }), 403
+        # Mark trial as used
+        current_user.mark_trial_used("unfollowers")
+        db.session.commit()
+
     task_id = str(uuid.uuid4())[:8]
     ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
     ig_pass = data.get("ig_password") or os.environ.get("IG_PASSWORD")
@@ -1073,6 +1084,16 @@ def api_relationship_scan():
     if not ok:
         return err
 
+    # Free users: only one scan allowed
+    if current_user.role != "admin" and not current_user.is_pro:
+        if current_user.has_used_trial("relationships"):
+            return jsonify({
+                "error": "You've used your free relationships scan. Upgrade to Pro ($5.50/mo) for unlimited scans.",
+                "upgrade": True
+            }), 403
+        current_user.mark_trial_used("relationships")
+        db.session.commit()
+
     task_id = str(uuid.uuid4())[:8]
     ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
     ig_pass = data.get("ig_password") or os.environ.get("IG_PASSWORD")
@@ -1091,15 +1112,27 @@ def api_relationship_scan():
 @api_can_view_account
 def api_relationships(username):
     # Try database first (survives Render restarts)
-    db_data = db_get_report(username, 'relationships')
-    if db_data:
-        return jsonify(db_data)
-    # Fall back to local file
-    report_path = Path(OUTPUT_DIR) / username / "relationships.json"
-    if not report_path.exists():
-        return jsonify({"error": "No relationship report found. Run a scan first."}), 404
-    with open(report_path) as f:
-        return jsonify(json.load(f))
+    data = db_get_report(username, 'relationships')
+    if not data:
+        # Fall back to local file
+        report_path = Path(OUTPUT_DIR) / username / "relationships.json"
+        if not report_path.exists():
+            return jsonify({"error": "No relationship report found. Run a scan first."}), 404
+        with open(report_path) as f:
+            data = json.load(f)
+
+    # Free users: strip gender analysis data
+    if current_user.role != "admin" and not current_user.is_pro:
+        data.pop("fans_gender", None)
+        data.pop("not_following_back_gender", None)
+        data.pop("mutual_gender", None)
+        # Strip gender from individual profiles
+        for key in ["fans", "not_following_back", "mutual"]:
+            for p in data.get(key, []):
+                p.pop("gender", None)
+        data["is_free"] = True
+
+    return jsonify(data)
 
 
 def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=None, session_id=None):
