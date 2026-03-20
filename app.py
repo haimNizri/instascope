@@ -85,6 +85,8 @@ with app.app_context():
                 conn.execute(text("ALTER TABLE users ADD COLUMN trial_used JSON"))
             if 'instagram_verified' not in existing:
                 conn.execute(text("ALTER TABLE users ADD COLUMN instagram_verified BOOLEAN DEFAULT FALSE"))
+            if 'trial_expires_at' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN trial_expires_at TIMESTAMP"))
             conn.commit()
 
 
@@ -548,6 +550,19 @@ def admin_update_user(user_id):
         user.instagram_username = data["instagram_username"]
     if "new_password" in data and len(data["new_password"]) >= 6:
         user.set_password(data["new_password"])
+    if "subscription_tier" in data and data["subscription_tier"] in ("free", "pro"):
+        user.subscription_tier = data["subscription_tier"]
+        if data["subscription_tier"] == "pro":
+            user.subscription_status = "active"
+        else:
+            user.subscription_status = None
+    if "trial_days" in data:
+        days = int(data["trial_days"])
+        if days > 0:
+            from datetime import timedelta
+            user.trial_expires_at = datetime.utcnow() + timedelta(days=days)
+        else:
+            user.trial_expires_at = None
     db.session.commit()
     return jsonify({"ok": True, "user": user.to_dict()})
 

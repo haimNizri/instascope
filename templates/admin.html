@@ -37,8 +37,8 @@
                 <th class="py-3 px-4">User</th>
                 <th class="py-3 px-4">Instagram</th>
                 <th class="py-3 px-4">Role</th>
+                <th class="py-3 px-4">Plan</th>
                 <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4">Allowed Accounts</th>
                 <th class="py-3 px-4">Actions</th>
             </tr>
         </thead>
@@ -64,17 +64,26 @@
                     </select>
                 </td>
                 <td class="py-3 px-4">
+                    <div class="flex flex-col gap-1">
+                        <select onchange="updateUser({{ user.id }}, {subscription_tier: this.value})"
+                            class="bg-dark-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
+                            <option value="free" {{ 'selected' if user.subscription_tier == 'free' or not user.subscription_tier }}>Free</option>
+                            <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro</option>
+                        </select>
+                        {% if user.trial_expires_at and user.trial_days_left > 0 %}
+                        <span class="text-xs text-cyan-400">Trial: {{ user.trial_days_left }}d left</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="py-3 px-4">
                     {% if user.is_active %}
                     <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">Active</span>
                     {% else %}
                     <span class="px-2 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400">Pending</span>
                     {% endif %}
-                </td>
-                <td class="py-3 px-4">
-                    <input type="text" value="{{ user.allowed_accounts or '' }}"
-                        onchange="updateUser({{ user.id }}, {allowed_accounts: this.value})"
-                        placeholder="username1, username2 or *"
-                        class="bg-dark-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white w-40">
+                    {% if user.instagram_verified %}
+                    <span class="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">IG Verified</span>
+                    {% endif %}
                 </td>
                 <td class="py-3 px-4">
                     <div class="flex gap-2">
@@ -89,6 +98,10 @@
                             Disable
                         </button>
                         {% endif %}
+                        <button onclick="grantTrial({{ user.id }})"
+                            class="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs hover:bg-cyan-500/30 transition">
+                            Trial
+                        </button>
                         <button onclick="resetPassword({{ user.id }})"
                             class="px-3 py-1 bg-accent-500/20 text-accent-400 rounded-lg text-xs hover:bg-accent-500/30 transition">
                             Reset PW
@@ -121,6 +134,13 @@ function updateUser(userId, data) {
             if (d.ok) location.reload();
             else alert(d.error || 'Error');
         });
+}
+
+function grantTrial(userId) {
+    const days = prompt('How many days of free Pro trial?', '7');
+    if (!days || isNaN(days) || parseInt(days) <= 0) return;
+    updateUser(userId, { trial_days: parseInt(days) });
+    alert('Trial granted: ' + days + ' days of Pro access');
 }
 
 function resetPassword(userId) {

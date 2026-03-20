@@ -29,6 +29,7 @@ class User(UserMixin, db.Model):
     subscription_id = db.Column(db.String(128))  # LemonSqueezy subscription ID
     subscription_status = db.Column(db.String(32))  # 'active', 'cancelled', 'expired'
     customer_portal_url = db.Column(db.Text)  # LemonSqueezy customer portal for managing subscription
+    trial_expires_at = db.Column(db.DateTime)  # admin-granted free trial expiry
     trial_used = db.Column(db.JSON, default=dict)  # tracks which free features were used {"relationships": true, "unfollowers": true}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -40,10 +41,23 @@ class User(UserMixin, db.Model):
 
     @property
     def is_pro(self):
-        """Check if user has an active pro subscription."""
+        """Check if user has an active pro subscription or trial."""
         if self.role == "admin":
             return True
-        return self.subscription_tier == "pro" and self.subscription_status == "active"
+        if self.subscription_tier == "pro" and self.subscription_status == "active":
+            return True
+        # Check admin-granted trial
+        if self.trial_expires_at and self.trial_expires_at > datetime.utcnow():
+            return True
+        return False
+
+    @property
+    def trial_days_left(self):
+        """Days remaining on trial, or 0."""
+        if not self.trial_expires_at:
+            return 0
+        delta = self.trial_expires_at - datetime.utcnow()
+        return max(0, delta.days)
 
     def has_used_trial(self, feature):
         """Check if user already used their free trial for a feature."""
