@@ -25,6 +25,7 @@ from analyzer import (
     analyze_content_performance,
     analyze_content_studio,
     analyze_follow_relationship,
+    analyze_follower_demographics,
     analyze_lurkers,
     analyze_unfollowers,
     business_insights,
@@ -1089,6 +1090,10 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session
         report = analyze_follow_relationship(followers, following)
         report["username"] = username
         report["analyzed_at"] = datetime.now().isoformat()
+
+        # Add demographics analysis
+        tasks[task_id]["progress"] = "Analyzing demographics..."
+        report["demographics"] = analyze_follower_demographics(followers)
 
         # Save report
         report_path = Path(OUTPUT_DIR) / username / "relationships.json"

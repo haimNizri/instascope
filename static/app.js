@@ -1424,6 +1424,15 @@ function renderRelDashboard(report) {
         const teaser = document.getElementById('upgradeTeaser');
         if (teaser) teaser.classList.remove('hidden');
     }
+
+    // Demographics
+    if (report.demographics && !isFree) {
+        renderDemographics(report.demographics);
+    } else if (report.demographics && isFree) {
+        // Show blurred for free users
+        renderDemographics(report.demographics);
+        setTimeout(() => addProLock('demographicsSection', 'Demographics Analysis'), 100);
+    }
     document.getElementById('mutualBadge').textContent = report.mutual_count;
 
     renderProfileList('nfbList', allNfbProfiles, 'text-red-400');
@@ -1494,6 +1503,84 @@ function renderProfileList(containerId, profiles, linkColor) {
             </div>
         `;
     }).join('');
+}
+
+function renderDemographics(demo) {
+    const section = document.getElementById('demographicsSection');
+    if (!section || !demo) return;
+    section.classList.remove('hidden');
+
+    // Region chart
+    const regions = demo.region_distribution || {};
+    const regionLabels = Object.keys(regions).filter(r => regions[r].percentage > 0);
+    const regionData = regionLabels.map(r => regions[r].percentage);
+    const regionColors = {
+        'Middle East': '#f97316', 'Europe': '#3b82f6', 'Latin America': '#22c55e',
+        'North America': '#8b5cf6', 'Asia Pacific': '#ec4899', 'Other/Unknown': '#6b7280'
+    };
+
+    if (regionLabels.length) {
+        new Chart(document.getElementById('regionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: regionLabels,
+                datasets: [{ data: regionData, backgroundColor: regionLabels.map(r => regionColors[r] || '#6b7280'), borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 8, usePointStyle: true, color: '#9ca3af', font: { size: 10 } } },
+                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } },
+                },
+            }
+        });
+    }
+
+    // Language list
+    const langs = demo.language_distribution || {};
+    const langEntries = Object.entries(langs).filter(([k, v]) => v.percentage > 0).sort((a, b) => b[1].percentage - a[1].percentage);
+    const langColors = {
+        'Hebrew': '#f97316', 'Arabic': '#22c55e', 'English/Western': '#3b82f6', 'Spanish': '#eab308',
+        'Turkish': '#ef4444', 'Russian/Slavic': '#8b5cf6', 'French': '#ec4899', 'Portuguese/Brazilian': '#14b8a6',
+        'East Asian': '#f43f5e', 'Other/Unknown': '#6b7280'
+    };
+    const maxLang = langEntries.length ? langEntries[0][1].percentage : 1;
+
+    document.getElementById('languageList').innerHTML = langEntries.slice(0, 8).map(([lang, data]) => `
+        <div>
+            <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-300">${lang}</span>
+                <span class="text-gray-500">${data.percentage.toFixed(1)}% (${data.count})</span>
+            </div>
+            <div class="h-1.5 bg-dark-900 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" style="width: ${Math.max(3, (data.percentage / maxLang) * 100)}%; background: ${langColors[lang] || '#6b7280'}"></div>
+            </div>
+        </div>
+    `).join('') || '<p class="text-gray-600 text-sm">Not enough data</p>';
+
+    // Country hints
+    const countries = demo.country_hints || {};
+    const countryEntries = Object.entries(countries).sort((a, b) => b[1] - a[1]);
+    const countryFlags = {
+        'Israel': '&#127470;&#127473;', 'Brazil': '&#127463;&#127479;', 'Turkey': '&#127481;&#127479;',
+        'India': '&#127470;&#127475;', 'USA': '&#127482;&#127480;', 'UK': '&#127468;&#127463;',
+        'France': '&#127467;&#127479;', 'Germany': '&#127465;&#127466;', 'Italy': '&#127470;&#127481;',
+        'Spain': '&#127466;&#127480;', 'Russia': '&#127479;&#127482;', 'Japan': '&#127471;&#127477;',
+        'Korea': '&#127472;&#127479;', 'Mexico': '&#127474;&#127485;', 'Argentina': '&#127462;&#127479;',
+        'Colombia': '&#127464;&#127476;', 'Indonesia': '&#127470;&#127465;', 'Philippines': '&#127477;&#127469;',
+        'Canada': '&#127464;&#127462;', 'Australia': '&#127462;&#127482;', 'Netherlands': '&#127475;&#127473;',
+        'Poland': '&#127477;&#127473;', 'UAE': '&#127462;&#127466;', 'Saudi Arabia': '&#127480;&#127462;',
+        'Iran': '&#127470;&#127479;', 'Egypt': '&#127466;&#127468;', 'Chile': '&#127464;&#127473;',
+    };
+
+    document.getElementById('countryList').innerHTML = countryEntries.length
+        ? countryEntries.map(([country, count]) => `
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-300">${countryFlags[country] || ''} ${country}</span>
+                <span class="text-gray-500">${count}</span>
+            </div>
+        `).join('')
+        : '<p class="text-gray-600 text-sm">No country patterns detected in usernames</p>';
 }
 
 function filterNfb(gender) {

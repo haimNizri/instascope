@@ -1485,6 +1485,252 @@ def analyze_content_studio(profile_data, posts_data):
     }
 
 
+def analyze_follower_demographics(followers_list):
+    """Analyze follower demographics: name origins, country hints, regions, gender."""
+    if not followers_list:
+        return {
+            "language_distribution": {},
+            "country_hints": {},
+            "region_distribution": {},
+            "gender_distribution": {},
+            "total_analyzed": 0,
+            "detection_rate": 0.0,
+        }
+
+    # ── Name sets by language/culture ────────────────────────────────────────
+    HEBREW_NAMES = {
+        "yosef", "moshe", "david", "sarah", "rachel", "haim", "noa", "yael",
+        "omer", "tal", "gal", "ori", "lior", "rotem", "shir", "amit", "ido",
+        "nir", "ofir", "tamar", "maya", "michal", "alon", "eyal", "itay",
+        "noam", "ariel", "chen", "liron", "mor", "shahar", "bar", "shai",
+        "dor", "adi", "rom", "kfir", "raz", "zohar", "matan", "avraham",
+        "rivka", "miriam", "esther", "malka", "shoshana", "elad", "tomer",
+        "yonatan", "eliran", "sapir", "or", "maayan", "eden", "lia", "ella",
+        "daniel", "ron", "uri", "nadav", "gilad", "assaf", "guy", "liad",
+        "dean", "sean",
+    }
+    ARABIC_NAMES = {
+        "ahmed", "mohammed", "ali", "fatima", "omar", "hassan", "aisha",
+        "youssef", "khalid", "ibrahim", "mustafa", "layla", "amira", "samir",
+        "nadia", "tariq", "zainab", "rania", "bilal", "kareem",
+    }
+    SPANISH_NAMES = {
+        "carlos", "maria", "juan", "pedro", "diego", "lucia", "carmen",
+        "pablo", "rosa", "luis", "jorge", "alejandra", "sofia", "santiago",
+        "valentina", "miguel", "ana", "fernanda", "rafael", "isabella",
+    }
+    TURKISH_NAMES = {
+        "mehmet", "ahmet", "mustafa", "elif", "ayse", "fatma", "emre",
+        "burak", "deniz", "zeynep", "ece", "berk", "ceren", "can", "tugce",
+        "serkan", "ozge", "mert", "selin", "umut",
+    }
+    RUSSIAN_NAMES = {
+        "ivan", "sergei", "natasha", "olga", "dmitri", "anna", "pavel",
+        "elena", "andrei", "tatiana", "nikita", "maria", "alexei", "yulia",
+        "vladimir", "svetlana", "boris", "irina", "maxim", "katya",
+    }
+    FRENCH_NAMES = {
+        "jean", "pierre", "marie", "claude", "sophie", "camille", "antoine",
+        "juliette", "nicolas", "amelie", "louis", "charlotte", "hugo", "lea",
+        "mathieu",
+    }
+    PORTUGUESE_NAMES = {
+        "joao", "pedro", "lucas", "gabriel", "leticia", "larissa", "bruno",
+        "thiago", "amanda", "jessica",
+    }
+
+    # ── Country code patterns in usernames ───────────────────────────────────
+    COUNTRY_PATTERNS = {
+        "Israel": ["_il", "_isr"],
+        "Brazil": ["_br"],
+        "Turkey": ["_tr"],
+        "Indonesia": ["_id"],
+        "India": ["_in"],
+        "Mexico": ["_mx"],
+        "Russia": ["_ru"],
+        "Italy": ["_it"],
+        "France": ["_fr"],
+        "Germany": ["_de"],
+        "Japan": ["_jp"],
+        "Korea": ["_kr"],
+        "Argentina": ["_ar"],
+        "Spain": ["_es"],
+        "UK": ["_uk", "_gb"],
+        "USA": ["_us", "_usa"],
+        "Philippines": ["_ph"],
+        "Iran": ["_ir"],
+        "Egypt": ["_eg"],
+        "Saudi Arabia": ["_sa"],
+        "UAE": ["_ae", "_uae"],
+        "Colombia": ["_co"],
+        "Chile": ["_cl"],
+        "Poland": ["_pl"],
+        "Netherlands": ["_nl"],
+        "Australia": ["_au"],
+        "Canada": ["_ca"],
+    }
+
+    # ── Region mapping ───────────────────────────────────────────────────────
+    LANGUAGE_TO_REGION = {
+        "Hebrew": "Middle East",
+        "Arabic": "Middle East",
+        "Turkish": "Middle East",
+        "French": "Europe",
+        "Russian/Slavic": "Europe",
+        "English/Western": "Europe",
+        "Spanish": "Latin America",
+        "Portuguese/Brazilian": "Latin America",
+        "Other Asian": "Asia Pacific",
+    }
+    COUNTRY_TO_REGION = {
+        "Israel": "Middle East",
+        "Iran": "Middle East",
+        "Egypt": "Middle East",
+        "Saudi Arabia": "Middle East",
+        "UAE": "Middle East",
+        "Turkey": "Middle East",
+        "UK": "Europe",
+        "France": "Europe",
+        "Germany": "Europe",
+        "Italy": "Europe",
+        "Spain": "Europe",
+        "Russia": "Europe",
+        "Poland": "Europe",
+        "Netherlands": "Europe",
+        "Brazil": "Latin America",
+        "Argentina": "Latin America",
+        "Mexico": "Latin America",
+        "Colombia": "Latin America",
+        "Chile": "Latin America",
+        "USA": "North America",
+        "Canada": "North America",
+        "Japan": "Asia Pacific",
+        "Korea": "Asia Pacific",
+        "India": "Asia Pacific",
+        "Indonesia": "Asia Pacific",
+        "Philippines": "Asia Pacific",
+        "Australia": "Asia Pacific",
+    }
+
+    total = len(followers_list)
+    language_counter = Counter()
+    country_counter = Counter()
+    region_counter = Counter()
+    gender_counter = Counter()
+    detected_count = 0
+
+    for follower in followers_list:
+        full_name = follower.get("full_name", "") or ""
+        username = follower.get("username", "") or ""
+        name_lower = full_name.lower().strip()
+        username_lower = username.lower().strip()
+
+        detected = False
+
+        # ── 1. Language/culture detection from full_name ─────────────────
+        name_parts = re.split(r"[\s\-_]+", name_lower)
+        name_parts = [p for p in name_parts if p]
+
+        matched_language = None
+        best_score = 0
+
+        # Check each language set
+        lang_sets = [
+            ("Hebrew", HEBREW_NAMES),
+            ("Arabic", ARABIC_NAMES),
+            ("Spanish", SPANISH_NAMES),
+            ("Turkish", TURKISH_NAMES),
+            ("Russian/Slavic", RUSSIAN_NAMES),
+            ("English/Western", FEMALE_NAMES | MALE_NAMES),
+            ("French", FRENCH_NAMES),
+            ("Portuguese/Brazilian", PORTUGUESE_NAMES),
+        ]
+
+        for lang, name_set in lang_sets:
+            score = sum(1 for part in name_parts if part in name_set)
+            if score > best_score:
+                best_score = score
+                matched_language = lang
+
+        # Hebrew suffix heuristics: names ending in -el, -it, -ya
+        if best_score == 0 and name_parts:
+            for part in name_parts:
+                if len(part) >= 3 and (
+                    part.endswith("el") or part.endswith("it") or part.endswith("ya")
+                ):
+                    matched_language = "Hebrew"
+                    best_score = 1
+                    break
+
+        # Portuguese/Brazilian heuristic: names ending in -ão, -inho
+        if best_score == 0 and name_parts:
+            for part in name_parts:
+                if part.endswith("ão") or part.endswith("inho"):
+                    matched_language = "Portuguese/Brazilian"
+                    best_score = 1
+                    break
+
+        # Other Asian heuristic: very short names (1-2 chars per part)
+        if best_score == 0 and name_parts:
+            short_parts = [p for p in name_parts if 1 <= len(p) <= 2]
+            if len(short_parts) >= 2 and len(short_parts) == len(name_parts):
+                matched_language = "Other Asian"
+                best_score = 1
+
+        if matched_language:
+            language_counter[matched_language] += 1
+            detected = True
+
+        # ── 2. Country detection from username ───────────────────────────
+        matched_country = None
+        for country, patterns in COUNTRY_PATTERNS.items():
+            for pattern in patterns:
+                if username_lower.endswith(pattern) or pattern in username_lower:
+                    matched_country = country
+                    break
+            if matched_country:
+                break
+
+        if matched_country:
+            country_counter[matched_country] += 1
+            detected = True
+
+        # ── 3. Region assignment ─────────────────────────────────────────
+        region = None
+        if matched_country and matched_country in COUNTRY_TO_REGION:
+            region = COUNTRY_TO_REGION[matched_country]
+        elif matched_language and matched_language in LANGUAGE_TO_REGION:
+            region = LANGUAGE_TO_REGION[matched_language]
+
+        if region:
+            region_counter[region] += 1
+        else:
+            region_counter["Other/Unknown"] += 1
+
+        # ── 4. Gender detection ──────────────────────────────────────────
+        gender = guess_gender(full_name)
+        gender_counter[gender] += 1
+
+        if detected:
+            detected_count += 1
+
+    # ── Build result dicts with percentages ──────────────────────────────────
+    def _dist(counter):
+        return {
+            key: {"count": count, "percentage": round(count / total * 100, 1)}
+            for key, count in counter.most_common()
+        }
+
+    return {
+        "language_distribution": _dist(language_counter),
+        "country_hints": dict(country_counter.most_common()),
+        "region_distribution": _dist(region_counter),
+        "gender_distribution": _dist(gender_counter),
+        "total_analyzed": total,
+        "detection_rate": round(detected_count / total * 100, 1),
+    }
+
+
 def analyze_unfollowers(unfollowers_list):
     """Analyze unfollowers by gender, account type, and patterns."""
     if not unfollowers_list:

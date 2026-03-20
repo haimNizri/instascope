@@ -118,6 +118,30 @@
             <div id="mutualList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto"></div>
         </div>
 
+        <!-- Demographics -->
+        <div id="demographicsSection" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <!-- Region distribution -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <h2 class="text-lg font-semibold mb-4">Region Distribution</h2>
+                <div class="h-48">
+                    <canvas id="regionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Language/Culture -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <h2 class="text-lg font-semibold mb-4">Language / Culture</h2>
+                <div id="languageList" class="space-y-2"></div>
+            </div>
+
+            <!-- Country hints -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <h2 class="text-lg font-semibold mb-4">Country Hints</h2>
+                <div id="countryList" class="space-y-2"></div>
+                <p class="text-xs text-gray-600 mt-3">Based on username patterns — estimates only</p>
+            </div>
+        </div>
+
         <!-- Upgrade teaser for free users -->
         <div id="upgradeTeaser" class="hidden mt-6 bg-gradient-to-r from-accent-600/10 to-pink-600/10 rounded-2xl p-6 border border-accent-500/30 text-center">
             <h3 class="text-lg font-bold text-white mb-2">Want more insights?</h3>
