@@ -165,27 +165,10 @@ def _get_ig_session(session_id):
 
 
 def scrape_profile_fast(session_id, target, output_dir):
-    """Fast profile scrape using Instagram private API."""
+    """Fast profile scrape using Instagram mobile API."""
     session = _get_ig_session(session_id)
 
-    # Try mobile API first (less blocked)
-    try:
-        resp = session.get(
-            f"https://i.instagram.com/api/v1/users/web_profile_info/",
-            params={"username": target},
-            timeout=10,
-        )
-        if resp.status_code == 200:
-            user = resp.json().get("data", {}).get("user", {})
-            if user:
-                info = _parse_web_profile(user, target)
-                save_json(info, f"{output_dir}/{target}/profile.json")
-                print(f"[+] Fast profile scraped: {target} ({info['followers']} followers)")
-                return info
-    except Exception as e:
-        print(f"[!] Web profile API failed: {e}")
-
-    # Fallback: search API
+    # Use search + info API (works reliably through proxies)
     try:
         resp = session.get(
             "https://i.instagram.com/api/v1/users/search/",
@@ -228,42 +211,6 @@ def scrape_profile_fast(session_id, target, output_dir):
     raise Exception(f"Could not fetch profile for {target} — Instagram may be blocking this server's IP")
 
 
-def _parse_web_profile(user, target):
-    """Parse web_profile_info response into our profile dict."""
-    return {
-        "username": user.get("username", target),
-        "full_name": user.get("full_name", ""),
-        "biography": user.get("biography", ""),
-        "external_url": user.get("external_url", ""),
-        "followers": user.get("edge_followed_by", {}).get("count", 0),
-        "following": user.get("edge_follow", {}).get("count", 0),
-        "posts_count": user.get("edge_owner_to_timeline_media", {}).get("count", 0),
-        "is_private": user.get("is_private", False),
-        "is_verified": user.get("is_verified", False),
-        "profile_pic_url": user.get("profile_pic_url_hd", user.get("profile_pic_url", "")),
-        "business_category": user.get("category_name", ""),
-        "user_id": user.get("id", ""),
-        "scraped_at": datetime.now().isoformat(),
-    }
-
-    info = {
-        "username": user.get("username", target),
-        "full_name": user.get("full_name", ""),
-        "biography": user.get("biography", ""),
-        "external_url": user.get("external_url", ""),
-        "followers": user.get("edge_followed_by", {}).get("count", 0),
-        "following": user.get("edge_follow", {}).get("count", 0),
-        "posts_count": user.get("edge_owner_to_timeline_media", {}).get("count", 0),
-        "is_private": user.get("is_private", False),
-        "is_verified": user.get("is_verified", False),
-        "profile_pic_url": user.get("profile_pic_url_hd", user.get("profile_pic_url", "")),
-        "business_category": user.get("category_name", ""),
-        "user_id": user.get("id", ""),
-        "scraped_at": datetime.now().isoformat(),
-    }
-    save_json(info, f"{output_dir}/{target}/profile.json")
-    print(f"[+] Fast profile scraped: {target} ({info['followers']} followers)")
-    return info
 
 
 def scrape_profile(L, target, output_dir):
