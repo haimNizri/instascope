@@ -1543,6 +1543,148 @@ def api_planner_delete(post_id):
     return jsonify({"ok": True})
 
 
+@app.post("/api/planner/generate-all")
+@login_required
+def api_generate_all():
+    """AI-generate caption, hashtags, best time, and notes for a post."""
+    import random
+    data = request.json or {}
+    description = data.get("description", "my post")
+    category = data.get("category", "lifestyle")
+    media_type = data.get("media_type", "image")
+
+    # Caption templates per category
+    caption_templates = {
+        "beauty": [
+            f"Glow up ✨ {description}\n\nDrop a 💖 if you love this look!\n\nRemember: beauty starts from within 🌸",
+            f"New look, who dis? 💄 {description}\n\nSave this for your next inspo!\n\nWhat's your go-to look? Tell me below 👇",
+            f"Beauty isn't about having a pretty face. It's about having a pretty mind, pretty heart, and a pretty soul 🌺\n\n{description}",
+        ],
+        "fitness": [
+            f"No excuses, just results 💪\n\n{description}\n\nThe only bad workout is the one that didn't happen 🔥\n\nTag your gym buddy!",
+            f"Progress over perfection 📈\n\n{description}\n\nConsistency is the key to transformation 🏋️\n\nWhat's your fitness goal?",
+            f"Sweat now, shine later ✨\n\n{description}\n\nEvery rep counts. Every day matters. Keep pushing! 💯",
+        ],
+        "food": [
+            f"Made with love (and a little extra seasoning) ❤️🍽️\n\n{description}\n\nWould you try this? Let me know below 👇\n\nSave for later!",
+            f"Food is my love language 😋\n\n{description}\n\nThe secret ingredient is always love 🧑‍🍳\n\nTag a foodie friend!",
+            f"Eat well, feel amazing 🌿\n\n{description}\n\nLife is too short for boring food ✨\n\nDouble tap if you agree!",
+        ],
+        "travel": [
+            f"Take me back ✈️\n\n{description}\n\nCollecting moments, not things 📸\n\nWhere's your dream destination? 🌍",
+            f"Not all who wander are lost 🧭\n\n{description}\n\nThe world is a book and those who don't travel read only one page 📖",
+            f"Adventure awaits 🌅\n\n{description}\n\nLife is short and the world is wide — go explore! 🗺️\n\nSave this spot!",
+        ],
+        "fashion": [
+            f"Style is a way to say who you are without speaking 👗\n\n{description}\n\nOutfit details in stories! ✨\n\nYay or nay?",
+            f"Dress like you're already famous 👑\n\n{description}\n\nFashion fades, style is eternal 💫\n\nWhat would you pair with this?",
+            f"Confidence is the best outfit. Rock it and own it 💃\n\n{description}\n\nOOTD goals ✨\n\nSave for inspo!",
+        ],
+        "lifestyle": [
+            f"Living my best life ☀️\n\n{description}\n\nIt's the little things that make life beautiful ✨\n\nDouble tap if you agree!",
+            f"Good vibes only 🌿\n\n{description}\n\nLife is what happens when you stop scrolling 😌\n\nWhat does your ideal day look like?",
+            f"Just another beautiful day ✨\n\n{description}\n\nGrateful for these moments 🙏\n\nTell me your favorite part of the day!",
+        ],
+        "tech": [
+            f"The future is now 🚀\n\n{description}\n\nTechnology is best when it brings people together 💡\n\nThoughts? 👇",
+            f"Innovation at its finest 🔧\n\n{description}\n\nThis changes everything ⚡\n\nSave for reference!",
+            f"Building the future, one line of code at a time 💻\n\n{description}\n\nStay curious, keep building 🛠️",
+        ],
+        "art": [
+            f"Art speaks where words fail 🎨\n\n{description}\n\nEvery canvas is a journey all its own ✨\n\nWhat do you see?",
+            f"Creating is my therapy 🖌️\n\n{description}\n\nArt is not what you see, but what you make others see 👀",
+            f"Lost in the creative process ✨\n\n{description}\n\nArt washes from the soul the dust of everyday life 🎭\n\nWould you hang this on your wall?",
+        ],
+        "music": [
+            f"Feel the rhythm 🎵\n\n{description}\n\nMusic is the soundtrack of your life 🎤\n\nTag someone who needs to hear this!",
+            f"Lost in the melody 🎶\n\n{description}\n\nWhere words fail, music speaks 🎸\n\nWhat's on your playlist?",
+            f"Making noise, making music, making memories 🎹\n\n{description}\n\nTurn up the volume! 🔊",
+        ],
+        "business": [
+            f"Hustle in silence, let success make the noise 📊\n\n{description}\n\nSuccess is not for the lazy 🏆\n\nWhat's your next big move?",
+            f"Building something great, one day at a time 🏗️\n\n{description}\n\nEntrepreneurship is living a few years of your life like most people won't 💡",
+            f"The best time to start was yesterday. The next best time is now ⏰\n\n{description}\n\nLet's go! 🚀",
+        ],
+        "gaming": [
+            f"Game on! 🎮\n\n{description}\n\nOne more game... said every gamer ever 😂\n\nDrop your gamertag below!",
+            f"Level up ⬆️\n\n{description}\n\nGaming isn't just a hobby, it's a lifestyle 🕹️\n\nWhat are you playing?",
+            f"GG! 🏆\n\n{description}\n\nRespawn and go again 💪\n\nTag your squad!",
+        ],
+        "education": [
+            f"Knowledge is power 📚\n\n{description}\n\nLearn something new every day 💡\n\nSave this for later!",
+            f"Did you know? 🤔\n\n{description}\n\nEducation is the most powerful weapon you can use to change the world 🌍",
+            f"Quick tip that changed everything for me ✨\n\n{description}\n\nShare with someone who needs this! 📲",
+        ],
+    }
+
+    # Pick best caption
+    templates = caption_templates.get(category, caption_templates["lifestyle"])
+    caption = random.choice(templates)
+
+    # Add media-type hooks
+    if media_type == "reel":
+        caption += "\n\n🎬 Watch till the end!"
+    elif media_type == "carousel":
+        caption += "\n\n👉 Swipe for more!"
+    elif media_type == "story":
+        caption += "\n\n📲 Tap for more!"
+
+    # Generate hashtags per category
+    category_hashtags = {
+        "beauty": ["beauty", "makeup", "skincare", "glowup", "beautytips", "mua", "beautyblogger", "makeupartist", "skincareroutine", "beautycommunity", "cosmetics", "lipstick", "foundation", "beautyinspo", "selfcare"],
+        "fitness": ["fitness", "gym", "workout", "fitfam", "motivation", "training", "health", "fitnessmotivation", "exercise", "bodybuilding", "personaltrainer", "gymlife", "fitnessjourney", "healthylifestyle", "gains"],
+        "food": ["food", "foodie", "instafood", "foodporn", "yummy", "cooking", "recipe", "homemade", "delicious", "foodphotography", "foodblogger", "healthyfood", "dinner", "lunch", "foodstagram"],
+        "travel": ["travel", "wanderlust", "travelgram", "adventure", "explore", "vacation", "travelphotography", "instatravel", "traveling", "traveltheworld", "travelblogger", "nature", "beautifuldestinations", "tourism", "trip"],
+        "fashion": ["fashion", "style", "ootd", "fashionblogger", "instafashion", "outfit", "fashionista", "streetstyle", "fashionstyle", "trendy", "lookoftheday", "whatiwore", "styleinspo", "fashiondiaries", "chic"],
+        "tech": ["tech", "technology", "innovation", "coding", "developer", "programming", "startup", "ai", "software", "gadgets", "techie", "futuretech", "digitaltransformation", "machinelearning", "webdev"],
+        "art": ["art", "artist", "artwork", "creative", "painting", "drawing", "illustration", "design", "contemporaryart", "artistsoninstagram", "artoftheday", "sketch", "digitalart", "abstractart", "gallery"],
+        "music": ["music", "musician", "singer", "newmusic", "hiphop", "rap", "producer", "dj", "song", "musicproducer", "guitar", "beats", "studio", "musicislife", "livemusic"],
+        "lifestyle": ["lifestyle", "dailylife", "instagood", "photooftheday", "happy", "love", "life", "motivation", "inspiration", "positivevibes", "goodvibes", "mindfulness", "selfcare", "wellness", "grateful"],
+        "business": ["business", "entrepreneur", "success", "motivation", "marketing", "startup", "leadership", "smallbusiness", "businessowner", "hustle", "mindset", "goals", "finance", "investment", "ceo"],
+        "gaming": ["gaming", "gamer", "videogames", "twitch", "xbox", "playstation", "pc", "esports", "gamingcommunity", "streamer", "gamers", "gameplay", "consolegaming", "retrogaming", "mobilegaming"],
+        "education": ["education", "learning", "knowledge", "study", "teacher", "school", "student", "tips", "facts", "didyouknow", "learnontiktok", "edutok", "educational", "tutorial", "howto"],
+    }
+
+    tags = category_hashtags.get(category, category_hashtags["lifestyle"])
+    selected = random.sample(tags, min(15, len(tags)))
+    # Add topic-specific tags
+    topic_words = description.lower().split()
+    for w in topic_words[:3]:
+        if len(w) > 3 and w.isalpha():
+            selected.append(w)
+    hashtags = " ".join(f"#{t}" for t in selected[:20])
+
+    # Best posting times per category
+    best_times = {
+        "beauty": ("11:00", "Tuesday"), "fitness": ("06:00", "Monday"), "food": ("12:00", "Sunday"),
+        "travel": ("09:00", "Thursday"), "fashion": ("10:00", "Wednesday"), "tech": ("14:00", "Tuesday"),
+        "art": ("15:00", "Saturday"), "music": ("20:00", "Friday"), "lifestyle": ("11:00", "Wednesday"),
+        "business": ("08:00", "Tuesday"), "gaming": ("21:00", "Friday"), "education": ("10:00", "Thursday"),
+    }
+    time_str, day = best_times.get(category, ("11:00", "Wednesday"))
+
+    # Suggest next occurrence of that day
+    from datetime import timedelta
+    today = datetime.utcnow()
+    days_map = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+    target_day = days_map.get(day, 0)
+    days_ahead = (target_day - today.weekday() + 7) % 7
+    if days_ahead == 0:
+        days_ahead = 7
+    suggested_date = (today + timedelta(days=days_ahead)).strftime("%Y-%m-%d")
+
+    notes = f"AI suggested: post on {day} at {time_str} for best {category} engagement"
+
+    return jsonify({
+        "caption": caption,
+        "hashtags": hashtags,
+        "best_time": f"{day} at {time_str}",
+        "suggested_date": suggested_date,
+        "suggested_time": time_str,
+        "notes": notes,
+    })
+
+
 @app.post("/api/planner/generate-caption")
 @login_required
 def api_generate_caption():

@@ -17,11 +17,12 @@
         </button>
     </div>
 
-    <!-- Calendar view tabs -->
+    <!-- View tabs -->
     <div class="flex gap-2 mb-6">
-        <button onclick="setView('calendar')" id="calendarViewBtn" class="px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white transition">Calendar</button>
-        <button onclick="setView('list')" id="listViewBtn" class="px-4 py-2 bg-accent-600 text-white rounded-lg text-sm font-semibold">List</button>
-        <button onclick="setView('drafts')" id="draftsViewBtn" class="px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white transition">Drafts</button>
+        <button onclick="setView('list')" id="listViewBtn" class="view-btn px-4 py-2 bg-accent-600 text-white rounded-lg text-sm font-semibold" data-view="list">All Posts</button>
+        <button onclick="setView('scheduled')" id="scheduledViewBtn" class="view-btn px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300" data-view="scheduled">Scheduled</button>
+        <button onclick="setView('drafts')" id="draftsViewBtn" class="view-btn px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300" data-view="drafts">Drafts</button>
+        <button onclick="setView('published')" id="publishedViewBtn" class="view-btn px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300" data-view="published">Published</button>
     </div>
 
     <!-- Posts list -->
@@ -40,85 +41,85 @@
 <!-- Post Editor Modal -->
 <div id="editorOverlay" class="hidden fixed inset-0 bg-black/70 flex items-start justify-center z-[100] overflow-y-auto py-8">
     <div class="bg-dark-800 border border-gray-700 rounded-2xl w-full max-w-2xl mx-4">
-        <!-- Editor header -->
         <div class="flex items-center justify-between p-6 border-b border-gray-700">
             <h3 class="text-lg font-bold text-white" id="editorTitle">New Post</h3>
-            <button onclick="closeEditor()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            <div class="flex items-center gap-3">
+                <button onclick="aiGenerateAll()" id="aiBtn"
+                    class="px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:brightness-110 text-white font-semibold rounded-lg text-sm transition">
+                    &#9889; AI Fill All
+                </button>
+                <button onclick="closeEditor()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
         </div>
 
         <div class="p-6 space-y-5">
-            <!-- Title -->
+            <!-- Title / Topic -->
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Title (for your reference)</label>
-                <input type="text" id="postTitle" placeholder="e.g., Monday motivation post"
+                <label class="block text-sm text-gray-400 mb-1">Topic / Idea</label>
+                <input type="text" id="postTitle" placeholder="e.g., Morning routine, New product launch, Beach sunset"
                     class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500">
+                <p class="text-xs text-gray-600 mt-1">Enter your topic and click "AI Fill All" to auto-generate everything</p>
             </div>
 
-            <!-- Media type -->
-            <div>
-                <label class="block text-sm text-gray-400 mb-1">Content Type</label>
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="setMediaType('image')" class="media-type-btn active px-4 py-2 bg-dark-900 border border-gray-700 rounded-lg text-sm" data-type="image">&#128248; Photo</button>
-                    <button onclick="setMediaType('carousel')" class="media-type-btn px-4 py-2 bg-dark-900 border border-gray-700 rounded-lg text-sm" data-type="carousel">&#128218; Carousel</button>
-                    <button onclick="setMediaType('reel')" class="media-type-btn px-4 py-2 bg-dark-900 border border-gray-700 rounded-lg text-sm" data-type="reel">&#127909; Reel</button>
-                    <button onclick="setMediaType('story')" class="media-type-btn px-4 py-2 bg-dark-900 border border-gray-700 rounded-lg text-sm" data-type="story">&#9898; Story</button>
-                    <button onclick="setMediaType('video')" class="media-type-btn px-4 py-2 bg-dark-900 border border-gray-700 rounded-lg text-sm" data-type="video">&#127916; Video</button>
+            <!-- Row: Media type + Category -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Content Type</label>
+                    <select id="postMediaType" class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
+                        <option value="image">&#128248; Photo</option>
+                        <option value="carousel">&#128218; Carousel</option>
+                        <option value="reel">&#127909; Reel</option>
+                        <option value="story">&#9898; Story</option>
+                        <option value="video">&#127916; Video</option>
+                    </select>
                 </div>
-            </div>
-
-            <!-- Category -->
-            <div>
-                <label class="block text-sm text-gray-400 mb-1">Category</label>
-                <select id="postCategory" class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
-                    <option value="lifestyle">Lifestyle</option>
-                    <option value="beauty">Beauty</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="food">Food</option>
-                    <option value="travel">Travel</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="tech">Tech</option>
-                    <option value="art">Art</option>
-                    <option value="music">Music</option>
-                    <option value="business">Business</option>
-                    <option value="gaming">Gaming</option>
-                    <option value="education">Education</option>
-                </select>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Category</label>
+                    <select id="postCategory" class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
+                        <option value="lifestyle">Lifestyle</option>
+                        <option value="beauty">Beauty</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="food">Food</option>
+                        <option value="travel">Travel</option>
+                        <option value="fashion">Fashion</option>
+                        <option value="tech">Tech</option>
+                        <option value="art">Art</option>
+                        <option value="music">Music</option>
+                        <option value="business">Business</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="education">Education</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Caption -->
             <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label class="text-sm text-gray-400">Caption</label>
-                    <button onclick="generateCaption()" id="generateBtn" class="text-xs px-3 py-1 bg-fuchsia-500/20 text-fuchsia-400 rounded-lg hover:bg-fuchsia-500/30 transition">
-                        &#9889; Generate Caption
-                    </button>
-                </div>
-                <textarea id="postCaption" rows="5" placeholder="Write your caption here..."
+                <label class="block text-sm text-gray-400 mb-1">Caption</label>
+                <textarea id="postCaption" rows="6" placeholder="Your caption will appear here..."
                     class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 resize-none"></textarea>
                 <div class="flex justify-between text-xs text-gray-600 mt-1">
-                    <span id="captionCount">0 characters</span>
-                    <span>Max 2,200</span>
+                    <span id="captionCount">0 / 2,200</span>
                 </div>
-            </div>
-
-            <!-- Generated captions suggestions -->
-            <div id="captionSuggestions" class="hidden space-y-2">
-                <label class="text-sm text-fuchsia-400 font-semibold">Suggestions (click to use):</label>
-                <div id="suggestionsContent"></div>
             </div>
 
             <!-- Hashtags -->
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Hashtags</label>
                 <textarea id="postHashtags" rows="2" placeholder="#hashtag1 #hashtag2 #hashtag3"
-                    class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 resize-none text-sm"></textarea>
+                    class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-emerald-400 placeholder-gray-500 focus:outline-none focus:border-accent-500 resize-none text-sm"></textarea>
+                <div class="text-xs text-gray-600 mt-1"><span id="hashtagCount">0</span> / 30 hashtags</div>
             </div>
 
             <!-- Schedule -->
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Schedule</label>
-                <input type="datetime-local" id="postSchedule"
-                    class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
+                <label class="block text-sm text-gray-400 mb-1">Schedule for</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="date" id="postDate"
+                        class="px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
+                    <input type="time" id="postTime"
+                        class="px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-accent-500">
+                </div>
+                <p id="bestTimeHint" class="text-xs text-emerald-400 mt-1 hidden"></p>
             </div>
 
             <!-- Notes -->
@@ -129,15 +130,15 @@
             </div>
         </div>
 
-        <!-- Editor footer -->
+        <!-- Footer -->
         <div class="flex gap-3 p-6 border-t border-gray-700">
             <button onclick="savePost('draft')"
                 class="flex-1 py-3 bg-dark-900 text-gray-300 font-semibold rounded-xl hover:text-white transition">
-                Save as Draft
+                Save Draft
             </button>
             <button onclick="savePost('scheduled')"
                 class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:brightness-110 transition">
-                Schedule Post
+                Schedule
             </button>
         </div>
     </div>
@@ -149,101 +150,108 @@
 let currentView = 'list';
 let allPosts = [];
 let editingPostId = null;
-let selectedMediaType = 'image';
 
-// Load posts on page load
 loadPlannerPosts();
 
-// Caption character counter
-document.getElementById('postCaption').addEventListener('input', function() {
-    document.getElementById('captionCount').textContent = this.value.length + ' characters';
+// Character counters
+document.getElementById('postCaption')?.addEventListener('input', function() {
+    document.getElementById('captionCount').textContent = this.value.length + ' / 2,200';
+});
+document.getElementById('postHashtags')?.addEventListener('input', function() {
+    const count = this.value.trim() ? this.value.trim().split(/\s+/).filter(h => h.startsWith('#')).length : 0;
+    document.getElementById('hashtagCount').textContent = count;
 });
 
 function loadPlannerPosts() {
     fetch('/api/planner/posts')
         .then(r => r.json())
-        .then(posts => {
-            allPosts = posts;
-            renderPosts();
-        });
+        .then(posts => { allPosts = posts; renderPosts(); });
 }
 
 function renderPosts() {
     let filtered = allPosts;
     if (currentView === 'drafts') filtered = allPosts.filter(p => p.status === 'draft');
-    else if (currentView === 'calendar') filtered = allPosts.filter(p => p.status === 'scheduled');
+    else if (currentView === 'scheduled') filtered = allPosts.filter(p => p.status === 'scheduled');
+    else if (currentView === 'published') filtered = allPosts.filter(p => p.status === 'published');
 
     const list = document.getElementById('postsList');
     const empty = document.getElementById('emptyState');
 
-    if (!filtered.length) {
-        list.innerHTML = '';
-        empty.classList.remove('hidden');
-        return;
-    }
-
+    if (!filtered.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    const typeIcons = { image: '&#128248;', carousel: '&#128218;', reel: '&#127909;', story: '&#9898;', video: '&#127916;' };
-    const statusColors = { draft: 'bg-gray-500/20 text-gray-400', scheduled: 'bg-emerald-500/20 text-emerald-400', published: 'bg-green-500/20 text-green-400', skipped: 'bg-red-500/20 text-red-400' };
 
-    list.innerHTML = filtered.map(p => `
+    const typeIcons = { image: '&#128248;', carousel: '&#128218;', reel: '&#127909;', story: '&#9898;', video: '&#127916;' };
+    const statusColors = { draft: 'bg-gray-500/20 text-gray-400', scheduled: 'bg-emerald-500/20 text-emerald-400', published: 'bg-green-500/20 text-green-400' };
+
+    list.innerHTML = filtered.map(p => {
+        const schedStr = p.scheduled_at ? new Date(p.scheduled_at).toLocaleString() : 'No schedule';
+        const hashCount = p.hashtags ? p.hashtags.split(' ').filter(h => h.startsWith('#')).length : 0;
+        return `
         <div class="bg-dark-800 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-dark-900 flex items-center justify-center text-xl flex-shrink-0">
                     ${typeIcons[p.media_type] || '&#128248;'}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                        <h3 class="font-semibold text-white truncate">${p.title || 'Untitled Post'}</h3>
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[p.status] || ''}">${p.status}</span>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 class="font-semibold text-white truncate">${p.title || 'Untitled'}</h3>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[p.status] || 'bg-gray-500/20 text-gray-400'}">${p.status}</span>
                         ${p.category ? `<span class="text-xs text-fuchsia-400">${p.category}</span>` : ''}
                     </div>
-                    <p class="text-sm text-gray-400 truncate mb-1">${p.caption ? p.caption.substring(0, 100) + (p.caption.length > 100 ? '...' : '') : 'No caption yet'}</p>
+                    <p class="text-sm text-gray-400 truncate mb-1">${p.caption ? p.caption.substring(0, 120) + (p.caption.length > 120 ? '...' : '') : 'No caption'}</p>
                     <div class="flex items-center gap-4 text-xs text-gray-500">
-                        ${p.scheduled_at ? `<span>&#128197; ${new Date(p.scheduled_at).toLocaleString()}</span>` : '<span>No schedule</span>'}
-                        ${p.hashtags ? `<span>${p.hashtags.split(' ').length} hashtags</span>` : ''}
+                        <span>&#128197; ${schedStr}</span>
+                        ${hashCount ? `<span>#${hashCount} tags</span>` : ''}
                     </div>
                 </div>
                 <div class="flex gap-2 flex-shrink-0">
                     <button onclick="editPost(${p.id})" class="px-3 py-1.5 bg-dark-900 text-gray-400 rounded-lg text-xs hover:text-white transition">Edit</button>
-                    ${p.status === 'scheduled' ? `<button onclick="markPublished(${p.id})" class="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/30 transition">Published</button>` : ''}
-                    <button onclick="deletePost(${p.id})" class="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-xs hover:bg-red-500/20 transition">&#128465;</button>
+                    ${p.status === 'scheduled' ? `<button onclick="markStatus(${p.id}, 'published')" class="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/30 transition">Done</button>` : ''}
+                    ${p.status === 'draft' ? `<button onclick="markStatus(${p.id}, 'scheduled')" class="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/30 transition">Schedule</button>` : ''}
+                    <button onclick="deletePost(${p.id})" class="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-xs hover:bg-red-500/20 transition">&times;</button>
                 </div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function setView(view) {
     currentView = view;
-    document.querySelectorAll('#calendarViewBtn, #listViewBtn, #draftsViewBtn').forEach(b => {
-        b.className = 'px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white transition';
+    document.querySelectorAll('.view-btn').forEach(b => {
+        const isActive = b.dataset.view === view;
+        b.className = isActive
+            ? 'view-btn px-4 py-2 bg-accent-600 text-white rounded-lg text-sm font-semibold'
+            : 'view-btn px-4 py-2 bg-dark-800 border border-gray-700 rounded-lg text-sm text-gray-300';
     });
-    document.getElementById(view + 'ViewBtn').className = 'px-4 py-2 bg-accent-600 text-white rounded-lg text-sm font-semibold';
     renderPosts();
 }
 
-function setMediaType(type) {
-    selectedMediaType = type;
-    document.querySelectorAll('.media-type-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.type === type);
-        b.classList.toggle('border-accent-500', b.dataset.type === type);
-        b.classList.toggle('text-white', b.dataset.type === type);
-    });
-}
-
 function openPostEditor(postData) {
-    editingPostId = postData?.id || null;
+    editingPostId = postData ? postData.id : null;
     document.getElementById('editorTitle').textContent = editingPostId ? 'Edit Post' : 'New Post';
     document.getElementById('postTitle').value = postData?.title || '';
     document.getElementById('postCaption').value = postData?.caption || '';
     document.getElementById('postHashtags').value = postData?.hashtags || '';
     document.getElementById('postNotes').value = postData?.notes || '';
     document.getElementById('postCategory').value = postData?.category || 'lifestyle';
-    document.getElementById('postSchedule').value = postData?.scheduled_at ? postData.scheduled_at.slice(0, 16) : '';
-    setMediaType(postData?.media_type || 'image');
-    document.getElementById('captionSuggestions').classList.add('hidden');
-    document.getElementById('captionCount').textContent = (postData?.caption || '').length + ' characters';
+    document.getElementById('postMediaType').value = postData?.media_type || 'image';
+
+    // Handle schedule date/time
+    if (postData?.scheduled_at) {
+        const dt = new Date(postData.scheduled_at);
+        document.getElementById('postDate').value = dt.toISOString().split('T')[0];
+        document.getElementById('postTime').value = dt.toTimeString().slice(0, 5);
+    } else {
+        document.getElementById('postDate').value = '';
+        document.getElementById('postTime').value = '';
+    }
+
+    // Update counters
+    document.getElementById('captionCount').textContent = (postData?.caption || '').length + ' / 2,200';
+    const hc = postData?.hashtags ? postData.hashtags.split(' ').filter(h => h.startsWith('#')).length : 0;
+    document.getElementById('hashtagCount').textContent = hc;
+
+    document.getElementById('bestTimeHint').classList.add('hidden');
     document.getElementById('editorOverlay').classList.remove('hidden');
 }
 
@@ -252,8 +260,16 @@ function closeEditor() {
 }
 
 function editPost(postId) {
-    const post = allPosts.find(p => p.id === postId);
+    const post = allPosts.find(p => p.id == postId);
     if (post) openPostEditor(post);
+}
+
+function getScheduleDateTime() {
+    const date = document.getElementById('postDate').value;
+    const time = document.getElementById('postTime').value;
+    if (date && time) return `${date}T${time}:00`;
+    if (date) return `${date}T12:00:00`;
+    return null;
 }
 
 function savePost(status) {
@@ -261,69 +277,69 @@ function savePost(status) {
         title: document.getElementById('postTitle').value,
         caption: document.getElementById('postCaption').value,
         hashtags: document.getElementById('postHashtags').value,
-        media_type: selectedMediaType,
+        media_type: document.getElementById('postMediaType').value,
         category: document.getElementById('postCategory').value,
-        scheduled_at: document.getElementById('postSchedule').value || null,
+        scheduled_at: getScheduleDateTime(),
         notes: document.getElementById('postNotes').value,
         status: status,
     };
 
     const url = editingPostId ? `/api/planner/posts/${editingPostId}` : '/api/planner/posts';
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    })
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
         .then(r => r.json())
-        .then(d => {
-            if (d.ok) { closeEditor(); loadPlannerPosts(); }
-            else alert(d.error || 'Failed to save');
-        });
+        .then(d => { if (d.ok) { closeEditor(); loadPlannerPosts(); } else alert(d.error || 'Failed'); });
 }
 
-function markPublished(postId) {
+function markStatus(postId, status) {
     fetch(`/api/planner/posts/${postId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'published' }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
     }).then(() => loadPlannerPosts());
 }
 
 function deletePost(postId) {
     if (!confirm('Delete this post?')) return;
-    fetch(`/api/planner/posts/${postId}`, { method: 'DELETE' })
-        .then(() => loadPlannerPosts());
+    fetch(`/api/planner/posts/${postId}`, { method: 'DELETE' }).then(() => loadPlannerPosts());
 }
 
-function generateCaption() {
-    const btn = document.getElementById('generateBtn');
+// ── AI Generate All ─────────────────────────────────────────────────────
+
+function aiGenerateAll() {
+    const title = document.getElementById('postTitle').value.trim();
+    if (!title) { alert('Enter a topic/idea first, then click AI Fill All'); document.getElementById('postTitle').focus(); return; }
+
+    const btn = document.getElementById('aiBtn');
     btn.textContent = 'Generating...';
     btn.disabled = true;
 
-    const description = document.getElementById('postTitle').value || document.getElementById('postCaption').value || 'my latest post';
     const category = document.getElementById('postCategory').value;
+    const mediaType = document.getElementById('postMediaType').value;
 
-    fetch('/api/planner/generate-caption', {
+    fetch('/api/planner/generate-all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description, category, media_type: selectedMediaType }),
+        body: JSON.stringify({ description: title, category, media_type: mediaType }),
     })
         .then(r => r.json())
         .then(data => {
-            btn.textContent = '⚡ Generate Caption';
+            btn.innerHTML = '&#9889; AI Fill All';
             btn.disabled = false;
-            if (data.captions) {
-                const container = document.getElementById('suggestionsContent');
-                container.innerHTML = data.captions.map(c =>
-                    `<div class="bg-dark-900 rounded-lg p-3 text-sm text-gray-300 cursor-pointer hover:bg-dark-950 hover:border-fuchsia-500/30 border border-transparent transition"
-                          onclick="document.getElementById('postCaption').value = this.textContent.trim(); document.getElementById('captionCount').textContent = this.textContent.trim().length + ' characters'; document.getElementById('captionSuggestions').classList.add('hidden');">
-                        ${c}
-                    </div>`
-                ).join('');
-                document.getElementById('captionSuggestions').classList.remove('hidden');
+            if (data.caption) document.getElementById('postCaption').value = data.caption;
+            if (data.hashtags) document.getElementById('postHashtags').value = data.hashtags;
+            if (data.best_time) {
+                const hint = document.getElementById('bestTimeHint');
+                hint.textContent = '&#9889; Best time to post: ' + data.best_time;
+                hint.classList.remove('hidden');
             }
+            if (data.suggested_date) document.getElementById('postDate').value = data.suggested_date;
+            if (data.suggested_time) document.getElementById('postTime').value = data.suggested_time;
+            if (data.notes) document.getElementById('postNotes').value = data.notes;
+            // Update counters
+            document.getElementById('captionCount').textContent = (data.caption || '').length + ' / 2,200';
+            const hc = data.hashtags ? data.hashtags.split(' ').filter(h => h.startsWith('#')).length : 0;
+            document.getElementById('hashtagCount').textContent = hc;
         })
-        .catch(() => { btn.textContent = '⚡ Generate Caption'; btn.disabled = false; });
+        .catch(err => { btn.innerHTML = '&#9889; AI Fill All'; btn.disabled = false; alert('Error: ' + err.message); });
 }
 </script>
 {% endblock %}
