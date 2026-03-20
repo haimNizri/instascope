@@ -88,6 +88,10 @@ with app.app_context():
                 conn.execute(text("ALTER TABLE users ADD COLUMN instagram_verified BOOLEAN DEFAULT FALSE"))
             if 'trial_expires_at' not in existing:
                 conn.execute(text("ALTER TABLE users ADD COLUMN trial_expires_at TIMESTAMP"))
+            if 'ai_generations_used' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN ai_generations_used INTEGER DEFAULT 0"))
+            if 'ai_reset_month' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN ai_reset_month VARCHAR(7)"))
             conn.commit()
 
 
@@ -551,7 +555,7 @@ def admin_update_user(user_id):
         user.instagram_username = data["instagram_username"]
     if "new_password" in data and len(data["new_password"]) >= 6:
         user.set_password(data["new_password"])
-    if "subscription_tier" in data and data["subscription_tier"] in ("free", "pro"):
+    if "subscription_tier" in data and data["subscription_tier"] in ("free", "pro", "creator"):
         user.subscription_tier = data["subscription_tier"]
         if data["subscription_tier"] == "pro":
             user.subscription_status = "active"
@@ -1351,6 +1355,7 @@ def api_studio(username):
 # ── Billing / Subscription ───────────────────────────────────────────────────
 
 LEMONSQUEEZY_CHECKOUT_URL = os.environ.get("LEMONSQUEEZY_CHECKOUT_URL", "")
+LEMONSQUEEZY_CREATOR_CHECKOUT_URL = os.environ.get("LEMONSQUEEZY_CREATOR_CHECKOUT_URL", "")
 LEMONSQUEEZY_WEBHOOK_SECRET = os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET", "")
 
 
@@ -1369,10 +1374,13 @@ def billing_page():
 @login_required
 def api_billing_checkout():
     """Return the LemonSqueezy checkout URL with user email prefilled."""
-    if not LEMONSQUEEZY_CHECKOUT_URL:
-        return jsonify({"error": "Billing not configured"}), 500
-    # Append user email and custom data to checkout URL
-    checkout = LEMONSQUEEZY_CHECKOUT_URL
+    tier = request.args.get("tier", "pro")
+    if tier == "creator":
+        checkout = LEMONSQUEEZY_CREATOR_CHECKOUT_URL
+    else:
+        checkout = LEMONSQUEEZY_CHECKOUT_URL
+    if not checkout:
+        return jsonify({"error": "Billing not configured for this tier"}), 500
     sep = "&" if "?" in checkout else "?"
     checkout += f"{sep}checkout[email]={current_user.email}&checkout[custom][user_id]={current_user.id}"
     return jsonify({"url": checkout})
@@ -1433,7 +1441,12 @@ def api_billing_webhook():
         user.customer_portal_url = portal_url
 
     if event_name == "subscription_created":
-        user.subscription_tier = "pro"
+        # Detect tier from variant/product name or amount
+        amount = attrs.get("first_subscription_item", {}).get("price", 0)
+        if amount and amount >= 1200:  # $12 in cents
+            user.subscription_tier = "creator"
+        else:
+            user.subscription_tier = "pro"
         user.subscription_status = "active"
         user.subscription_id = subscription_id
         db.session.commit()
@@ -1555,6 +1568,19 @@ def api_generate_all():
     category = data.get("category", "lifestyle")
     media_type = data.get("media_type", "image")
 
+    # Check AI generation limit
+    allowed, remaining = current_user.use_ai_generation()
+    if not allowed:
+        tier = current_user.subscription_tier or "free"
+        if tier == "free":
+            msg = "You've used all 3 free AI generations. Upgrade to Pro ($6/mo) for 20/month or Creator ($12/mo) for 200/month."
+        elif tier == "pro":
+            msg = "You've used all 20 AI generations this month. Upgrade to Creator ($12/mo) for 200/month."
+        else:
+            msg = "You've reached your AI generation limit this month."
+        return jsonify({"error": msg, "upgrade": True}), 403
+    db.session.commit()
+
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         return jsonify({"error": "AI not configured — missing API key"}), 500
@@ -1610,6 +1636,8 @@ Generate the following in JSON format ONLY (no markdown, no explanation, just va
             "suggested_date": suggested_date,
             "suggested_time": best_time,
             "notes": ai_data.get("notes", ""),
+            "ai_remaining": current_user.ai_remaining,
+            "ai_limit": current_user.ai_limit,
         })
 
     except Exception as e:

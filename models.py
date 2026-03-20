@@ -25,7 +25,9 @@ class User(UserMixin, db.Model):
     allowed_accounts = db.Column(db.Text, default="")
     instagram_username = db.Column(db.String(64))  # their own IG username
     instagram_verified = db.Column(db.Boolean, default=False)  # confirmed via session cookie
-    subscription_tier = db.Column(db.String(16), default="free")  # 'free' or 'pro'
+    subscription_tier = db.Column(db.String(16), default="free")  # 'free', 'pro', 'creator'
+    ai_generations_used = db.Column(db.Integer, default=0)  # monthly AI usage counter
+    ai_reset_month = db.Column(db.String(7))  # 'YYYY-MM' — resets counter each month
     subscription_id = db.Column(db.String(128))  # LemonSqueezy subscription ID
     subscription_status = db.Column(db.String(32))  # 'active', 'cancelled', 'expired'
     customer_portal_url = db.Column(db.Text)  # LemonSqueezy customer portal for managing subscription
@@ -41,13 +43,21 @@ class User(UserMixin, db.Model):
 
     @property
     def is_pro(self):
-        """Check if user has an active pro subscription or trial."""
+        """Check if user has an active pro or creator subscription, or trial."""
         if self.role == "admin":
             return True
-        if self.subscription_tier == "pro" and self.subscription_status == "active":
+        if self.subscription_tier in ("pro", "creator") and self.subscription_status == "active":
             return True
-        # Check admin-granted trial
         if self.trial_expires_at and self.trial_expires_at > datetime.utcnow():
+            return True
+        return False
+
+    @property
+    def is_creator(self):
+        """Check if user has creator tier (highest)."""
+        if self.role == "admin":
+            return True
+        if self.subscription_tier == "creator" and self.subscription_status == "active":
             return True
         return False
 
@@ -58,6 +68,39 @@ class User(UserMixin, db.Model):
             return 0
         delta = self.trial_expires_at - datetime.utcnow()
         return max(0, delta.days)
+
+    @property
+    def ai_limit(self):
+        """Max AI generations per month based on tier."""
+        if self.role == "admin":
+            return 9999
+        if self.subscription_tier == "creator" and self.subscription_status == "active":
+            return 200
+        if self.subscription_tier == "pro" and self.subscription_status == "active":
+            return 20
+        if self.trial_expires_at and self.trial_expires_at > datetime.utcnow():
+            return 20  # trial gets pro-level AI
+        return 3  # free users get 3 total (taste)
+
+    @property
+    def ai_remaining(self):
+        """AI generations remaining this month."""
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        if self.ai_reset_month != current_month:
+            return self.ai_limit
+        return max(0, self.ai_limit - (self.ai_generations_used or 0))
+
+    def use_ai_generation(self):
+        """Consume one AI generation. Returns (allowed, remaining)."""
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        # Reset counter on new month
+        if self.ai_reset_month != current_month:
+            self.ai_reset_month = current_month
+            self.ai_generations_used = 0
+        if self.ai_generations_used >= self.ai_limit:
+            return False, 0
+        self.ai_generations_used = (self.ai_generations_used or 0) + 1
+        return True, self.ai_limit - self.ai_generations_used
 
     def has_used_trial(self, feature):
         """Check if user already used their free trial for a feature."""
@@ -92,7 +135,7 @@ class User(UserMixin, db.Model):
         if not allowed:
             if feature == "unfollowers_first" and self.has_used_trial("unfollowers"):
                 return False, "You've used your free unfollower scan. Upgrade to Pro for unlimited scans."
-            return False, "This feature requires a Pro subscription ($6/month)."
+            return False, "This feature requires a Pro subscription ($6/month) or Creator ($12/month)."
         return True, "free"
 
     def can_view(self, ig_username):
@@ -119,6 +162,9 @@ class User(UserMixin, db.Model):
             "subscription_tier": self.subscription_tier,
             "subscription_status": self.subscription_status,
             "is_pro": self.is_pro,
+            "is_creator": self.is_creator,
+            "ai_remaining": self.ai_remaining,
+            "ai_limit": self.ai_limit,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

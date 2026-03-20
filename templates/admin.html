@@ -68,7 +68,8 @@
                         <select onchange="updateUser({{ user.id }}, {subscription_tier: this.value})"
                             class="bg-dark-900 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white">
                             <option value="free" {{ 'selected' if user.subscription_tier == 'free' or not user.subscription_tier }}>Free</option>
-                            <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro</option>
+                            <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro ($6)</option>
+                            <option value="creator" {{ 'selected' if user.subscription_tier == 'creator' }}>Creator ($12)</option>
                         </select>
                         {% if user.trial_expires_at and user.trial_days_left > 0 %}
                         <span class="text-xs text-cyan-400">Trial: {{ user.trial_days_left }}d left</span>

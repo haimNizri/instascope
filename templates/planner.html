@@ -324,6 +324,7 @@ function aiGenerateAll() {
         .then(data => {
             btn.innerHTML = '&#9889; AI Fill All';
             btn.disabled = false;
+            if (handleApiResponse(data, btn, '⚡ AI Fill All')) return;
             if (data.caption) document.getElementById('postCaption').value = data.caption;
             if (data.hashtags) document.getElementById('postHashtags').value = data.hashtags;
             if (data.best_time) {
@@ -338,6 +339,10 @@ function aiGenerateAll() {
             document.getElementById('captionCount').textContent = (data.caption || '').length + ' / 2,200';
             const hc = data.hashtags ? data.hashtags.split(' ').filter(h => h.startsWith('#')).length : 0;
             document.getElementById('hashtagCount').textContent = hc;
+            // Show AI remaining
+            if (data.ai_remaining !== undefined) {
+                btn.innerHTML = `&#9889; AI Fill All (${data.ai_remaining} left)`;
+            }
         })
         .catch(err => { btn.innerHTML = '&#9889; AI Fill All'; btn.disabled = false; alert('Error: ' + err.message); });
 }
