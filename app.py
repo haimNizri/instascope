@@ -324,7 +324,7 @@ def run_analysis(task_id, username, post_limit=50, deep=False,
         tasks[task_id]["progress"] = "Connecting to Instagram..."
         L = get_loader(ig_user, ig_pass, session_id=session_id)
 
-        tasks[task_id]["progress"] = "Scraping profile info..."
+        tasks[task_id]["progress"] = "Loading profile..."
         profile_obj = scrape_profile(L, username, OUTPUT_DIR)
 
         with open(Path(OUTPUT_DIR) / username / "profile.json") as f:
@@ -336,7 +336,7 @@ def run_analysis(task_id, username, post_limit=50, deep=False,
         if profile_obj.is_private and not profile_obj.followed_by_viewer:
             tasks[task_id]["progress"] = "Profile is private — limited analysis..."
         else:
-            tasks[task_id]["progress"] = f"Scraping posts (up to {post_limit})..."
+            tasks[task_id]["progress"] = f"Fetching posts (up to {post_limit})..."
             posts_data = scrape_posts(
                 L, profile_obj, OUTPUT_DIR,
                 limit=post_limit, download_media=False
@@ -810,7 +810,7 @@ def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None, session_i
             profile_data = json.load(f)
         profile_follower_count = profile_data.get("followers", 0)
 
-        tasks[task_id]["progress"] = "Scraping followers (this may take a while)..."
+        tasks[task_id]["progress"] = "Retrieving followers..."
         followers = scrape_followers(L, profile_obj, OUTPUT_DIR)
 
         if not followers:
@@ -959,15 +959,15 @@ def run_lurker_scan(task_id, username, post_limit=20,
             raise Exception("Profile is private and you don't follow them")
 
         # Scrape followers
-        tasks[task_id]["progress"] = "Scraping followers..."
+        tasks[task_id]["progress"] = "Retrieving followers..."
         followers = scrape_followers(L, profile_obj, OUTPUT_DIR)
 
         # Scrape post engagement (likers + commenters)
-        tasks[task_id]["progress"] = f"Scraping engagement on {post_limit} recent posts..."
+        tasks[task_id]["progress"] = f"Analyzing engagement on {post_limit} recent posts..."
         engagement_map = scrape_post_likers(L, profile_obj, OUTPUT_DIR, limit=post_limit)
 
         # Scrape story viewers
-        tasks[task_id]["progress"] = "Scraping story viewers..."
+        tasks[task_id]["progress"] = "Checking story viewers..."
         scrape_story_viewers(L, profile_obj, OUTPUT_DIR)
 
         # Load story viewer history
@@ -1055,10 +1055,10 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session
         if profile_obj.is_private and not profile_obj.followed_by_viewer:
             raise Exception("Profile is private and you don't follow them")
 
-        tasks[task_id]["progress"] = "Scraping followers..."
+        tasks[task_id]["progress"] = "Retrieving followers..."
         followers = scrape_followers(L, profile_obj, OUTPUT_DIR)
 
-        tasks[task_id]["progress"] = "Scraping following..."
+        tasks[task_id]["progress"] = "Retrieving following..."
         following = scrape_following(L, profile_obj, OUTPUT_DIR)
 
         tasks[task_id]["progress"] = "Analyzing relationships..."
@@ -1171,7 +1171,7 @@ def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=Non
         if profile_obj.is_private and not profile_obj.followed_by_viewer:
             raise Exception("Profile is private and you don't follow them")
 
-        tasks[task_id]["progress"] = f"Scraping posts (up to {post_limit})..."
+        tasks[task_id]["progress"] = f"Fetching posts (up to {post_limit})..."
         posts_data = scrape_posts(
             L, profile_obj, OUTPUT_DIR,
             limit=post_limit, download_media=False
