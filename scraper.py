@@ -152,7 +152,7 @@ def _get_ig_session(session_id):
     session = _req.Session()
     session.cookies.set("sessionid", session_id, domain=".instagram.com")
     session.headers.update({
-        "x-ig-app-id": "936619743392459",
+        "x-ig-app-id": "567067343352427",
         "User-Agent": "Instagram 317.0.0.0.62 Android (26/8.0.0; 480dpi; 1080x1920; samsung; SM-G950F; dreamlte; samsungexynos8895; en_US; 556062177)",
     })
 
