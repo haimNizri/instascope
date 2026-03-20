@@ -636,6 +636,12 @@ def planner_page():
     return render_template("planner.html")
 
 
+@app.route("/insights/<username>")
+@can_view_account
+def insights_page(username):
+    return render_template("insights.html", username=username)
+
+
 # ── API ──────────────────────────────────────────────────────────────────────
 
 @app.post("/api/analyze")
@@ -1490,6 +1496,170 @@ def api_me():
         "instagram_username": current_user.instagram_username,
         "trial_used": current_user.trial_used or {},
     })
+
+
+# ── AI Insights ─────────────────────────────────────────────────────────────
+
+@app.post("/api/insights/<username>")
+@api_can_view_account
+def api_generate_insights(username):
+    """Generate AI-powered cross-referenced insights from all user data."""
+    import anthropic
+
+    # Check AI limit
+    allowed, remaining = current_user.use_ai_generation()
+    if not allowed:
+        return jsonify({"error": "AI generation limit reached. Upgrade for more.", "upgrade": True}), 403
+    db.session.commit()
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return jsonify({"error": "AI not configured"}), 500
+
+    # Gather all available data
+    data_summary = {}
+
+    # Profile
+    profile_path = Path(OUTPUT_DIR) / username / "profile.json"
+    if profile_path.exists():
+        with open(profile_path) as f:
+            data_summary["profile"] = json.load(f)
+
+    # Relationships
+    rel_data = db_get_report(username, 'relationships')
+    if rel_data:
+        data_summary["relationships"] = {
+            "followers_count": rel_data.get("followers_count"),
+            "following_count": rel_data.get("following_count"),
+            "mutual_count": rel_data.get("mutual_count"),
+            "fans_count": rel_data.get("fans_count"),
+            "not_following_back_count": rel_data.get("not_following_back_count"),
+        }
+
+    # Unfollowers
+    unf_data = db_get_report(username, 'unfollowers')
+    if unf_data and unf_data.get("comparison"):
+        comp = unf_data["comparison"]
+        data_summary["unfollowers"] = {
+            "unfollower_count": comp.get("unfollower_count"),
+            "new_follower_count": comp.get("new_follower_count"),
+            "net_change": comp.get("net_change"),
+        }
+        if unf_data.get("unfollower_analysis"):
+            ua = unf_data["unfollower_analysis"]
+            data_summary["unfollower_analysis"] = {
+                "total": ua.get("total"),
+                "gender_breakdown": ua.get("gender_breakdown"),
+                "private_percentage": ua.get("private_percentage"),
+                "no_name_percentage": ua.get("no_name_percentage"),
+            }
+
+    # Advisor / content performance
+    adv_data = db_get_report(username, 'advisor')
+    if adv_data:
+        data_summary["content_performance"] = {
+            "posts_analyzed": adv_data.get("posts_analyzed"),
+            "best_hours": adv_data.get("best_hours"),
+            "best_day": adv_data.get("best_day"),
+            "engagement_trend": adv_data.get("engagement_trend"),
+            "content_type_performance": adv_data.get("content_type_performance"),
+            "recommendations": adv_data.get("recommendations"),
+        }
+
+    # Studio / categories
+    studio_data = db_get_report(username, 'studio')
+    if studio_data:
+        data_summary["categories"] = studio_data.get("categories", [])
+        data_summary["performance_comparison"] = studio_data.get("performance_comparison")
+
+    # Recent posts
+    posts_path = Path(OUTPUT_DIR) / username / "posts.json"
+    if posts_path.exists():
+        with open(posts_path) as f:
+            posts = json.load(f)
+            # Summarize recent posts
+            data_summary["recent_posts"] = [{
+                "date": p.get("date", "")[:10],
+                "type": p.get("typename"),
+                "likes": p.get("likes"),
+                "comments": p.get("comments_count"),
+                "hashtags_count": len(p.get("hashtags", [])),
+                "caption_length": len(p.get("caption") or ""),
+            } for p in posts[:20]]
+
+    if not data_summary:
+        return jsonify({"error": "No data available. Run some scans first."}), 404
+
+    prompt = f"""You are an expert Instagram growth strategist and data analyst. Analyze this Instagram account data and provide actionable, cross-referenced insights.
+
+Account: @{username}
+Data: {json.dumps(data_summary, indent=2, default=str)}
+
+Generate 6-8 detailed insights in JSON format. Each insight should:
+1. Cross-reference multiple data points (e.g., connect unfollower patterns with content type)
+2. Be specific with numbers from the data
+3. Include actionable advice
+4. Be written in a friendly, professional tone
+
+Categories of insights to cover:
+- Follower health (growth, unfollowers, ghost followers)
+- Content performance (what works, what doesn't)
+- Audience insights (who follows, who unfollowed, gender patterns)
+- Growth opportunities (what to do next)
+- Warnings (declining metrics, concerning patterns)
+- Quick wins (easy things to improve right now)
+
+Return ONLY valid JSON, no markdown:
+{{
+    "insights": [
+        {{
+            "title": "Short title",
+            "category": "growth|content|audience|opportunity|warning|quick_win",
+            "icon": "emoji",
+            "text": "Detailed insight text with specific numbers and advice",
+            "priority": "high|medium|low"
+        }}
+    ],
+    "health_score": 0-100,
+    "health_label": "Excellent|Good|Needs Attention|Critical",
+    "summary": "One sentence overall summary"
+}}"""
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        import re
+        response_text = message.content[0].text.strip()
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        if json_match:
+            result = json.loads(json_match.group())
+            result["ai_remaining"] = current_user.ai_remaining
+            # Save to DB
+            try:
+                with app.app_context():
+                    db_save_report(username, 'insights', result)
+            except Exception:
+                pass
+            return jsonify(result)
+        return jsonify({"error": "AI returned invalid format"}), 500
+
+    except Exception as e:
+        return jsonify({"error": f"AI failed: {str(e)}"}), 500
+
+
+@app.get("/api/insights/<username>")
+@api_can_view_account
+def api_get_insights(username):
+    """Get cached insights."""
+    data = db_get_report(username, 'insights')
+    if data:
+        return jsonify(data)
+    return jsonify({"error": "No insights yet. Click Generate to create them."}), 404
 
 
 # ── Content Planner API ──────────────────────────────────────────────────────
