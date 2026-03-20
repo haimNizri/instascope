@@ -105,6 +105,14 @@ function addProBadge(elementId) {
     el.appendChild(badge);
 }
 
+// Destroy existing chart on a canvas before creating a new one
+function destroyChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+}
+
 const chartDefaults = {
     color: '#9ca3af',
     borderColor: 'transparent',
@@ -268,6 +276,7 @@ function renderAuthenticity(auth) {
     verdictEl.textContent = auth.verdict;
     verdictEl.style.color = color;
 
+    destroyChart('authGauge');
     new Chart(document.getElementById('authGauge'), {
         type: 'doughnut',
         data: {
@@ -308,6 +317,7 @@ function renderAge(age) {
     const labels = Object.keys(dist);
     const values = Object.values(dist).map(v => parseFloat(String(v).replace('%', '')) || 0);
 
+    destroyChart('ageChart');
     new Chart(document.getElementById('ageChart'), {
         type: 'bar',
         data: {
@@ -347,6 +357,7 @@ function renderDemographics(demo) {
     document.getElementById('demoCharts').classList.remove('hidden');
 
     const gd = demo.gender_distribution || {};
+    destroyChart('genderChart');
     new Chart(document.getElementById('genderChart'), {
         type: 'bar',
         data: {
@@ -405,6 +416,7 @@ function renderBusiness(biz) {
     // Content mix donut
     const mix = biz.content_mix || {};
     const typeLabels = { GraphImage: 'Images', GraphVideo: 'Videos', GraphSidecar: 'Carousels' };
+    destroyChart('contentMixChart');
     new Chart(document.getElementById('contentMixChart'), {
         type: 'doughnut',
         data: {
@@ -527,7 +539,8 @@ function renderCampaigns(camp) {
     // Posting calendar
     const calendar = camp.posting_calendar || {};
     if (Object.keys(calendar).length > 1) {
-        new Chart(document.getElementById('calendarChart'), {
+        destroyChart('calendarChart');
+    new Chart(document.getElementById('calendarChart'), {
             type: 'bar',
             data: {
                 labels: Object.keys(calendar).map(m => m.slice(2)), // "2025-03" -> "25-03"
@@ -749,6 +762,7 @@ function renderUnfollowerGenderChart(genderBreakdown) {
     const canvas = document.getElementById('unfollowerGenderChart');
     if (!canvas) return;
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -787,6 +801,7 @@ function renderAccountTypeChart(analysis) {
     const noNameCount = analysis.no_name_accounts || 0;
     const namedCount = total - noNameCount;
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'bar',
         data: {
@@ -847,6 +862,7 @@ function renderHistoryChart(history) {
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
 
+    destroyChart('historyChart');
     new Chart(document.getElementById('historyChart'), {
         type: 'line',
         data: {
@@ -1131,6 +1147,7 @@ function renderGenderDoughnut(canvasId, genderData) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !genderData || !Object.keys(genderData).length) return;
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -1449,6 +1466,7 @@ function renderRelGenderChart(canvasId, genderData) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !genderData || !Object.keys(genderData).length) return;
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -1520,7 +1538,8 @@ function renderDemographics(demo) {
     };
 
     if (regionLabels.length) {
-        new Chart(document.getElementById('regionChart'), {
+        destroyChart('regionChart');
+    new Chart(document.getElementById('regionChart'), {
             type: 'doughnut',
             data: {
                 labels: regionLabels,
@@ -1899,6 +1918,7 @@ function renderHoursChart(bestHours) {
     const data = allHours.map(h => bestMap[h] || 0);
     const colors = allHours.map(h => bestHourSet.has(h) ? '#eab308' : 'rgba(234, 179, 8, 0.15)');
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'bar',
         data: {
@@ -1923,6 +1943,7 @@ function renderTrendChart(trend) {
     const isDown = trend.length >= 2 && trend[trend.length - 1].avg_engagement < trend[0].avg_engagement;
     const color = isDown ? '#ef4444' : '#22c55e';
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'line',
         data: {
@@ -1954,6 +1975,7 @@ function renderTypeChart(typePerf) {
     const engagements = Object.values(typePerf).map(v => v.avg_engagement_rate);
     const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316'];
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'bar',
         data: {
@@ -1993,6 +2015,7 @@ function renderCaptionChart(captionPerf) {
     const maxVal = Math.max(...data);
     const colors = data.map(v => v === maxVal && v > 0 ? '#eab308' : 'rgba(234, 179, 8, 0.3)');
 
+    { const ex = Chart.getChart(canvas); if(ex) ex.destroy(); }
     new Chart(canvas, {
         type: 'bar',
         data: {
