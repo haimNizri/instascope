@@ -40,11 +40,13 @@
                     <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                     <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                     <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                    <a href="#" onclick="promptNav('studio')" class="text-sm text-gray-400 hover:text-white transition">Studio</a>
                     {% else %}
                     <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                     <a href="/unfollowers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
                     <a href="/lurkers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                     <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
+                    <a href="/studio/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Studio</a>
                     {% endif %}
                 {% endif %}
                 {% if current_user.is_authenticated and not current_user.is_pro %}
@@ -75,7 +77,7 @@
     <script src="/static/app.js"></script>
     <script>
         function promptNav(feature) {
-            const labels = { unfollowers: 'track unfollowers', lurkers: 'detect ghost followers & lurkers', relationships: 'analyze follow relationships', advisor: 'get content recommendations' };
+            const labels = { unfollowers: 'track unfollowers', lurkers: 'detect ghost followers & lurkers', relationships: 'analyze follow relationships', advisor: 'get content recommendations', studio: 'open content studio' };
             const u = prompt('Enter Instagram username to ' + (labels[feature] || feature) + ':');
             if (u) window.location.href = '/' + feature + '/' + u.trim().replace(/^@/, '');
         }

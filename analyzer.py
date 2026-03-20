@@ -986,6 +986,505 @@ def analyze_content_performance(posts_data, profile_data, follower_snapshots=Non
     }
 
 
+def analyze_content_studio(profile_data, posts_data):
+    """Auto-categorize a profile, benchmark against niche averages, and generate
+    content ideas, caption templates, hashtag recommendations, and performance insights."""
+
+    # ── 1. Category keyword definitions ──────────────────────────────────────
+    CATEGORY_KEYWORDS = {
+        "beauty": ["makeup", "skincare", "beauty", "cosmetics", "lashes", "lipstick",
+                    "foundation", "contour", "glow", "nails"],
+        "fitness": ["fitness", "gym", "workout", "training", "gains", "bodybuilding",
+                     "crossfit", "yoga", "pilates", "protein"],
+        "food": ["food", "recipe", "cooking", "foodie", "chef", "baking",
+                 "restaurant", "vegan", "healthy eating", "brunch"],
+        "travel": ["travel", "wanderlust", "adventure", "explore", "backpacking",
+                   "vacation", "destination", "beach", "hiking"],
+        "fashion": ["fashion", "style", "outfit", "ootd", "streetwear", "designer",
+                    "model", "clothing", "vintage", "trendy"],
+        "tech": ["tech", "coding", "programming", "developer", "startup", "ai",
+                 "software", "gadget", "innovation"],
+        "art": ["art", "artist", "painting", "drawing", "illustration", "creative",
+                "design", "sculpture", "photography"],
+        "music": ["music", "musician", "singer", "guitar", "producer", "dj",
+                  "band", "concert", "lyrics", "album"],
+        "lifestyle": ["lifestyle", "daily", "motivation", "mindset", "self care",
+                      "wellness", "home", "family"],
+        "business": ["business", "entrepreneur", "ceo", "marketing", "brand",
+                     "investment", "finance", "hustle", "leadership"],
+        "gaming": ["gaming", "gamer", "twitch", "esports", "playstation", "xbox",
+                   "streamer", "pc gaming"],
+        "education": ["education", "learning", "teacher", "student", "study",
+                      "tips", "tutorial", "howto"],
+    }
+
+    # ── 2. Category benchmarks (hardcoded realistic values) ──────────────────
+    CATEGORY_BENCHMARKS = {
+        "beauty": {
+            "avg_engagement_rate": 3.5,
+            "avg_followers": "10K–500K",
+            "best_posting_frequency": 5,
+            "best_content_type": "video",
+            "peak_hours": [10, 13, 19],
+            "top_hashtags": ["#beauty", "#makeup", "#skincare", "#glam", "#makeupartist",
+                             "#beautytips", "#cosmetics", "#skincareroutine", "#glow", "#beautyblogger"],
+        },
+        "fitness": {
+            "avg_engagement_rate": 3.2,
+            "avg_followers": "5K–300K",
+            "best_posting_frequency": 5,
+            "best_content_type": "video",
+            "peak_hours": [6, 12, 18],
+            "top_hashtags": ["#fitness", "#gym", "#workout", "#fitfam", "#motivation",
+                             "#bodybuilding", "#training", "#fitnessmotivation", "#gains", "#healthylifestyle"],
+        },
+        "food": {
+            "avg_engagement_rate": 4.0,
+            "avg_followers": "5K–250K",
+            "best_posting_frequency": 7,
+            "best_content_type": "carousel",
+            "peak_hours": [11, 17, 20],
+            "top_hashtags": ["#food", "#foodie", "#recipe", "#homemade", "#cooking",
+                             "#foodporn", "#yummy", "#instafood", "#healthyfood", "#delicious"],
+        },
+        "travel": {
+            "avg_engagement_rate": 4.5,
+            "avg_followers": "10K–500K",
+            "best_posting_frequency": 4,
+            "best_content_type": "carousel",
+            "peak_hours": [9, 14, 20],
+            "top_hashtags": ["#travel", "#wanderlust", "#travelgram", "#explore", "#adventure",
+                             "#travelphotography", "#instatravel", "#vacation", "#nature", "#traveltheworld"],
+        },
+        "fashion": {
+            "avg_engagement_rate": 3.8,
+            "avg_followers": "10K–1M",
+            "best_posting_frequency": 5,
+            "best_content_type": "carousel",
+            "peak_hours": [10, 14, 19],
+            "top_hashtags": ["#fashion", "#style", "#ootd", "#fashionblogger", "#streetstyle",
+                             "#outfit", "#instafashion", "#trendy", "#fashionista", "#lookbook"],
+        },
+        "tech": {
+            "avg_engagement_rate": 2.5,
+            "avg_followers": "5K–200K",
+            "best_posting_frequency": 4,
+            "best_content_type": "carousel",
+            "peak_hours": [9, 13, 17],
+            "top_hashtags": ["#tech", "#technology", "#coding", "#programming", "#developer",
+                             "#ai", "#startup", "#innovation", "#software", "#gadgets"],
+        },
+        "art": {
+            "avg_engagement_rate": 4.2,
+            "avg_followers": "5K–300K",
+            "best_posting_frequency": 4,
+            "best_content_type": "image",
+            "peak_hours": [10, 15, 20],
+            "top_hashtags": ["#art", "#artist", "#artwork", "#painting", "#drawing",
+                             "#illustration", "#creative", "#design", "#digitalart", "#instaart"],
+        },
+        "music": {
+            "avg_engagement_rate": 3.0,
+            "avg_followers": "5K–500K",
+            "best_posting_frequency": 4,
+            "best_content_type": "video",
+            "peak_hours": [12, 17, 21],
+            "top_hashtags": ["#music", "#musician", "#newmusic", "#singer", "#guitar",
+                             "#producer", "#hiphop", "#rap", "#livemusic", "#songwriter"],
+        },
+        "lifestyle": {
+            "avg_engagement_rate": 3.3,
+            "avg_followers": "5K–300K",
+            "best_posting_frequency": 5,
+            "best_content_type": "carousel",
+            "peak_hours": [8, 12, 19],
+            "top_hashtags": ["#lifestyle", "#motivation", "#dailylife", "#mindset", "#selfcare",
+                             "#wellness", "#inspiration", "#positivity", "#lifestyleblogger", "#goals"],
+        },
+        "business": {
+            "avg_engagement_rate": 2.8,
+            "avg_followers": "5K–200K",
+            "best_posting_frequency": 5,
+            "best_content_type": "carousel",
+            "peak_hours": [8, 12, 17],
+            "top_hashtags": ["#business", "#entrepreneur", "#marketing", "#success", "#startup",
+                             "#hustle", "#leadership", "#finance", "#branding", "#ceo"],
+        },
+        "gaming": {
+            "avg_engagement_rate": 3.6,
+            "avg_followers": "5K–500K",
+            "best_posting_frequency": 6,
+            "best_content_type": "video",
+            "peak_hours": [15, 19, 22],
+            "top_hashtags": ["#gaming", "#gamer", "#twitch", "#esports", "#playstation",
+                             "#xbox", "#pcgaming", "#streamer", "#gamingcommunity", "#videogames"],
+        },
+        "education": {
+            "avg_engagement_rate": 3.0,
+            "avg_followers": "5K–200K",
+            "best_posting_frequency": 5,
+            "best_content_type": "carousel",
+            "peak_hours": [8, 13, 18],
+            "top_hashtags": ["#education", "#learning", "#study", "#teacher", "#student",
+                             "#tips", "#tutorial", "#knowledge", "#edtech", "#studygram"],
+        },
+    }
+
+    # ── 3. Content ideas per category ────────────────────────────────────────
+    CONTENT_IDEAS = {
+        "beauty": [
+            "Before/after transformation reel",
+            "Get ready with me (GRWM) morning routine",
+            "Product review and swatch carousel",
+            "Skincare routine breakdown with close-ups",
+            "Trending makeup look tutorial",
+        ],
+        "fitness": [
+            "Full workout routine reel with form tips",
+            "Weekly meal prep and macro breakdown",
+            "30-day challenge progress timelapse",
+            "Exercise myth-busting carousel",
+            "Day in the life of a fitness routine",
+        ],
+        "food": [
+            "Meal prep timelapse",
+            "Recipe step-by-step carousel",
+            "Restaurant review reel with ratings",
+            "What I eat in a day vlog-style reel",
+            "Quick 60-second recipe tutorial",
+        ],
+        "travel": [
+            "Hidden gems in [destination] carousel",
+            "Travel packing tips and hacks reel",
+            "Budget breakdown for a weekend trip",
+            "Cinematic destination reveal reel",
+            "Top 5 must-visit spots carousel",
+        ],
+        "fashion": [
+            "Outfit of the week carousel",
+            "Thrift haul try-on reel",
+            "How to style one piece five ways",
+            "Seasonal capsule wardrobe guide carousel",
+            "Street style lookbook reel",
+        ],
+        "tech": [
+            "Gadget unboxing and first impressions reel",
+            "Coding tutorial for beginners carousel",
+            "Tech setup / desk tour video",
+            "App of the week review carousel",
+            "Day in the life of a developer reel",
+        ],
+        "art": [
+            "Painting process timelapse reel",
+            "Art supply review and comparison carousel",
+            "Sketch to finished piece transformation",
+            "Creative challenge with fan-picked themes",
+            "Behind the scenes of a commission",
+        ],
+        "music": [
+            "Song cover or remix reel",
+            "Studio session behind the scenes",
+            "Gear breakdown and review carousel",
+            "How I wrote this song — storytelling reel",
+            "Live performance snippet with crowd reaction",
+        ],
+        "lifestyle": [
+            "Morning routine reel",
+            "Weekly habit tracker and reflection carousel",
+            "Self-care Sunday vlog-style reel",
+            "Room makeover or home tour",
+            "Monthly goals and wins recap carousel",
+        ],
+        "business": [
+            "Day in the life of an entrepreneur reel",
+            "Top lessons learned this quarter carousel",
+            "Revenue milestone breakdown (transparent numbers)",
+            "Tool stack I use to run my business carousel",
+            "Quick marketing tip reel under 30 seconds",
+        ],
+        "gaming": [
+            "Epic gameplay highlight reel",
+            "Game review and rating carousel",
+            "Setup tour and gear recommendations",
+            "Funny moments compilation reel",
+            "Tips and tricks for beginners carousel",
+        ],
+        "education": [
+            "Quick explainer reel on a tricky topic",
+            "Study tips and techniques carousel",
+            "Day in the life of a student / teacher reel",
+            "Book recommendations carousel with mini-reviews",
+            "Myth vs fact quiz-style reel",
+        ],
+    }
+
+    # ── 4. Caption templates per category ────────────────────────────────────
+    CAPTION_TEMPLATES = {
+        "beauty": [
+            "New look alert! Tried {product} and here's my honest take. Would you try it? Drop a {emoji} below!",
+            "My {time_of_day} skincare routine in 3 steps. Step 1: {step}. What's your go-to product?",
+            "Obsessed with this {trend} look! Tutorial coming soon — save this for later {emoji}",
+        ],
+        "fitness": [
+            "Today's workout: {exercise}. {sets} sets x {reps} reps. Save this for your next gym day!",
+            "{days}-day challenge update! Feeling {feeling}. Who's joining me? Comment {emoji} if you're in!",
+            "Fuel your gains: {meal} packed with {macros}. Full recipe in highlights!",
+        ],
+        "food": [
+            "Made {dish} from scratch and it only took {time} minutes! Recipe in carousel — swipe {emoji}",
+            "Rating this {restaurant} spot: {rating}/10. The {dish} was {adjective}! Have you been?",
+            "What I eat in a day: {meal_count} meals, all under {calories} cal. Save for inspo!",
+        ],
+        "travel": [
+            "Exploring {destination}! This hidden gem blew my mind {emoji}. Adding to your bucket list?",
+            "{days} days in {destination} for ${budget}. Full budget breakdown in the carousel!",
+            "Sunsets in {destination} hit different {emoji}. Where should I go next? Drop suggestions!",
+        ],
+        "fashion": [
+            "Today's fit: {item_1} + {item_2}. Styled {count} ways in the carousel — which is your fave?",
+            "Thrift haul alert! Everything under ${price}. Swipe to see what I found {emoji}",
+            "Building a capsule wardrobe for {season}. These {count} pieces are all you need!",
+        ],
+        "tech": [
+            "Just unboxed the {gadget}! First impressions: {opinion}. Full review coming {emoji}",
+            "{count} tools I use daily as a {role}. Number {number} is a game changer!",
+            "Coded {project} in {time}. Here's how — step-by-step in the carousel {emoji}",
+        ],
+        "art": [
+            "From blank canvas to {piece}: {hours} hours of work in {time} seconds {emoji}",
+            "Trying {medium} for the first time! What do you think — keep going or stick to {usual_medium}?",
+            "Commission piece for {client_type}: swipe to see the full process {emoji}",
+        ],
+        "music": [
+            "Dropped a cover of {song}! Link in bio {emoji}. What should I cover next?",
+            "Behind the scenes of {project}. The process is just as important as the product {emoji}",
+            "New gear day! Got the {gear}. Sound test in the reel — thoughts?",
+        ],
+        "lifestyle": [
+            "My {time_of_day} routine that changed everything. Step {number} is non-negotiable {emoji}",
+            "Weekly reset: {count} habits I'm tracking this week. How do you stay on track?",
+            "{season} self-care essentials: {item_1}, {item_2}, and {item_3}. What's on your list?",
+        ],
+        "business": [
+            "Month {number} in business: {metric}. Here's what I'd do differently {emoji}",
+            "{count} marketing strategies that actually work in {year}. Save this carousel!",
+            "From {start} to {current}: my journey so far. Biggest lesson? {lesson} {emoji}",
+        ],
+        "gaming": [
+            "This {game} moment was insane {emoji}! Have you tried it yet?",
+            "My setup tour: {item_1}, {item_2}, {item_3}. Total cost? ${price}. Worth it!",
+            "Top {count} tips for {game}. Number {number} will change your gameplay {emoji}",
+        ],
+        "education": [
+            "Learn {topic} in {time} seconds! Save this for later {emoji}",
+            "{count} study tips that got me through {subject}. Which one do you swear by?",
+            "Myth: {myth}. Fact: {fact}. Swipe for {count} more {emoji}",
+        ],
+    }
+
+    # ── Build searchable text corpus ─────────────────────────────────────────
+    bio = (profile_data.get("biography") or "").lower()
+    all_captions = []
+    all_hashtags = []
+    for post in (posts_data or []):
+        caption = (post.get("caption") or "").lower()
+        all_captions.append(caption)
+        hashtags = post.get("hashtags") or []
+        all_hashtags.extend([h.lower().strip("#") for h in hashtags])
+
+    corpus = bio + " " + " ".join(all_captions) + " " + " ".join(all_hashtags)
+
+    # ── Score categories ─────────────────────────────────────────────────────
+    category_scores = {}
+    for cat, keywords in CATEGORY_KEYWORDS.items():
+        score = 0
+        for kw in keywords:
+            score += len(re.findall(r'\b' + re.escape(kw) + r'\b', corpus))
+        category_scores[cat] = score
+
+    total_matches = sum(category_scores.values()) or 1
+    scored = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
+    top3 = scored[:3]
+
+    categories = [
+        {"name": name, "score": score, "confidence": round(score / total_matches * 100, 1)}
+        for name, score in top3 if score > 0
+    ]
+
+    # Fallback if nothing matched
+    if not categories:
+        categories = [{"name": "lifestyle", "score": 0, "confidence": 0.0}]
+
+    primary_category = categories[0]["name"]
+
+    # ── Benchmarks for detected categories ───────────────────────────────────
+    benchmarks = {}
+    for cat_info in categories:
+        cname = cat_info["name"]
+        benchmarks[cname] = CATEGORY_BENCHMARKS.get(cname, CATEGORY_BENCHMARKS["lifestyle"])
+
+    # ── Content ideas for detected categories ────────────────────────────────
+    content_ideas = {}
+    for cat_info in categories:
+        cname = cat_info["name"]
+        content_ideas[cname] = CONTENT_IDEAS.get(cname, CONTENT_IDEAS["lifestyle"])
+
+    # ── Caption templates for detected categories ────────────────────────────
+    caption_templates = {}
+    for cat_info in categories:
+        cname = cat_info["name"]
+        caption_templates[cname] = CAPTION_TEMPLATES.get(cname, CAPTION_TEMPLATES["lifestyle"])
+
+    # ── 5. Performance comparison vs benchmark ───────────────────────────────
+    followers = profile_data.get("followers") or 0
+    total_posts = len(posts_data or [])
+
+    # Compute user's actual engagement rate
+    if posts_data and followers > 0:
+        engagement_rates = []
+        for post in posts_data:
+            likes = post.get("likes") or 0
+            comments = post.get("comments") or 0
+            engagement_rates.append((likes + comments) / followers * 100)
+        user_engagement_rate = statistics.mean(engagement_rates) if engagement_rates else 0.0
+    else:
+        user_engagement_rate = 0.0
+
+    # Estimate posting frequency (posts per week)
+    if len(posts_data or []) >= 2:
+        dates = []
+        for post in posts_data:
+            ts = post.get("timestamp") or post.get("date")
+            if ts:
+                if isinstance(ts, (int, float)):
+                    dates.append(datetime.fromtimestamp(ts))
+                elif isinstance(ts, str):
+                    try:
+                        dates.append(datetime.fromisoformat(ts))
+                    except ValueError:
+                        pass
+        if len(dates) >= 2:
+            dates.sort()
+            span_days = max((dates[-1] - dates[0]).days, 1)
+            user_posting_freq = len(dates) / span_days * 7
+        else:
+            user_posting_freq = 0.0
+    else:
+        user_posting_freq = 0.0
+
+    # Content mix: count types
+    type_counter = Counter()
+    for post in (posts_data or []):
+        ptype = (post.get("type") or post.get("media_type") or "image").lower()
+        type_counter[ptype] += 1
+    user_dominant_type = type_counter.most_common(1)[0][0] if type_counter else "image"
+
+    bench = CATEGORY_BENCHMARKS.get(primary_category, CATEGORY_BENCHMARKS["lifestyle"])
+
+    def _compare(user_val, bench_val, tolerance=0.15):
+        if user_val >= bench_val * (1 + tolerance):
+            return "above_benchmark"
+        elif user_val <= bench_val * (1 - tolerance):
+            return "below_benchmark"
+        return "at_benchmark"
+
+    performance_comparison = {
+        "engagement_rate": {
+            "user": round(user_engagement_rate, 2),
+            "benchmark": bench["avg_engagement_rate"],
+            "status": _compare(user_engagement_rate, bench["avg_engagement_rate"]),
+        },
+        "posting_frequency": {
+            "user": round(user_posting_freq, 1),
+            "benchmark": bench["best_posting_frequency"],
+            "status": _compare(user_posting_freq, bench["best_posting_frequency"]),
+        },
+        "content_type": {
+            "user": user_dominant_type,
+            "benchmark": bench["best_content_type"],
+            "status": "at_benchmark" if user_dominant_type == bench["best_content_type"] else "below_benchmark",
+        },
+    }
+
+    # ── 6. Trending / recommended hashtags ───────────────────────────────────
+    # Best-performing user hashtags (by avg engagement of posts containing them)
+    hashtag_engagement = defaultdict(list)
+    for post in (posts_data or []):
+        likes = post.get("likes") or 0
+        comments = post.get("comments") or 0
+        eng = likes + comments
+        for h in (post.get("hashtags") or []):
+            hashtag_engagement[h.lower().strip("#")].append(eng)
+
+    user_top_hashtags = sorted(
+        hashtag_engagement.keys(),
+        key=lambda h: statistics.mean(hashtag_engagement[h]) if hashtag_engagement[h] else 0,
+        reverse=True,
+    )[:10]
+
+    # Merge benchmark hashtags with user's best-performing ones
+    niche_hashtags = [h.strip("#").lower() for h in bench.get("top_hashtags", [])]
+    seen = set()
+    recommended_hashtags = []
+    for h in niche_hashtags + user_top_hashtags:
+        if h not in seen:
+            seen.add(h)
+            recommended_hashtags.append(f"#{h}")
+    recommended_hashtags = recommended_hashtags[:20]
+
+    # ── Insights / recommendations ───────────────────────────────────────────
+    insights = []
+    er_status = performance_comparison["engagement_rate"]["status"]
+    pf_status = performance_comparison["posting_frequency"]["status"]
+    ct_status = performance_comparison["content_type"]["status"]
+
+    if er_status == "below_benchmark":
+        insights.append(
+            f"Your engagement rate ({user_engagement_rate:.2f}%) is below the {primary_category} "
+            f"average ({bench['avg_engagement_rate']}%). Try using more calls-to-action in captions "
+            f"and posting during peak hours: {bench['peak_hours']}."
+        )
+    elif er_status == "above_benchmark":
+        insights.append(
+            f"Great job! Your engagement rate ({user_engagement_rate:.2f}%) exceeds the "
+            f"{primary_category} niche average ({bench['avg_engagement_rate']}%). Keep it up!"
+        )
+
+    if pf_status == "below_benchmark":
+        insights.append(
+            f"You're posting ~{user_posting_freq:.1f} times/week. The recommended frequency for "
+            f"{primary_category} is {bench['best_posting_frequency']} posts/week. Consider increasing output."
+        )
+    elif pf_status == "above_benchmark":
+        insights.append(
+            f"You're posting more frequently ({user_posting_freq:.1f}/week) than the typical "
+            f"{primary_category} creator ({bench['best_posting_frequency']}/week). Watch for audience fatigue."
+        )
+
+    if ct_status == "below_benchmark":
+        insights.append(
+            f"Your most-used content type is '{user_dominant_type}', but '{bench['best_content_type']}' "
+            f"tends to perform best in {primary_category}. Try mixing in more {bench['best_content_type']} content."
+        )
+
+    if not insights:
+        insights.append(
+            f"You're performing at or above benchmark across the board for {primary_category}. "
+            f"Experiment with new content ideas to keep growing!"
+        )
+
+    return {
+        "categories": categories,
+        "primary_category": primary_category,
+        "benchmarks": benchmarks,
+        "content_ideas": content_ideas,
+        "caption_templates": caption_templates,
+        "performance_comparison": performance_comparison,
+        "recommended_hashtags": recommended_hashtags,
+        "insights": insights,
+    }
+
+
 def analyze_unfollowers(unfollowers_list):
     """Analyze unfollowers by gender, account type, and patterns."""
     if not unfollowers_list:

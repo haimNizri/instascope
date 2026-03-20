@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}InstaScope — Content Studio — @{{ username }}{% endblock %}
+
+{% block content %}
+<!-- Loading -->
+<div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
+    <div class="relative mb-6">
+        <div class="w-16 h-16 border-4 border-gray-700 border-t-accent-500 rounded-full animate-spin"></div>
+    </div>
+    <p id="progressText" class="text-lg text-gray-400 animate-pulse">Analyzing content...</p>
+</div>
+
+<!-- Error -->
+<div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
+    <div class="text-5xl mb-4">&#9888;&#65039;</div>
+    <p id="errorText" class="text-xl text-red-400"></p>
+    <a href="/" class="mt-4 text-accent-400 hover:underline">&larr; Back to home</a>
+</div>
+
+<div id="studioDashboard">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <span class="bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">Content Studio</span>
+            </h1>
+            <p class="text-gray-400 mt-1">@{{ username }} &mdash; AI-powered content recommendations</p>
+        </div>
+        <div class="flex gap-3 items-center">
+            <label class="text-sm text-gray-400">Posts:</label>
+            <select id="postLimitSelect" class="bg-dark-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm">
+                <option value="20">20</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+            </select>
+            <button onclick="startStudioScan()" id="scanBtn"
+                class="px-6 py-3 bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:brightness-110 text-white font-semibold rounded-xl transition
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+                Analyze Content
+            </button>
+        </div>
+    </div>
+
+    <!-- First time -->
+    <div id="firstTimeMsg" class="hidden bg-dark-800 rounded-2xl p-8 border border-gray-800 text-center">
+        <div class="text-4xl mb-4">&#127912;</div>
+        <h2 class="text-xl font-semibold mb-2">Your Content Studio</h2>
+        <p class="text-gray-400 mb-4 max-w-lg mx-auto">
+            Auto-detect your content categories, get niche-specific recommendations,
+            content ideas, caption templates, and benchmark against top creators.
+        </p>
+        <button onclick="startStudioScan()"
+            class="px-8 py-3 bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:brightness-110
+                   text-white font-semibold rounded-xl transition">
+            Start Analysis
+        </button>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="hidden">
+
+        <!-- Categories -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Your Content Categories</h2>
+            <div id="categoriesList" class="flex flex-wrap gap-3"></div>
+        </div>
+
+        <!-- Performance vs Benchmark -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Your Performance vs Niche Benchmark</h2>
+            <div id="performanceComparison" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Insights -->
+        <div class="bg-gradient-to-r from-fuchsia-500/10 to-violet-500/10 border border-fuchsia-500/30 rounded-2xl p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-3 text-fuchsia-400">Recommendations</h2>
+            <ul id="studioInsights" class="space-y-3"></ul>
+        </div>
+
+        <!-- Content Ideas + Caption Templates -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Content Ideas -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <h2 class="text-lg font-semibold mb-4">Content Ideas</h2>
+                <div id="contentIdeas" class="space-y-3"></div>
+            </div>
+
+            <!-- Caption Templates -->
+            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+                <h2 class="text-lg font-semibold mb-4">Caption Templates</h2>
+                <div id="captionTemplates" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Recommended Hashtags -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Recommended Hashtags</h2>
+            <div id="recommendedHashtags" class="flex flex-wrap gap-2"></div>
+            <button onclick="copyHashtags()" class="mt-4 px-4 py-2 bg-dark-900 text-gray-400 rounded-lg text-sm hover:text-white transition">
+                Copy All Hashtags
+            </button>
+        </div>
+
+        <!-- Niche Benchmarks -->
+        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+            <h2 class="text-lg font-semibold mb-4">Niche Benchmarks</h2>
+            <div id="benchmarkCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const USERNAME = "{{ username }}";
+    const params = new URLSearchParams(window.location.search);
+    const taskId = params.get("task");
+
+    if (taskId) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        pollStudioStatus(taskId);
+    } else {
+        loadStudioReport(USERNAME);
+    }
+</script>
+{% endblock %}

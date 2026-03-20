@@ -1622,6 +1622,182 @@ function renderAdvisorDashboard(report) {
     renderCorrelation(report.follower_correlation);
 }
 
+// ── Content Studio ─────────────────────────────────────────────────────────
+
+let studioHashtags = [];
+
+function startStudioScan() {
+    const username = typeof USERNAME !== 'undefined' ? USERNAME : '';
+    if (!username) return;
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true; btn.textContent = 'Analyzing...';
+    const postLimit = parseInt(document.getElementById('postLimitSelect')?.value || 50);
+
+    fetch('/api/studio/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, post_limit: postLimit }),
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (handleApiResponse(data, btn, 'Analyze Content')) return;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('firstTimeMsg').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            pollStudioStatus(data.task_id);
+        })
+        .catch(err => { alert('Error: ' + err.message); btn.disabled = false; btn.textContent = 'Analyze Content'; });
+}
+
+function pollStudioStatus(taskId) {
+    fetch(`/api/status/${taskId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.lost) { loadStudioReport(USERNAME); return; }
+            if (data.error && !data.status) { showStudioError(data.error); return; }
+            const p = document.getElementById('progressText');
+            if (p) p.textContent = data.progress || 'Working...';
+            if (data.status === 'done') renderStudioDashboard(data.result);
+            else if (data.status === 'error') showStudioError(data.error);
+            else setTimeout(() => pollStudioStatus(taskId), 1500);
+        })
+        .catch(() => setTimeout(() => pollStudioStatus(taskId), 3000));
+}
+
+function loadStudioReport(username) {
+    fetch(`/api/studio/${username}`)
+        .then(r => { if (!r.ok) { document.getElementById('firstTimeMsg').classList.remove('hidden'); throw null; } return r.json(); })
+        .then(data => { if (data) renderStudioDashboard(data); })
+        .catch(err => { if (err !== null) showStudioError(err.message || 'Failed to load'); });
+}
+
+function showStudioError(msg) {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('errorState').classList.remove('hidden');
+    document.getElementById('errorText').textContent = msg;
+    const btn = document.getElementById('scanBtn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Analyze Content'; }
+}
+
+function renderStudioDashboard(report) {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('firstTimeMsg').classList.add('hidden');
+    document.getElementById('resultsSection').classList.remove('hidden');
+    const btn = document.getElementById('scanBtn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Analyze Content'; }
+
+    // Categories
+    const cats = report.categories || [];
+    const catColors = {
+        beauty: 'from-pink-500 to-rose-500', fitness: 'from-green-500 to-emerald-500',
+        food: 'from-orange-500 to-amber-500', travel: 'from-cyan-500 to-sky-500',
+        fashion: 'from-purple-500 to-violet-500', tech: 'from-blue-500 to-indigo-500',
+        art: 'from-fuchsia-500 to-pink-500', music: 'from-red-500 to-orange-500',
+        lifestyle: 'from-teal-500 to-cyan-500', business: 'from-gray-500 to-slate-500',
+        gaming: 'from-violet-500 to-purple-500', education: 'from-emerald-500 to-teal-500',
+    };
+    const catEmojis = {
+        beauty: '&#128132;', fitness: '&#128170;', food: '&#127869;', travel: '&#9992;&#65039;',
+        fashion: '&#128087;', tech: '&#128187;', art: '&#127912;', music: '&#127926;',
+        lifestyle: '&#127793;', business: '&#128188;', gaming: '&#127918;', education: '&#127891;',
+    };
+
+    document.getElementById('categoriesList').innerHTML = cats.map((c, i) => `
+        <div class="bg-gradient-to-r ${catColors[c.name] || 'from-gray-500 to-gray-600'} rounded-xl px-5 py-3 ${i === 0 ? 'ring-2 ring-white/30 scale-105' : 'opacity-80'}">
+            <span class="text-lg mr-1">${catEmojis[c.name] || '&#128200;'}</span>
+            <span class="font-bold text-white">${c.name.charAt(0).toUpperCase() + c.name.slice(1)}</span>
+            <span class="ml-2 text-white/70 text-sm">${c.confidence}%</span>
+        </div>
+    `).join('') || '<span class="text-gray-500">Not enough data to categorize</span>';
+
+    // Performance comparison
+    const perf = report.performance_comparison || {};
+    const perfCards = [
+        { label: 'Engagement Rate', key: 'engagement_rate', icon: '&#128200;' },
+        { label: 'Posting Frequency', key: 'posting_frequency', icon: '&#128197;' },
+        { label: 'Content Type', key: 'content_type', icon: '&#127909;' },
+    ];
+    document.getElementById('performanceComparison').innerHTML = perfCards.map(p => {
+        const d = perf[p.key] || {};
+        const status = d.status || 'unknown';
+        const statusColor = status === 'above_benchmark' ? 'text-green-400' : status === 'below_benchmark' ? 'text-red-400' : 'text-yellow-400';
+        const statusLabel = status === 'above_benchmark' ? 'Above Benchmark' : status === 'below_benchmark' ? 'Below Benchmark' : 'At Benchmark';
+        const statusIcon = status === 'above_benchmark' ? '&#9650;' : status === 'below_benchmark' ? '&#9660;' : '&#9654;';
+        return `
+            <div class="bg-dark-900 rounded-xl p-4 text-center">
+                <div class="text-2xl mb-2">${p.icon}</div>
+                <div class="text-sm text-gray-400 mb-1">${p.label}</div>
+                <div class="text-sm font-semibold text-white mb-1">${d.yours || 'N/A'} <span class="text-gray-500">vs</span> ${d.benchmark || 'N/A'}</div>
+                <div class="${statusColor} text-xs font-bold">${statusIcon} ${statusLabel}</div>
+            </div>
+        `;
+    }).join('');
+
+    // Insights
+    const insights = report.insights || [];
+    document.getElementById('studioInsights').innerHTML = insights.map(s =>
+        `<li class="flex gap-3 items-start"><span class="text-fuchsia-400 text-lg flex-shrink-0">&#9733;</span><span class="text-gray-200">${s}</span></li>`
+    ).join('') || '<li class="text-gray-500">Not enough data for recommendations</li>';
+
+    // Content Ideas
+    const ideas = report.content_ideas || {};
+    let ideasHtml = '';
+    for (const [cat, catIdeas] of Object.entries(ideas)) {
+        ideasHtml += `<div class="mb-3"><div class="text-xs text-fuchsia-400 font-semibold uppercase mb-2">${cat}</div>`;
+        ideasHtml += catIdeas.map(idea =>
+            `<div class="flex gap-2 items-start mb-2"><span class="text-yellow-400 flex-shrink-0">&#128161;</span><span class="text-gray-300 text-sm">${idea}</span></div>`
+        ).join('');
+        ideasHtml += '</div>';
+    }
+    document.getElementById('contentIdeas').innerHTML = ideasHtml || '<p class="text-gray-500">Not enough data</p>';
+
+    // Caption Templates
+    const templates = report.caption_templates || {};
+    let templatesHtml = '';
+    for (const [cat, catTemplates] of Object.entries(templates)) {
+        templatesHtml += `<div class="mb-3"><div class="text-xs text-violet-400 font-semibold uppercase mb-2">${cat}</div>`;
+        templatesHtml += catTemplates.map(tmpl =>
+            `<div class="bg-dark-900 rounded-lg p-3 mb-2 text-sm text-gray-300 cursor-pointer hover:bg-dark-950 transition" onclick="navigator.clipboard.writeText(this.textContent.trim()); this.style.borderColor='#a78bfa'; setTimeout(()=>this.style.borderColor='',1000)" style="border: 1px solid transparent">
+                &#128221; ${tmpl}
+            </div>`
+        ).join('');
+        templatesHtml += '</div>';
+    }
+    document.getElementById('captionTemplates').innerHTML = templatesHtml || '<p class="text-gray-500">Not enough data</p>';
+
+    // Recommended Hashtags
+    studioHashtags = report.recommended_hashtags || [];
+    document.getElementById('recommendedHashtags').innerHTML = studioHashtags.map(h =>
+        `<span class="px-3 py-1.5 bg-dark-900 rounded-full text-sm hover:bg-fuchsia-600/20 transition cursor-pointer" onclick="navigator.clipboard.writeText('#${h}')">#${h}</span>`
+    ).join('') || '<span class="text-gray-500">Not enough data</span>';
+
+    // Benchmarks
+    const benchmarks = report.benchmarks || {};
+    document.getElementById('benchmarkCards').innerHTML = Object.entries(benchmarks).map(([cat, b]) => `
+        <div class="bg-dark-900 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">${catEmojis[cat] || '&#128200;'}</span>
+                <span class="font-bold text-white">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+            </div>
+            <div class="space-y-2 text-xs text-gray-400">
+                <div class="flex justify-between"><span>Avg Engagement</span><span class="text-white">${b.avg_engagement_rate}%</span></div>
+                <div class="flex justify-between"><span>Best Frequency</span><span class="text-white">${b.best_posting_frequency} posts/week</span></div>
+                <div class="flex justify-between"><span>Best Content</span><span class="text-white">${b.best_content_type}</span></div>
+                <div class="flex justify-between"><span>Peak Hours</span><span class="text-white">${(b.peak_hours || []).join(', ')}</span></div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-1">
+                ${(b.top_hashtags || []).slice(0, 5).map(h => `<span class="text-xs text-fuchsia-400">#${h}</span>`).join(' ')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function copyHashtags() {
+    const text = studioHashtags.map(h => '#' + h).join(' ');
+    navigator.clipboard.writeText(text);
+    alert('Copied ' + studioHashtags.length + ' hashtags!');
+}
+
 function renderHoursChart(bestHours) {
     const canvas = document.getElementById('hoursChart');
     if (!canvas) return;

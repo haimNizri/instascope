@@ -23,6 +23,7 @@ from models import (
 from analyzer import (
     analyze_authenticity,
     analyze_content_performance,
+    analyze_content_studio,
     analyze_follow_relationship,
     analyze_lurkers,
     analyze_unfollowers,
@@ -617,6 +618,12 @@ def relationships_page(username):
 @can_view_account
 def advisor_page(username):
     return render_template("advisor.html", username=username)
+
+
+@app.route("/studio/<username>")
+@can_view_account
+def studio_page(username):
+    return render_template("studio.html", username=username)
 
 
 # ── API ──────────────────────────────────────────────────────────────────────
@@ -1239,14 +1246,98 @@ def api_advisor_scan():
 @app.get("/api/advisor/<username>")
 @api_can_view_account
 def api_advisor(username):
-    # Try database first (survives Render restarts)
     db_data = db_get_report(username, 'advisor')
     if db_data:
         return jsonify(db_data)
-    # Fall back to local file
     report_path = Path(OUTPUT_DIR) / username / "advisor.json"
     if not report_path.exists():
         return jsonify({"error": "No advisor report found. Run a scan first."}), 404
+    with open(report_path) as f:
+        return jsonify(json.load(f))
+
+
+def run_studio_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=None, session_id=None):
+    """Background worker: analyze content and generate studio recommendations."""
+    tasks[task_id] = {"status": "running", "progress": "Initializing..."}
+    try:
+        tasks[task_id]["progress"] = "Connecting to Instagram..."
+        L = get_loader(ig_user, ig_pass, session_id=session_id)
+
+        tasks[task_id]["progress"] = "Loading profile..."
+        profile_obj = scrape_profile(L, username, OUTPUT_DIR)
+
+        with open(Path(OUTPUT_DIR) / username / "profile.json") as f:
+            profile_data = json.load(f)
+
+        if profile_obj.is_private and not profile_obj.followed_by_viewer:
+            raise Exception("Profile is private and you don't follow them")
+
+        tasks[task_id]["progress"] = f"Fetching posts (up to {post_limit})..."
+        posts_data = scrape_posts(L, profile_obj, OUTPUT_DIR, limit=post_limit, download_media=False)
+
+        tasks[task_id]["progress"] = "Analyzing content categories..."
+        report = analyze_content_studio(profile_data, posts_data)
+        report["username"] = username
+        report["analyzed_at"] = datetime.now().isoformat()
+        report["posts_analyzed"] = len(posts_data)
+
+        # Save
+        report_path = Path(OUTPUT_DIR) / username / "studio.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(report_path, "w") as f:
+            json.dump(report, f, indent=2, default=str)
+
+        # Save to DB
+        try:
+            with app.app_context():
+                db_save_report(username, 'studio', report)
+        except Exception:
+            pass
+
+        tasks[task_id]["status"] = "done"
+        tasks[task_id]["result"] = report
+
+    except Exception as e:
+        tasks[task_id]["status"] = "error"
+        tasks[task_id]["error"] = str(e)
+
+
+@app.post("/api/studio/scan")
+@pro_required("advisor")
+def api_studio_scan():
+    data = request.json or {}
+    username = data.get("username", "").strip().lstrip("@")
+    if not username:
+        return jsonify({"error": "Username required"}), 400
+
+    ok, err = validate_scan_username(username)
+    if not ok:
+        return err
+
+    task_id = str(uuid.uuid4())[:8]
+    post_limit = data.get("post_limit", 50)
+    ig_user = data.get("ig_username") or os.environ.get("IG_USERNAME")
+    ig_pass = data.get("ig_password") or os.environ.get("IG_PASSWORD")
+
+    thread = threading.Thread(
+        target=run_studio_scan,
+        args=(task_id, username, post_limit, ig_user, ig_pass, get_ig_session_id()),
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"task_id": task_id, "username": username})
+
+
+@app.get("/api/studio/<username>")
+@api_can_view_account
+def api_studio(username):
+    db_data = db_get_report(username, 'studio')
+    if db_data:
+        return jsonify(db_data)
+    report_path = Path(OUTPUT_DIR) / username / "studio.json"
+    if not report_path.exists():
+        return jsonify({"error": "No studio report found. Run a scan first."}), 404
     with open(report_path) as f:
         return jsonify(json.load(f))
 
