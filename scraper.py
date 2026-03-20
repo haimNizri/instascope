@@ -310,8 +310,97 @@ def scrape_profile(L, target, output_dir):
     return profile
 
 
+def scrape_posts_fast(session_id, user_id, username, output_dir, limit=50):
+    """Fast posts scrape using Instagram private API."""
+    import re
+    session = _get_ig_session(session_id)
+
+    posts_data = []
+    max_id = None
+    page = 0
+
+    while len(posts_data) < limit:
+        page += 1
+        url = f"https://i.instagram.com/api/v1/feed/user/{user_id}/"
+        params = {"count": min(33, limit - len(posts_data))}
+        if max_id:
+            params["max_id"] = max_id
+
+        resp = session.get(url, params=params, timeout=15)
+        if resp.status_code != 200:
+            print(f"[!] Posts API returned {resp.status_code} on page {page}")
+            break
+
+        data = resp.json()
+        items = data.get("items", [])
+        if not items:
+            break
+
+        for item in items:
+            caption_text = ""
+            caption_obj = item.get("caption")
+            if caption_obj and isinstance(caption_obj, dict):
+                caption_text = caption_obj.get("text", "")
+
+            # Extract hashtags and mentions from caption
+            hashtags = re.findall(r'#(\w+)', caption_text)
+            mentions = re.findall(r'@(\w+)', caption_text)
+
+            # Determine type
+            media_type = item.get("media_type", 1)
+            if media_type == 1:
+                typename = "GraphImage"
+            elif media_type == 2:
+                typename = "GraphVideo"
+            elif media_type == 8:
+                typename = "GraphSidecar"
+            else:
+                typename = f"Type{media_type}"
+
+            post_info = {
+                "shortcode": item.get("code", ""),
+                "url": f"https://www.instagram.com/p/{item.get('code', '')}/",
+                "typename": typename,
+                "caption": caption_text,
+                "hashtags": hashtags,
+                "mentions": mentions,
+                "likes": item.get("like_count", 0),
+                "comments_count": item.get("comment_count", 0),
+                "date": datetime.utcfromtimestamp(item.get("taken_at", 0)).isoformat() if item.get("taken_at") else "",
+                "is_video": media_type == 2,
+                "video_view_count": item.get("view_count") if media_type == 2 else None,
+                "location": item.get("location", {}).get("name") if item.get("location") else None,
+            }
+            posts_data.append(post_info)
+
+        print(f"  [page {page}] fetched {len(items)} posts (total: {len(posts_data)})")
+
+        if not data.get("more_available"):
+            break
+        max_id = data.get("next_max_id")
+        if not max_id:
+            break
+        time.sleep(0.5)
+
+    save_json(posts_data[:limit], f"{output_dir}/{username}/posts.json")
+    print(f"[+] Total posts collected: {len(posts_data[:limit])}")
+    return posts_data[:limit]
+
+
 def scrape_posts(L, profile, output_dir, limit=None, download_media=True):
-    """Scrape posts (images/videos/carousels) with metadata."""
+    """Scrape posts. Uses fast API first, falls back to instaloader."""
+    session_id = load_saved_session_id()
+    if session_id and hasattr(profile, 'userid') and profile.userid:
+        try:
+            return scrape_posts_fast(session_id, profile.userid, profile.username, output_dir, limit=limit or 50)
+        except Exception as e:
+            print(f"[!] Fast posts API failed ({e}), falling back to instaloader...")
+
+    # Fallback: instaloader (needs real profile object with get_posts)
+    if not hasattr(profile, 'get_posts'):
+        print("[!] Cannot scrape posts: no fast API and no instaloader profile")
+        return []
+
     posts_data = []
     for i, post in enumerate(profile.get_posts()):
         if limit and i >= limit:
