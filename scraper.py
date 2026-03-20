@@ -213,9 +213,10 @@ def scrape_profile_fast(session_id, target, output_dir):
 
 
 
-def scrape_profile(L, target, output_dir):
+def scrape_profile(L, target, output_dir, session_id=None):
     """Scrape basic profile information. Uses fast API first, falls back to instaloader."""
-    session_id = load_saved_session_id()
+    if not session_id:
+        session_id = load_saved_session_id()
     if session_id:
         try:
             info = scrape_profile_fast(session_id, target, output_dir)
@@ -334,9 +335,10 @@ def scrape_posts_fast(session_id, user_id, username, output_dir, limit=50):
     return posts_data[:limit]
 
 
-def scrape_posts(L, profile, output_dir, limit=None, download_media=True):
+def scrape_posts(L, profile, output_dir, limit=None, download_media=True, session_id=None):
     """Scrape posts. Uses fast API first, falls back to instaloader."""
-    session_id = load_saved_session_id()
+    if not session_id:
+        session_id = load_saved_session_id()
     if session_id and hasattr(profile, 'userid') and profile.userid:
         try:
             return scrape_posts_fast(session_id, profile.userid, profile.username, output_dir, limit=limit or 50)
@@ -489,10 +491,11 @@ def scrape_followers_fast(session_id, user_id, output_dir, username):
     return followers
 
 
-def scrape_followers(L, profile, output_dir):
+def scrape_followers(L, profile, output_dir, session_id=None):
     """Scrape followers list. Uses fast API if sessionid available, falls back to instaloader."""
     # Try fast API first
-    session_id = load_saved_session_id()
+    if not session_id:
+        session_id = load_saved_session_id()
     if session_id:
         try:
             return scrape_followers_fast(session_id, profile.userid, output_dir, profile.username)
@@ -624,9 +627,10 @@ def scrape_following_fast(session_id, user_id, output_dir, username):
     return following
 
 
-def scrape_following(L, profile, output_dir):
+def scrape_following(L, profile, output_dir, session_id=None):
     """Scrape following list. Uses fast API if sessionid available."""
-    session_id = load_saved_session_id()
+    if not session_id:
+        session_id = load_saved_session_id()
     if session_id:
         try:
             return scrape_following_fast(session_id, profile.userid, output_dir, profile.username)
