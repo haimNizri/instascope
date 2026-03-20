@@ -17,7 +17,7 @@ from functools import wraps
 from config import Config
 from models import (
     db, Account, FollowerSnapshot, FollowEvent,
-    PostData, Report, ScanLog, StoryViewer, User,
+    PlannedPost, PostData, Report, ScanLog, StoryViewer, User,
 )
 
 from analyzer import (
@@ -624,6 +624,12 @@ def advisor_page(username):
 @can_view_account
 def studio_page(username):
     return render_template("studio.html", username=username)
+
+
+@app.route("/planner")
+@login_required
+def planner_page():
+    return render_template("planner.html")
 
 
 # ── API ──────────────────────────────────────────────────────────────────────
@@ -1471,6 +1477,156 @@ def api_me():
         "instagram_username": current_user.instagram_username,
         "trial_used": current_user.trial_used or {},
     })
+
+
+# ── Content Planner API ──────────────────────────────────────────────────────
+
+@app.get("/api/planner/posts")
+@login_required
+def api_planner_list():
+    """List all planned posts for current user."""
+    posts = PlannedPost.query.filter_by(user_id=current_user.id).order_by(PlannedPost.scheduled_at.asc()).all()
+    return jsonify([p.to_dict() for p in posts])
+
+
+@app.post("/api/planner/posts")
+@login_required
+def api_planner_create():
+    """Create a new planned post."""
+    data = request.json or {}
+    post = PlannedPost(
+        user_id=current_user.id,
+        title=data.get("title", ""),
+        caption=data.get("caption", ""),
+        hashtags=data.get("hashtags", ""),
+        media_type=data.get("media_type", "image"),
+        scheduled_at=datetime.fromisoformat(data["scheduled_at"]) if data.get("scheduled_at") else None,
+        status=data.get("status", "draft"),
+        notes=data.get("notes", ""),
+        category=data.get("category", ""),
+    )
+    db.session.add(post)
+    db.session.commit()
+    return jsonify({"ok": True, "post": post.to_dict()})
+
+
+@app.post("/api/planner/posts/<int:post_id>")
+@login_required
+def api_planner_update(post_id):
+    """Update a planned post."""
+    post = PlannedPost.query.filter_by(id=post_id, user_id=current_user.id).first()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+    data = request.json or {}
+    if "title" in data: post.title = data["title"]
+    if "caption" in data: post.caption = data["caption"]
+    if "hashtags" in data: post.hashtags = data["hashtags"]
+    if "media_type" in data: post.media_type = data["media_type"]
+    if "scheduled_at" in data:
+        post.scheduled_at = datetime.fromisoformat(data["scheduled_at"]) if data["scheduled_at"] else None
+    if "status" in data: post.status = data["status"]
+    if "notes" in data: post.notes = data["notes"]
+    if "category" in data: post.category = data["category"]
+    db.session.commit()
+    return jsonify({"ok": True, "post": post.to_dict()})
+
+
+@app.delete("/api/planner/posts/<int:post_id>")
+@login_required
+def api_planner_delete(post_id):
+    """Delete a planned post."""
+    post = PlannedPost.query.filter_by(id=post_id, user_id=current_user.id).first()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+    db.session.delete(post)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.post("/api/planner/generate-caption")
+@login_required
+def api_generate_caption():
+    """Generate caption suggestions based on category and description."""
+    data = request.json or {}
+    description = data.get("description", "")
+    category = data.get("category", "lifestyle")
+    media_type = data.get("media_type", "image")
+
+    # Rule-based caption generation (no AI API needed)
+    templates = {
+        "beauty": [
+            f"Glow up loading... ✨ {description}\n\nDrop a 💖 if you love this look!",
+            f"New look, who dis? 💄 {description}\n\nSave this for your next inspo!",
+            f"Beauty is about being comfortable in your own skin 🌸\n\n{description}",
+        ],
+        "fitness": [
+            f"No excuses, just results 💪\n\n{description}\n\nTag your gym buddy!",
+            f"The only bad workout is the one that didn't happen 🔥\n\n{description}",
+            f"Progress, not perfection 📈\n\n{description}\n\nWhat's your goal?",
+        ],
+        "food": [
+            f"Eat well, feel well 🍽️\n\n{description}\n\nWould you try this? 👇",
+            f"Made with love (and a little extra garlic) 🧄❤️\n\n{description}",
+            f"Food is my love language 😋\n\n{description}\n\nSave for later!",
+        ],
+        "travel": [
+            f"Take me back ✈️\n\n{description}\n\nWhere's your dream destination?",
+            f"Not all who wander are lost 🌍\n\n{description}",
+            f"Collecting moments, not things 📸\n\n{description}\n\nSave this spot!",
+        ],
+        "fashion": [
+            f"Outfit of the day ✨\n\n{description}\n\nYay or nay? 👗",
+            f"Style is a way to say who you are without speaking 💫\n\n{description}",
+            f"Dress like you're already famous 👑\n\n{description}\n\nWhat would you pair with this?",
+        ],
+        "lifestyle": [
+            f"Living my best life ☀️\n\n{description}\n\nDouble tap if you agree!",
+            f"It's the little things ✨\n\n{description}",
+            f"Just another day in paradise 🌿\n\n{description}\n\nWhat does your ideal day look like?",
+        ],
+        "tech": [
+            f"The future is now 🚀\n\n{description}\n\nThoughts? 👇",
+            f"Tech that changes everything 💡\n\n{description}",
+            f"Innovation at its finest 🔧\n\n{description}\n\nSave for reference!",
+        ],
+        "art": [
+            f"Art speaks where words fail 🎨\n\n{description}\n\nWhat do you see?",
+            f"Every canvas is a journey ✨\n\n{description}",
+            f"Creating is my therapy 🖌️\n\n{description}\n\nWould you hang this on your wall?",
+        ],
+        "music": [
+            f"Feel the rhythm 🎵\n\n{description}\n\nTag someone who needs to hear this!",
+            f"Music is the soundtrack of life 🎤\n\n{description}",
+            f"Lost in the melody 🎶\n\n{description}\n\nWhat's on your playlist?",
+        ],
+        "business": [
+            f"Hustle in silence, let success make the noise 📊\n\n{description}",
+            f"Building something great 🏗️\n\n{description}\n\nWhat's your next big move?",
+            f"Success is a journey, not a destination 🎯\n\n{description}",
+        ],
+        "gaming": [
+            f"Game on! 🎮\n\n{description}\n\nDrop your gamertag below!",
+            f"One more game... said no gamer ever 😂\n\n{description}",
+            f"Level up 🕹️\n\n{description}\n\nWhat are you playing right now?",
+        ],
+        "education": [
+            f"Knowledge is power 📚\n\n{description}\n\nSave this for later!",
+            f"Learn something new every day 💡\n\n{description}",
+            f"Did you know? 🤔\n\n{description}\n\nShare with someone who needs this!",
+        ],
+    }
+
+    captions = templates.get(category, templates["lifestyle"])
+
+    # Add media-type specific hooks
+    if media_type == "reel":
+        captions = [c + "\n\n🎬 Watch till the end!" for c in captions]
+    elif media_type == "story":
+        captions = [c + "\n\n📲 Swipe up for more!" for c in captions]
+    elif media_type == "carousel":
+        captions = [c + "\n\n👉 Swipe for more!" for c in captions]
+
+    return jsonify({"captions": captions})
 
 
 if __name__ == "__main__":

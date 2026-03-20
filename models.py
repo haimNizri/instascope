@@ -123,6 +123,42 @@ class User(UserMixin, db.Model):
         }
 
 
+class PlannedPost(db.Model):
+    """Scheduled/planned Instagram post."""
+    __tablename__ = "planned_posts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    title = db.Column(db.String(256))
+    caption = db.Column(db.Text)
+    hashtags = db.Column(db.Text)  # space-separated hashtags
+    media_type = db.Column(db.String(16), default="image")  # image, video, carousel, reel, story
+    media_url = db.Column(db.Text)  # uploaded image URL or path
+    scheduled_at = db.Column(db.DateTime)
+    status = db.Column(db.String(16), default="draft")  # draft, scheduled, published, skipped
+    notes = db.Column(db.Text)
+    category = db.Column(db.String(32))  # content category
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("planned_posts", lazy="dynamic"))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "caption": self.caption,
+            "hashtags": self.hashtags,
+            "media_type": self.media_type,
+            "media_url": self.media_url,
+            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "status": self.status,
+            "notes": self.notes,
+            "category": self.category,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class Account(db.Model):
     """Instagram account being tracked."""
     __tablename__ = "accounts"

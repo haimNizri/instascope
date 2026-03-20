@@ -41,12 +41,14 @@
                     <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                     <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
                     <a href="#" onclick="promptNav('studio')" class="text-sm text-gray-400 hover:text-white transition">Studio</a>
+                    <a href="/planner" class="text-sm text-gray-400 hover:text-white transition">Planner</a>
                     {% else %}
                     <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Relationships</a>
                     <a href="/unfollowers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Unfollowers</a>
                     <a href="/lurkers/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Lurkers</a>
                     <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Advisor</a>
                     <a href="/studio/{{ current_user.instagram_username }}" class="text-sm text-gray-400 hover:text-white transition">Studio</a>
+                    <a href="/planner" class="text-sm text-gray-400 hover:text-white transition">Planner</a>
                     {% endif %}
                 {% endif %}
                 {% if current_user.is_authenticated and not current_user.is_pro %}
