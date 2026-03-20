@@ -589,8 +589,9 @@ def admin_delete_user(user_id):
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
-@login_required
 def index():
+    if not current_user.is_authenticated:
+        return render_template("landing.html")
     return render_template("index.html")
 
 
