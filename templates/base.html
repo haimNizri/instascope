@@ -6,6 +6,7 @@
     <title>{% block title %}InstaScope{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -29,7 +30,7 @@
     <nav class="border-b border-gray-800 bg-dark-900/80 backdrop-blur-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 text-xl font-bold">
-                <span class="text-2xl">🔍</span>
+                <i data-lucide="scan-search" class="w-6 h-6 text-accent-400"></i>
                 <span class="bg-gradient-to-r from-accent-400 to-pink-400 bg-clip-text text-transparent">InstaScope</span>
             </a>
             <div class="flex items-center gap-4">
@@ -103,5 +104,6 @@
 
     </script>
     {% block scripts %}{% endblock %}
+    <script>lucide.createIcons();</script>
 </body>
 </html>
