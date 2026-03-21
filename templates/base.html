@@ -25,12 +25,6 @@
     </script>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        .gradient-text {
-            background: linear-gradient(135deg, #7C5CFC 0%, #2DD4A8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
     </style>
 </head>
 <body class="bg-surface-50 text-gray-900 font-sans min-h-screen antialiased">
@@ -39,7 +33,7 @@
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 text-xl font-bold">
                 <i data-lucide="scan-search" class="w-6 h-6 text-purple-500"></i>
-                <span class="gradient-text">IGAI</span>
+                <span class="text-gray-900 font-extrabold">IGAI</span>
             </a>
             <div class="flex items-center gap-4">
                 <a href="/" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Home</a>
@@ -72,8 +66,8 @@
                 {% endif %}
                 <span id="sessionStatus" class="text-xs px-2 py-1 rounded-full"></span>
                 {% if current_user.is_authenticated %}
-                <span class="text-xs text-gray-400 font-medium">{{ current_user.display_name or current_user.email }}</span>
-                <a href="/logout" class="text-xs text-gray-400 hover:text-gray-900 transition font-medium">Logout</a>
+                <span class="text-xs text-gray-500 font-medium">{{ current_user.display_name or current_user.email }}</span>
+                <a href="/logout" class="text-xs text-gray-500 hover:text-gray-900 transition font-medium">Logout</a>
                 {% endif %}
             </div>
         </div>
@@ -83,7 +77,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-surface-200 mt-16 py-6 text-center text-gray-400 text-sm font-medium bg-white">
+    <footer class="border-t border-surface-200 mt-16 py-6 text-center text-gray-500 text-sm font-medium bg-white">
         IGAI — Instagram Profile Analyzer
     </footer>
 

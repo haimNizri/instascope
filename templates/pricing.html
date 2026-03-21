@@ -4,7 +4,7 @@
 {% block content %}
 <div class="max-w-5xl mx-auto py-8">
     <div class="text-center mb-12">
-        <h1 class="text-4xl font-extrabold mb-3 gradient-text">
+        <h1 class="text-4xl font-extrabold mb-3 text-gray-900">
             Choose Your Plan
         </h1>
         <p class="text-gray-500 text-lg">Unlock the full power of IGAI</p>
@@ -13,19 +13,19 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Free -->
         <div class="bg-white rounded-2xl p-7 border border-gray-200 shadow-sm">
-            <div class="text-sm text-gray-400 uppercase font-semibold mb-2">Free</div>
+            <div class="text-sm text-gray-500 uppercase font-semibold mb-2">Free</div>
             <div class="text-4xl font-bold text-gray-900 mb-1">$0</div>
             <div class="text-gray-500 text-sm mb-6">Get started</div>
             <ul class="space-y-3 text-sm mb-8">
                 <li class="flex gap-2 text-gray-600"><span class="text-green-500">&#10003;</span> Follow Relationships (view only)</li>
                 <li class="flex gap-2 text-gray-600"><span class="text-green-500">&#10003;</span> Unfollower Tracker (one scan)</li>
                 <li class="flex gap-2 text-gray-600"><span class="text-green-500">&#10003;</span> 3 AI generations (taste)</li>
-                <li class="flex gap-2 text-gray-400"><span class="text-gray-300">&#10007;</span> Gender & demographic analysis</li>
-                <li class="flex gap-2 text-gray-400"><span class="text-gray-300">&#10007;</span> Ghost followers & lurkers</li>
-                <li class="flex gap-2 text-gray-400"><span class="text-gray-300">&#10007;</span> Content Studio & Advisor</li>
-                <li class="flex gap-2 text-gray-400"><span class="text-gray-300">&#10007;</span> Automatic daily scans</li>
+                <li class="flex gap-2 text-gray-500"><span class="text-gray-400">&#10007;</span> Gender & demographic analysis</li>
+                <li class="flex gap-2 text-gray-500"><span class="text-gray-400">&#10007;</span> Ghost followers & lurkers</li>
+                <li class="flex gap-2 text-gray-500"><span class="text-gray-400">&#10007;</span> Content Studio & Advisor</li>
+                <li class="flex gap-2 text-gray-500"><span class="text-gray-400">&#10007;</span> Automatic daily scans</li>
             </ul>
-            <div class="text-center text-gray-400 text-sm">Current plan</div>
+            <div class="text-center text-gray-500 text-sm">Current plan</div>
         </div>
 
         <!-- Pro -->
@@ -34,7 +34,7 @@
                 POPULAR
             </div>
             <div class="text-sm text-purple-500 uppercase font-semibold mb-2">Pro</div>
-            <div class="text-4xl font-bold text-gray-900 mb-1">$6<span class="text-lg text-gray-400 font-normal">/mo</span></div>
+            <div class="text-4xl font-bold text-gray-900 mb-1">$6<span class="text-lg text-gray-500 font-normal">/mo</span></div>
             <div class="text-gray-500 text-sm mb-6">For active users</div>
             <ul class="space-y-3 text-sm mb-8">
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> <strong>Unlimited</strong> scans & tracking</li>
@@ -58,7 +58,7 @@
                 BEST VALUE
             </div>
             <div class="text-sm text-fuchsia-500 uppercase font-semibold mb-2">Creator</div>
-            <div class="text-4xl font-bold text-gray-900 mb-1">$12<span class="text-lg text-gray-400 font-normal">/mo</span></div>
+            <div class="text-4xl font-bold text-gray-900 mb-1">$12<span class="text-lg text-gray-500 font-normal">/mo</span></div>
             <div class="text-gray-500 text-sm mb-6">For content creators</div>
             <ul class="space-y-3 text-sm mb-8">
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Everything in Pro</li>
@@ -81,8 +81,8 @@
     {% if current_user.is_authenticated %}
     <div class="mt-8 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm max-w-md mx-auto text-center">
         <div class="text-sm text-gray-500 mb-2">Your AI Usage This Month</div>
-        <div class="text-3xl font-bold text-gray-900">{{ current_user.ai_remaining }} <span class="text-lg text-gray-400">/ {{ current_user.ai_limit }}</span></div>
-        <div class="text-xs text-gray-400 mt-1">generations remaining</div>
+        <div class="text-3xl font-bold text-gray-900">{{ current_user.ai_remaining }} <span class="text-lg text-gray-500">/ {{ current_user.ai_limit }}</span></div>
+        <div class="text-xs text-gray-500 mt-1">generations remaining</div>
     </div>
     {% endif %}
 </div>
