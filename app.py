@@ -1086,9 +1086,54 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session
         report["username"] = username
         report["analyzed_at"] = datetime.now().isoformat()
 
-        # Add demographics analysis
-        tasks[task_id]["progress"] = "Analyzing demographics..."
-        report["demographics"] = analyze_follower_demographics(followers)
+        # Add demographics analysis — use AI if available, fall back to basic
+        tasks[task_id]["progress"] = "Analyzing demographics with AI..."
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if api_key and len(followers) > 0:
+            try:
+                import anthropic
+                # Prepare follower names for AI analysis (batch them)
+                names_sample = [{"username": f["username"], "full_name": f.get("full_name", "")} for f in followers[:300]]
+
+                client = anthropic.Anthropic(api_key=api_key)
+                message = client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=2048,
+                    messages=[{"role": "user", "content": f"""Analyze these Instagram followers and estimate their demographics. For each person, determine the most likely country/region and language based on their username and full_name.
+
+Followers ({len(names_sample)} people):
+{json.dumps(names_sample, ensure_ascii=False)}
+
+Return ONLY valid JSON with this exact structure:
+{{
+    "language_distribution": {{"Hebrew": {{"count": N, "percentage": N.N}}, "Italian": {{"count": N, "percentage": N.N}}, "English": {{"count": N, "percentage": N.N}}, "Greek": {{"count": N, "percentage": N.N}}, "Arabic": {{"count": N, "percentage": N.N}}, "Turkish": {{"count": N, "percentage": N.N}}, "Spanish": {{"count": N, "percentage": N.N}}, "French": {{"count": N, "percentage": N.N}}, "Russian": {{"count": N, "percentage": N.N}}, "Portuguese": {{"count": N, "percentage": N.N}}, "Other": {{"count": N, "percentage": N.N}}}},
+    "country_distribution": {{"Israel": N, "Italy": N, "UK": N, "USA": N, "Greece": N, "Turkey": N, "Brazil": N, "Spain": N, "France": N, "Germany": N, "Russia": N, "Other": N}},
+    "region_distribution": {{"Middle East": {{"count": N, "percentage": N.N}}, "Europe": {{"count": N, "percentage": N.N}}, "North America": {{"count": N, "percentage": N.N}}, "Latin America": {{"count": N, "percentage": N.N}}, "Asia Pacific": {{"count": N, "percentage": N.N}}, "Other/Unknown": {{"count": N, "percentage": N.N}}}},
+    "gender_distribution": {{"female": {{"count": N, "percentage": N.N}}, "male": {{"count": N, "percentage": N.N}}, "unknown": {{"count": N, "percentage": N.N}}}},
+    "total_analyzed": {len(names_sample)},
+    "detection_rate": N.N
+}}
+
+Be thorough — detect Hebrew names (both in Hebrew script like נטע and transliterated like Neta), Italian names (Marco, Giulia, Alessandro), Greek names (Nikos, Eleni, Dimitris), Arabic names, Turkish names, etc. Analyze EVERY name. For usernames with no recognizable name pattern, classify as "Other/Unknown".
+Only include languages/countries with count > 0. Percentages should sum to ~100%."""}],
+                )
+
+                import re
+                resp_text = message.content[0].text.strip()
+                json_match = re.search(r'\{[\s\S]*\}', resp_text)
+                if json_match:
+                    ai_demographics = json.loads(json_match.group())
+                    # Rename country_distribution to country_hints for frontend compatibility
+                    ai_demographics["country_hints"] = ai_demographics.pop("country_distribution", {})
+                    report["demographics"] = ai_demographics
+                    print(f"[+] AI demographics analysis complete")
+                else:
+                    report["demographics"] = analyze_follower_demographics(followers)
+            except Exception as e:
+                print(f"[!] AI demographics failed ({e}), using basic analysis")
+                report["demographics"] = analyze_follower_demographics(followers)
+        else:
+            report["demographics"] = analyze_follower_demographics(followers)
 
         # Save report
         report_path = Path(OUTPUT_DIR) / username / "relationships.json"
