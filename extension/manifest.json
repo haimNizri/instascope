@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "InstaScope Connect",
+  "name": "IGAI Connect",
   "version": "1.0",
-  "description": "Connect your Instagram account to InstaScope with one click",
+  "description": "Connect your Instagram account to IGAI with one click",
   "permissions": ["cookies", "activeTab", "storage"],
   "host_permissions": [
     "https://www.instagram.com/*",
-    "https://instascope-824d.onrender.com/*"
+    "https://igai.app/*"
   ],
   "action": {
     "default_popup": "popup.html",

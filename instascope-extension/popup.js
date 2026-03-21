@@ -1,4 +1,4 @@
-const API_BASE = "https://instascope-824d.onrender.com";
+const API_BASE = "https://igai.app";
 let igUser = "";
 
 // ── Status helpers ─────────────────────────────────────────────────────────

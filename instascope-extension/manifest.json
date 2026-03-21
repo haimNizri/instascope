@@ -6,7 +6,7 @@
   "permissions": ["cookies", "activeTab", "storage"],
   "host_permissions": [
     "https://www.instagram.com/*",
-    "https://instascope-824d.onrender.com/*"
+    "https://igai.app/*"
   ],
   "action": {
     "default_popup": "popup.html",

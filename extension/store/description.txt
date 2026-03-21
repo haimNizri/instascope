@@ -1,6 +1,6 @@
-InstaScope Connect — Instagram Analytics & Insights
+IGAI Connect — Instagram Analytics & Insights
 
-Connect your Instagram account to InstaScope with one click. Get powerful analytics, track unfollowers, discover ghost followers, and optimize your content strategy.
+Connect your Instagram account to IGAI with one click. Get powerful analytics, track unfollowers, discover ghost followers, and optimize your content strategy.
 
 FEATURES:
 
@@ -22,7 +22,7 @@ Track non-followers who view your stories regularly.
 HOW IT WORKS:
 
 1. Install the extension
-2. Create an account at InstaScope
+2. Create an account at IGAI
 3. Go to instagram.com
 4. Click the extension icon → "Connect Instagram"
 5. That's it! Your analytics dashboard is ready.
@@ -45,5 +45,5 @@ PRO PLAN ($6/month):
 • Automatic daily scans
 • Full analytics history
 
-Website: https://instascope-824d.onrender.com
+Website: https://igai.app
 Support: haim1221@gmail.com
