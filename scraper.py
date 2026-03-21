@@ -251,7 +251,7 @@ def scrape_profile(L, target, output_dir, session_id=None):
     """Scrape basic profile information. Uses fast API first, falls back to instaloader."""
     if not session_id:
         session_id = load_saved_session_id()
-    print(f"[*] scrape_profile called: target={target}, session_id={'SET' if session_id else 'NONE'}")
+    print(f"[*] scrape_profile called: target={target}, session_id={'SET('+str(len(session_id))+' chars)' if session_id else 'NONE'}, proxy={'SET' if os.environ.get('PROXY_URL') else 'NONE'}")
     if session_id:
         try:
             info = scrape_profile_fast(session_id, target, output_dir)
