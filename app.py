@@ -1906,6 +1906,19 @@ def api_generate_caption():
     return jsonify({"captions": captions})
 
 
+@app.get("/api/debug/env")
+@login_required
+@admin_required
+def api_debug_env():
+    """Debug: check env vars (admin only)."""
+    return jsonify({
+        "PROXY_URL": "set" if os.environ.get("PROXY_URL") else "NOT SET",
+        "ANTHROPIC_API_KEY": "set" if os.environ.get("ANTHROPIC_API_KEY") else "NOT SET",
+        "LEMONSQUEEZY_CHECKOUT_URL": "set" if os.environ.get("LEMONSQUEEZY_CHECKOUT_URL") else "NOT SET",
+        "DATABASE_URL": "set" if os.environ.get("DATABASE_URL") else "NOT SET",
+    })
+
+
 if __name__ == "__main__":
     Path(OUTPUT_DIR).mkdir(exist_ok=True)
     print("\n  InstaScope running at http://localhost:8080\n")
