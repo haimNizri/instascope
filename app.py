@@ -1892,6 +1892,40 @@ def api_generate_caption():
     return jsonify({"captions": captions})
 
 
+@app.get("/api/debug/test-ig")
+@login_required
+@admin_required
+def api_debug_test_ig():
+    """Debug: test Instagram API from Render."""
+    import requests as _req
+    sid = get_ig_session_id()
+    proxy = os.environ.get("PROXY_URL")
+
+    results = {"session_id_length": len(sid) if sid else 0, "proxy_set": bool(proxy)}
+
+    if not sid:
+        results["error"] = "No session_id"
+        return jsonify(results)
+
+    s = _req.Session()
+    s.cookies.set("sessionid", sid, domain=".instagram.com")
+    s.headers.update({
+        "x-ig-app-id": "567067343352427",
+        "User-Agent": "Instagram 317.0.0.0.62 Android",
+    })
+    if proxy:
+        s.proxies = {"http": proxy, "https": proxy}
+
+    try:
+        r = s.get("https://i.instagram.com/api/v1/users/search/", params={"q": "goose_furnitures", "count": 5}, timeout=15)
+        results["search_status"] = r.status_code
+        results["search_body"] = r.text[:500]
+    except Exception as e:
+        results["search_error"] = f"{type(e).__name__}: {e}"
+
+    return jsonify(results)
+
+
 @app.get("/api/debug/env")
 @login_required
 @admin_required
