@@ -174,11 +174,13 @@ def scrape_profile_fast(session_id, target, output_dir):
     session = _get_ig_session(session_id)
 
     # Use search + info API (works reliably through proxies)
+    proxy_status = "with proxy" if os.environ.get("PROXY_URL") else "no proxy"
+    print(f"[*] Fast profile: searching for {target} ({proxy_status})")
     try:
         resp = session.get(
             "https://i.instagram.com/api/v1/users/search/",
             params={"q": target, "count": 1},
-            timeout=10,
+            timeout=30,
         )
         if resp.status_code == 200:
             users = resp.json().get("users", [])
@@ -186,9 +188,10 @@ def scrape_profile_fast(session_id, target, output_dir):
                 u = users[0]
                 user_id = u["pk"]
                 # Get full profile
+                print(f"[*] Fast profile: found user_id={user_id}, fetching info...")
                 resp2 = session.get(
                     f"https://i.instagram.com/api/v1/users/{user_id}/info/",
-                    timeout=10,
+                    timeout=30,
                 )
                 if resp2.status_code == 200:
                     u2 = resp2.json().get("user", {})
@@ -211,9 +214,8 @@ def scrape_profile_fast(session_id, target, output_dir):
                     print(f"[+] Fast profile scraped (v2): {target} ({info['followers']} followers)")
                     return info
     except Exception as e:
-        print(f"[!] Search/info API failed: {e}")
-
-    raise Exception(f"Could not fetch profile for {target} — Instagram may be blocking this server's IP")
+        print(f"[!] Search/info API failed: {type(e).__name__}: {e}")
+        raise Exception(f"Could not fetch profile for {target}: {type(e).__name__}: {e}")
 
 
 
