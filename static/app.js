@@ -1617,9 +1617,10 @@ function renderDemographics(demo) {
         </div>
     `).join('') || '<p class="text-gray-600 text-sm">Not enough data</p>';
 
-    // Country hints
+    // Country distribution — pie chart + percentage list
     const countries = demo.country_hints || {};
-    const countryEntries = Object.entries(countries).sort((a, b) => b[1] - a[1]);
+    const countryEntries = Object.entries(countries).filter(([k, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+    const countryTotal = countryEntries.reduce((sum, [, v]) => sum + v, 0);
     const countryFlags = {
         'Israel': '&#127470;&#127473;', 'Brazil': '&#127463;&#127479;', 'Turkey': '&#127481;&#127479;',
         'India': '&#127470;&#127475;', 'USA': '&#127482;&#127480;', 'UK': '&#127468;&#127463;',
@@ -1630,16 +1631,49 @@ function renderDemographics(demo) {
         'Canada': '&#127464;&#127462;', 'Australia': '&#127462;&#127482;', 'Netherlands': '&#127475;&#127473;',
         'Poland': '&#127477;&#127473;', 'UAE': '&#127462;&#127466;', 'Saudi Arabia': '&#127480;&#127462;',
         'Iran': '&#127470;&#127479;', 'Egypt': '&#127466;&#127468;', 'Chile': '&#127464;&#127473;',
+        'Greece': '&#127468;&#127479;', 'Romania': '&#127479;&#127476;', 'Sweden': '&#127480;&#127466;',
+        'Portugal': '&#127477;&#127481;', 'Thailand': '&#127481;&#127469;', 'Other': '&#127760;',
     };
+    const countryColors = ['#f97316', '#3b82f6', '#22c55e', '#8b5cf6', '#ec4899', '#eab308', '#14b8a6', '#ef4444', '#06b6d4', '#a855f7', '#f43f5e', '#84cc16', '#6b7280'];
 
+    // Pie chart
+    if (countryEntries.length && document.getElementById('countryChart')) {
+        const topCountries = countryEntries.slice(0, 10);
+        const otherCount = countryEntries.slice(10).reduce((s, [, v]) => s + v, 0);
+        const chartLabels = topCountries.map(([c]) => c);
+        const chartData = topCountries.map(([, v]) => v);
+        if (otherCount > 0) { chartLabels.push('Other'); chartData.push(otherCount); }
+
+        destroyChart('countryChart');
+        new Chart(document.getElementById('countryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{ data: chartData, backgroundColor: countryColors.slice(0, chartLabels.length), borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '50%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + ' (' + (ctx.parsed / countryTotal * 100).toFixed(1) + '%)' } },
+                },
+            }
+        });
+    }
+
+    // Country percentage list
     document.getElementById('countryList').innerHTML = countryEntries.length
-        ? countryEntries.map(([country, count]) => `
-            <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-300">${countryFlags[country] || ''} ${country}</span>
-                <span class="text-gray-500">${count}</span>
-            </div>
-        `).join('')
-        : '<p class="text-gray-600 text-sm">No country patterns detected in usernames</p>';
+        ? countryEntries.slice(0, 12).map(([country, count], i) => {
+            const pct = countryTotal > 0 ? (count / countryTotal * 100).toFixed(1) : 0;
+            return `
+            <div class="flex items-center gap-2 text-sm mb-2">
+                <div class="w-2 h-2 rounded-full flex-shrink-0" style="background: ${countryColors[i] || '#6b7280'}"></div>
+                <span class="text-gray-300 flex-1">${countryFlags[country] || '&#127760;'} ${country}</span>
+                <span class="text-white font-semibold">${pct}%</span>
+                <span class="text-gray-600 text-xs">(${count})</span>
+            </div>`;
+        }).join('')
+        : '<p class="text-gray-600 text-sm">No country data available</p>';
 }
 
 function filterNfb(gender) {
