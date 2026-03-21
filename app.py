@@ -1062,7 +1062,7 @@ def api_lurkers(username):
         return jsonify(json.load(f))
 
 
-def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session_id=None):
+def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session_id=None, user_is_pro=False):
     """Background worker: scrape followers + following, compare relationships."""
     tasks[task_id] = {"status": "running", "progress": "Initializing..."}
     try:
@@ -1086,10 +1086,10 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session
         report["username"] = username
         report["analyzed_at"] = datetime.now().isoformat()
 
-        # Add demographics analysis — use AI if available, fall back to basic
-        tasks[task_id]["progress"] = "Analyzing demographics with AI..."
+        # Add demographics analysis — Pro/Creator get AI, Free gets basic
+        tasks[task_id]["progress"] = "Analyzing demographics..."
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        if api_key and len(followers) > 0:
+        if api_key and len(followers) > 0 and user_is_pro:
             try:
                 import anthropic
                 # Prepare follower names for AI analysis (batch them)
@@ -1187,7 +1187,7 @@ def api_relationship_scan():
 
     thread = threading.Thread(
         target=run_relationship_scan,
-        args=(task_id, username, ig_user, ig_pass, get_ig_session_id()),
+        args=(task_id, username, ig_user, ig_pass, get_ig_session_id(), current_user.is_pro),
         daemon=True,
     )
     thread.start()
