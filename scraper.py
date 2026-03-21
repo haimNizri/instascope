@@ -179,43 +179,70 @@ def scrape_profile_fast(session_id, target, output_dir):
     try:
         resp = session.get(
             "https://i.instagram.com/api/v1/users/search/",
-            params={"q": target, "count": 1},
+            params={"q": target, "count": 5},
             timeout=30,
         )
+        print(f"[*] Search response: {resp.status_code}")
         if resp.status_code == 200:
-            users = resp.json().get("users", [])
-            if users and users[0].get("username", "").lower() == target.lower():
-                u = users[0]
-                user_id = u["pk"]
-                # Get full profile
+            data = resp.json()
+            users = data.get("users", [])
+            print(f"[*] Search returned {len(users)} users")
+
+            # Find matching user (case insensitive)
+            matched_user = None
+            for u in users:
+                if u.get("username", "").lower() == target.lower():
+                    matched_user = u
+                    break
+
+            if not matched_user and users:
+                # Take first result if close match
+                print(f"[*] No exact match, first result: {users[0].get('username')}")
+                matched_user = users[0]
+
+            if matched_user:
+                user_id = matched_user.get("pk") or matched_user.get("id")
                 print(f"[*] Fast profile: found user_id={user_id}, fetching info...")
+
                 resp2 = session.get(
                     f"https://i.instagram.com/api/v1/users/{user_id}/info/",
                     timeout=30,
                 )
+                print(f"[*] Info response: {resp2.status_code}")
                 if resp2.status_code == 200:
                     u2 = resp2.json().get("user", {})
-                    info = {
-                        "username": u2.get("username", target),
-                        "full_name": u2.get("full_name", ""),
-                        "biography": u2.get("biography", ""),
-                        "external_url": u2.get("external_url", ""),
-                        "followers": u2.get("follower_count", 0),
-                        "following": u2.get("following_count", 0),
-                        "posts_count": u2.get("media_count", 0),
-                        "is_private": u2.get("is_private", False),
-                        "is_verified": u2.get("is_verified", False),
-                        "profile_pic_url": u2.get("hd_profile_pic_url_info", {}).get("url", u2.get("profile_pic_url", "")),
-                        "business_category": u2.get("category", ""),
-                        "user_id": str(user_id),
-                        "scraped_at": datetime.now().isoformat(),
-                    }
-                    save_json(info, f"{output_dir}/{target}/profile.json")
-                    print(f"[+] Fast profile scraped (v2): {target} ({info['followers']} followers)")
-                    return info
+                    if u2:
+                        pic_info = u2.get("hd_profile_pic_url_info") or {}
+                        info = {
+                            "username": u2.get("username", target),
+                            "full_name": u2.get("full_name", ""),
+                            "biography": u2.get("biography", ""),
+                            "external_url": u2.get("external_url", ""),
+                            "followers": u2.get("follower_count", 0),
+                            "following": u2.get("following_count", 0),
+                            "posts_count": u2.get("media_count", 0),
+                            "is_private": u2.get("is_private", False),
+                            "is_verified": u2.get("is_verified", False),
+                            "profile_pic_url": pic_info.get("url", u2.get("profile_pic_url", "")),
+                            "business_category": u2.get("category", ""),
+                            "user_id": str(user_id),
+                            "scraped_at": datetime.now().isoformat(),
+                        }
+                        save_json(info, f"{output_dir}/{target}/profile.json")
+                        print(f"[+] Fast profile scraped: {target} ({info['followers']} followers)")
+                        return info
+                    else:
+                        print(f"[!] Info response had no 'user' key")
+                else:
+                    print(f"[!] Info API returned {resp2.status_code}: {resp2.text[:200]}")
+            else:
+                print(f"[!] No users found in search results")
+        else:
+            print(f"[!] Search API returned {resp.status_code}: {resp.text[:200]}")
     except Exception as e:
-        print(f"[!] Search/info API failed: {type(e).__name__}: {e}")
-        raise Exception(f"Could not fetch profile for {target}: {type(e).__name__}: {e}")
+        print(f"[!] Fast profile exception: {type(e).__name__}: {e}")
+
+    raise Exception(f"Could not fetch profile for {target} via fast API")
 
 
 
