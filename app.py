@@ -519,6 +519,24 @@ def connect_page():
     return render_template("connect.html")
 
 
+@app.route("/robots.txt")
+def robots():
+    return "User-agent: *\nAllow: /\nSitemap: https://instascope-824d.onrender.com/sitemap.xml", 200, {"Content-Type": "text/plain"}
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url><loc>https://instascope-824d.onrender.com/</loc><priority>1.0</priority></url>
+    <url><loc>https://instascope-824d.onrender.com/login</loc><priority>0.8</priority></url>
+    <url><loc>https://instascope-824d.onrender.com/register</loc><priority>0.8</priority></url>
+    <url><loc>https://instascope-824d.onrender.com/pricing</loc><priority>0.9</priority></url>
+    <url><loc>https://instascope-824d.onrender.com/privacy</loc><priority>0.3</priority></url>
+</urlset>"""
+    return xml, 200, {"Content-Type": "application/xml"}
+
+
 @app.route("/privacy")
 def privacy_page():
     return render_template("privacy.html")
