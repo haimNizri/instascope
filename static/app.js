@@ -193,7 +193,9 @@ function loadHistory() {
 
 // ── Polling ─────────────────────────────────────────────────────────────────
 
-function pollStatus(taskId) {
+function pollStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 40) { showError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -202,9 +204,9 @@ function pollStatus(taskId) {
             document.getElementById('progressText').textContent = data.progress || 'Working...';
             if (data.status === 'done') renderDashboard(data.result);
             else if (data.status === 'error') showError(data.error);
-            else setTimeout(() => pollStatus(taskId), 1500);
+            else setTimeout(() => pollStatus(taskId, _count + 1), 1500);
         })
-        .catch(() => setTimeout(() => pollStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollStatus(taskId, _count + 1), 3000));
 }
 
 function loadReport(username) {
@@ -220,7 +222,15 @@ function loadReport(username) {
 function showError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
 }
 
 // ── Dashboard Renderer ──────────────────────────────────────────────────────
@@ -643,7 +653,9 @@ function startScan() {
         });
 }
 
-function pollUnfollowerStatus(taskId) {
+function pollUnfollowerStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 30) { showUnfollowerError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -653,9 +665,9 @@ function pollUnfollowerStatus(taskId) {
             if (progress) progress.textContent = data.progress || 'Working...';
             if (data.status === 'done') renderUnfollowerDashboard(data.result);
             else if (data.status === 'error') showUnfollowerError(data.error);
-            else setTimeout(() => pollUnfollowerStatus(taskId), 2000);
+            else setTimeout(() => pollUnfollowerStatus(taskId, _count + 1), 2000);
         })
-        .catch(() => setTimeout(() => pollUnfollowerStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollUnfollowerStatus(taskId, _count + 1), 3000));
 }
 
 function loadUnfollowerReport(username) {
@@ -679,7 +691,15 @@ function loadUnfollowerReport(username) {
 function showUnfollowerError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Scan Followers Now'; }
 }
@@ -1038,7 +1058,9 @@ function startLurkerScan() {
         });
 }
 
-function pollLurkerStatus(taskId) {
+function pollLurkerStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 30) { showLurkerError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -1048,9 +1070,9 @@ function pollLurkerStatus(taskId) {
             if (progress) progress.textContent = data.progress || 'Working...';
             if (data.status === 'done') renderLurkerDashboard(data.result);
             else if (data.status === 'error') showLurkerError(data.error);
-            else setTimeout(() => pollLurkerStatus(taskId), 2000);
+            else setTimeout(() => pollLurkerStatus(taskId, _count + 1), 2000);
         })
-        .catch(() => setTimeout(() => pollLurkerStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollLurkerStatus(taskId, _count + 1), 3000));
 }
 
 function loadLurkerReport(username) {
@@ -1073,7 +1095,15 @@ function loadLurkerReport(username) {
 function showLurkerError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Scan Now'; }
 }
@@ -1359,7 +1389,9 @@ function startRelScan() {
         .catch(err => { alert('Error: ' + err.message); btn.disabled = false; btn.textContent = 'Scan Now'; });
 }
 
-function pollRelStatus(taskId) {
+function pollRelStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 40) { showRelError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -1369,9 +1401,9 @@ function pollRelStatus(taskId) {
             if (p) p.textContent = data.progress || 'Working...';
             if (data.status === 'done') renderRelDashboard(data.result);
             else if (data.status === 'error') showRelError(data.error);
-            else setTimeout(() => pollRelStatus(taskId), 1500);
+            else setTimeout(() => pollRelStatus(taskId, _count + 1), 1500);
         })
-        .catch(() => setTimeout(() => pollRelStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollRelStatus(taskId, _count + 1), 3000));
 }
 
 function loadRelReport(username) {
@@ -1384,7 +1416,15 @@ function loadRelReport(username) {
 function showRelError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Scan Now'; }
 }
@@ -1647,7 +1687,9 @@ function startAdvisorScan() {
         .catch(err => { alert('Error: ' + err.message); btn.disabled = false; btn.textContent = 'Analyze Content'; });
 }
 
-function pollAdvisorStatus(taskId) {
+function pollAdvisorStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 40) { showAdvisorError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -1657,9 +1699,9 @@ function pollAdvisorStatus(taskId) {
             if (p) p.textContent = data.progress || 'Working...';
             if (data.status === 'done') renderAdvisorDashboard(data.result);
             else if (data.status === 'error') showAdvisorError(data.error);
-            else setTimeout(() => pollAdvisorStatus(taskId), 1500);
+            else setTimeout(() => pollAdvisorStatus(taskId, _count + 1), 1500);
         })
-        .catch(() => setTimeout(() => pollAdvisorStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollAdvisorStatus(taskId, _count + 1), 3000));
 }
 
 function loadAdvisorReport(username) {
@@ -1672,7 +1714,15 @@ function loadAdvisorReport(username) {
 function showAdvisorError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Analyze Content'; }
 }
@@ -1755,7 +1805,9 @@ function startStudioScan() {
         .catch(err => { alert('Error: ' + err.message); btn.disabled = false; btn.textContent = 'Analyze Content'; });
 }
 
-function pollStudioStatus(taskId) {
+function pollStudioStatus(taskId, _count) {
+    if (_count === undefined) _count = 0;
+    if (_count > 40) { showStudioError('Scan timed out. Your Instagram session may have expired. Please reconnect at /connect'); return; }
     fetch(`/api/status/${taskId}`)
         .then(r => r.json())
         .then(data => {
@@ -1765,9 +1817,9 @@ function pollStudioStatus(taskId) {
             if (p) p.textContent = data.progress || 'Working...';
             if (data.status === 'done') renderStudioDashboard(data.result);
             else if (data.status === 'error') showStudioError(data.error);
-            else setTimeout(() => pollStudioStatus(taskId), 1500);
+            else setTimeout(() => pollStudioStatus(taskId, _count + 1), 1500);
         })
-        .catch(() => setTimeout(() => pollStudioStatus(taskId), 3000));
+        .catch(() => setTimeout(() => pollStudioStatus(taskId, _count + 1), 3000));
 }
 
 function loadStudioReport(username) {
@@ -1780,7 +1832,15 @@ function loadStudioReport(username) {
 function showStudioError(msg) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorText').textContent = msg;
+    const errorEl = document.getElementById('errorText');
+    errorEl.textContent = msg;
+    if (/session|expired|reconnect/i.test(msg)) {
+        const link = document.createElement('a');
+        link.href = '/connect';
+        link.textContent = 'Reconnect Instagram';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        errorEl.parentElement.appendChild(link);
+    }
     const btn = document.getElementById('scanBtn');
     if (btn) { btn.disabled = false; btn.textContent = 'Analyze Content'; }
 }

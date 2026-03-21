@@ -410,8 +410,11 @@ def run_analysis(task_id, username, post_limit=50, deep=False,
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 # ── Auth Routes ──────────────────────────────────────────────────────────────
@@ -888,8 +891,11 @@ def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None, session_i
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 @app.post("/api/unfollowers/scan")
@@ -1007,8 +1013,11 @@ def run_lurker_scan(task_id, username, post_limit=20,
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 @app.post("/api/lurkers/scan")
@@ -1098,8 +1107,11 @@ def run_relationship_scan(task_id, username, ig_user=None, ig_pass=None, session
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 @app.post("/api/relationships/scan")
@@ -1220,8 +1232,11 @@ def run_advisor_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=Non
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 @app.post("/api/advisor/scan")
@@ -1306,8 +1321,11 @@ def run_studio_scan(task_id, username, post_limit=50, ig_user=None, ig_pass=None
         tasks[task_id]["result"] = report
 
     except Exception as e:
+        error_msg = str(e)
+        if any(kw in error_msg.lower() for kw in ["login_required", "logged out", "session"]):
+            error_msg = "Instagram session expired. Please reconnect at /connect"
         tasks[task_id]["status"] = "error"
-        tasks[task_id]["error"] = str(e)
+        tasks[task_id]["error"] = error_msg
 
 
 @app.post("/api/studio/scan")
