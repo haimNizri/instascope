@@ -9,16 +9,16 @@ function showUpgradePopup(message) {
 
     const overlay = document.createElement('div');
     overlay.id = 'upgradeOverlay';
-    overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[100]';
+    overlay.className = 'fixed inset-0 bg-black/40 flex items-center justify-center z-[100]';
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     overlay.innerHTML = `
-        <div class="bg-dark-800 border border-accent-500/30 rounded-2xl p-8 max-w-md mx-4 text-center animate-[fadeUp_0.3s_ease-out]">
+        <div class="bg-white border border-purple-200 shadow-xl rounded-2xl p-8 max-w-md mx-4 text-center animate-[fadeUp_0.3s_ease-out]">
             <div class="text-5xl mb-4">&#128274;</div>
-            <h2 class="text-xl font-bold text-white mb-2">Upgrade to Pro</h2>
-            <p class="text-gray-400 mb-6">${message || 'This feature requires a Pro subscription.'}</p>
-            <div class="bg-dark-900 rounded-xl p-4 mb-6">
-                <div class="text-3xl font-bold text-white mb-1">$6<span class="text-lg text-gray-400 font-normal">/month</span></div>
-                <ul class="text-sm text-gray-300 text-left space-y-2 mt-4">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Upgrade to Pro</h2>
+            <p class="text-gray-500 mb-6">${message || 'This feature requires a Pro subscription.'}</p>
+            <div class="bg-[#FAFAFA] rounded-xl p-4 mb-6 border border-gray-100">
+                <div class="text-3xl font-bold text-gray-900 mb-1">$6<span class="text-lg text-gray-500 font-normal">/month</span></div>
+                <ul class="text-sm text-gray-600 text-left space-y-2 mt-4">
                     <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Unlimited scans & tracking</li>
                     <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Gender & demographic analysis</li>
                     <li class="flex gap-2"><span class="text-green-400">&#10003;</span> Ghost followers & lurkers</li>
@@ -27,11 +27,11 @@ function showUpgradePopup(message) {
                 </ul>
             </div>
             <div class="flex gap-3">
-                <a href="/pricing" class="flex-1 py-3 bg-gradient-to-r from-accent-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-center">
+                <a href="/pricing" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-center">
                     View Plans
                 </a>
                 <button onclick="document.getElementById('upgradeOverlay').remove()"
-                    class="px-6 py-3 bg-dark-900 text-gray-400 rounded-xl hover:text-white transition">
+                    class="px-6 py-3 bg-gray-100 text-gray-500 rounded-xl hover:text-gray-900 transition">
                     Later
                 </button>
             </div>
@@ -71,10 +71,10 @@ function addProLock(elementId, featureName) {
     overlay.className = 'absolute inset-0 flex flex-col items-center justify-center z-10 cursor-pointer';
     overlay.onclick = () => showUpgradePopup(`Unlock ${featureName} with Pro subscription.`);
     overlay.innerHTML = `
-        <div class="bg-dark-900/80 backdrop-blur-sm rounded-xl px-6 py-4 text-center border border-accent-500/30 shadow-lg">
+        <div class="bg-white/90 backdrop-blur-sm rounded-xl px-6 py-4 text-center border border-purple-200 shadow-lg">
             <div class="text-2xl mb-1">&#128274;</div>
-            <div class="text-sm font-semibold text-accent-400">Pro Feature</div>
-            <div class="text-xs text-gray-400 mt-1">Click to upgrade</div>
+            <div class="text-sm font-semibold text-purple-500">Pro Feature</div>
+            <div class="text-xs text-gray-500 mt-1">Click to upgrade</div>
         </div>
     `;
     el.appendChild(overlay);
@@ -84,11 +84,11 @@ function appendUpgradeButton(containerId, totalCount) {
     const el = document.getElementById(containerId);
     if (!el) return;
     const btn = document.createElement('div');
-    btn.className = 'mt-3 text-center py-4 border-t border-gray-800';
+    btn.className = 'mt-3 text-center py-4 border-t border-gray-200';
     btn.innerHTML = `
         <div class="text-xs text-gray-500 mb-2">Showing 20 of ${totalCount}</div>
         <button onclick="showUpgradePopup('Upgrade to Pro to see all ${totalCount} users and unlock gender analysis.')"
-            class="px-6 py-2.5 bg-gradient-to-r from-accent-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-sm">
+            class="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 text-white font-semibold rounded-xl transition text-sm">
             See All ${totalCount} &mdash; Upgrade to Pro
         </button>
     `;
@@ -99,7 +99,7 @@ function addProBadge(elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
     const badge = document.createElement('span');
-    badge.className = 'ml-2 px-2 py-0.5 bg-accent-500/20 text-accent-400 rounded-full text-xs font-bold cursor-pointer';
+    badge.className = 'ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-500 rounded-full text-xs font-bold cursor-pointer';
     badge.textContent = 'PRO';
     badge.onclick = () => showUpgradePopup();
     el.appendChild(badge);
@@ -114,11 +114,11 @@ function destroyChart(canvasId) {
 }
 
 const chartDefaults = {
-    color: '#9ca3af',
+    color: '#6B7280',
     borderColor: 'transparent',
     font: { family: 'Inter' },
 };
-Chart.defaults.color = '#9ca3af';
+Chart.defaults.color = '#6B7280';
 Chart.defaults.font.family = 'Inter';
 
 // ── Search & Navigation ─────────────────────────────────────────────────────
@@ -168,19 +168,19 @@ function loadHistory() {
             document.getElementById('historySection').classList.remove('hidden');
             const grid = document.getElementById('historyGrid');
             grid.innerHTML = items.map(h => `
-                <a href="/dashboard/${h.username}" class="bg-dark-800 border border-gray-800 rounded-xl p-4 hover:border-accent-500 transition group block">
+                <a href="/dashboard/${h.username}" class="bg-white border border-gray-200 rounded-xl p-4 hover:border-purple-500 transition group block shadow-sm hover:shadow-md">
                     <div class="flex items-center gap-3 mb-3">
-                        <img src="${h.profile_pic_url || ''}" alt="" class="w-12 h-12 rounded-full bg-gray-700 object-cover"
-                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23374151%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2240%22>?</text></svg>'">
+                        <img src="${h.profile_pic_url || ''}" alt="" class="w-12 h-12 rounded-full bg-gray-200 object-cover"
+                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23E5E7EB%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%236B7280%22 font-size=%2240%22>?</text></svg>'">
                         <div class="flex-1 min-w-0">
-                            <div class="font-semibold truncate group-hover:text-accent-400 transition">
+                            <div class="font-semibold truncate group-hover:text-purple-500 transition">
                                 @${h.username} ${h.is_verified ? '<span class="text-blue-400">✓</span>' : ''}
                             </div>
                             <div class="text-xs text-gray-500 truncate">${h.full_name}</div>
                         </div>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-400">${formatNumber(h.followers)} followers</span>
+                        <span class="text-gray-500">${formatNumber(h.followers)} followers</span>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${scoreColor(h.authenticity_score)}">
                             ${h.authenticity_score}/100
                         </span>
@@ -228,7 +228,7 @@ function showError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
 }
@@ -252,7 +252,7 @@ function renderDashboard(report) {
 function renderProfileHeader(p) {
     const pic = document.getElementById('profilePic');
     pic.src = p.profile_pic_url || '';
-    pic.onerror = () => pic.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23374151%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2240%22>?</text></svg>';
+    pic.onerror = () => pic.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23E5E7EB%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%236B7280%22 font-size=%2240%22>?</text></svg>';
 
     document.getElementById('profileUsername').textContent = '@' + p.username;
     document.getElementById('profileName').textContent = p.full_name || '';
@@ -277,7 +277,7 @@ function renderProfileHeader(p) {
 function renderAuthenticity(auth) {
     const score = auth.authenticity_score;
     const color = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : score >= 40 ? '#f97316' : '#ef4444';
-    const bgColor = '#1f2937';
+    const bgColor = '#F3F4F6';
 
     document.getElementById('authScore').textContent = score;
     document.getElementById('authScore').style.color = color;
@@ -350,7 +350,7 @@ function renderAge(age) {
                 y: {
                     beginAtZero: true,
                     ticks: { callback: v => v + '%' },
-                    grid: { color: '#1f2937' },
+                    grid: { color: '#E5E7EB' },
                 },
                 x: { grid: { display: false } },
             },
@@ -388,7 +388,7 @@ function renderDemographics(demo) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { ticks: { callback: v => v + '%' }, grid: { color: '#1f2937' } },
+                x: { ticks: { callback: v => v + '%' }, grid: { color: '#E5E7EB' } },
                 y: { grid: { display: false } },
             },
         }
@@ -397,10 +397,10 @@ function renderDemographics(demo) {
     const countries = demo.detected_countries || {};
     if (Object.keys(countries).length) {
         document.getElementById('countriesList').innerHTML = `
-            <h3 class="text-sm font-semibold text-gray-400 mb-2">Detected Countries</h3>
+            <h3 class="text-sm font-semibold text-gray-500 mb-2">Detected Countries</h3>
             <div class="flex flex-wrap gap-2">
                 ${Object.entries(countries).map(([c, n]) =>
-                    `<span class="px-2 py-1 bg-dark-900 rounded-lg text-xs">${c} <span class="text-accent-400">${n}</span></span>`
+                    `<span class="px-2 py-1 bg-[#FAFAFA] rounded-lg text-xs">${c} <span class="text-purple-500">${n}</span></span>`
                 ).join('')}
             </div>`;
     }
@@ -410,14 +410,14 @@ function renderDemographics(demo) {
 
 function renderBusiness(biz) {
     const metrics = [
-        { label: 'Account Tier', value: biz.account_tier, color: 'text-accent-400' },
+        { label: 'Account Tier', value: biz.account_tier, color: 'text-purple-500' },
         { label: 'Engagement Rate', value: biz.avg_engagement_rate, color: 'text-green-400' },
         { label: 'Est. Post Value', value: biz.estimated_post_value, color: 'text-yellow-400' },
         { label: 'Posts / Week', value: biz.posts_per_week, color: 'text-blue-400' },
     ];
 
     document.getElementById('bizMetrics').innerHTML = metrics.map(m => `
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-lg">${m.value}</div>
         </div>
@@ -455,24 +455,24 @@ function renderBusiness(biz) {
     let html = '';
     if (byLikes.length) {
         html += `<div>
-            <h3 class="text-sm font-semibold text-gray-400 mb-2">Most Liked</h3>
+            <h3 class="text-sm font-semibold text-gray-500 mb-2">Most Liked</h3>
             ${byLikes.map(p => `
                 <a href="https://www.instagram.com/p/${p.shortcode}/" target="_blank"
-                   class="block bg-dark-900 rounded-lg p-3 mb-2 hover:bg-gray-800 transition">
-                    <span class="text-accent-400 font-mono text-sm">${p.shortcode}</span>
-                    <span class="text-gray-400 ml-2">${p.likes > 0 ? formatNumber(p.likes) + ' likes' : 'likes hidden'}</span>
+                   class="block bg-[#FAFAFA] rounded-lg p-3 mb-2 hover:bg-gray-100 transition">
+                    <span class="text-purple-500 font-mono text-sm">${p.shortcode}</span>
+                    <span class="text-gray-500 ml-2">${p.likes > 0 ? formatNumber(p.likes) + ' likes' : 'likes hidden'}</span>
                 </a>
             `).join('')}
         </div>`;
     }
     if (byComments.length) {
         html += `<div>
-            <h3 class="text-sm font-semibold text-gray-400 mb-2">Most Commented</h3>
+            <h3 class="text-sm font-semibold text-gray-500 mb-2">Most Commented</h3>
             ${byComments.map(p => `
                 <a href="https://www.instagram.com/p/${p.shortcode}/" target="_blank"
-                   class="block bg-dark-900 rounded-lg p-3 mb-2 hover:bg-gray-800 transition">
-                    <span class="text-accent-400 font-mono text-sm">${p.shortcode}</span>
-                    <span class="text-gray-400 ml-2">${formatNumber(p.comments)} comments</span>
+                   class="block bg-[#FAFAFA] rounded-lg p-3 mb-2 hover:bg-gray-100 transition">
+                    <span class="text-purple-500 font-mono text-sm">${p.shortcode}</span>
+                    <span class="text-gray-500 ml-2">${formatNumber(p.comments)} comments</span>
                 </a>
             `).join('')}
         </div>`;
@@ -485,19 +485,19 @@ function renderBusiness(biz) {
 
     // Add extra metric cards for timing
     document.getElementById('bizMetrics').innerHTML += `
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">Best Day</div>
             <div class="text-pink-400 font-bold text-lg">${bestDay}</div>
         </div>
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">Best Hours (UTC)</div>
             <div class="text-orange-400 font-bold text-sm">${bestHours}</div>
         </div>
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">Avg Likes</div>
             <div class="text-blue-400 font-bold text-lg">${formatNumber(biz.avg_likes)}</div>
         </div>
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">Avg Video Views</div>
             <div class="text-purple-400 font-bold text-lg">${formatNumber(biz.avg_video_views)}</div>
         </div>
@@ -510,10 +510,10 @@ function renderCampaigns(camp) {
     // Metrics
     document.getElementById('campMetrics').innerHTML = [
         { label: 'Sponsored Posts', value: camp.sponsored_posts_detected, color: 'text-yellow-400' },
-        { label: 'Posts Analyzed', value: camp.total_posts_analyzed, color: 'text-gray-300' },
+        { label: 'Posts Analyzed', value: camp.total_posts_analyzed, color: 'text-gray-600' },
         { label: 'Sponsorship Rate', value: camp.sponsorship_rate, color: 'text-orange-400' },
     ].map(m => `
-        <div class="bg-dark-900 rounded-xl p-4 text-center">
+        <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-xl">${m.value}</div>
         </div>
@@ -525,11 +525,11 @@ function renderCampaigns(camp) {
     if (Object.keys(partners).length) {
         bp.innerHTML = Object.entries(partners).map(([brand, count]) => `
             <div class="flex items-center gap-3">
-                <div class="flex-1 bg-dark-900 rounded-lg overflow-hidden h-6">
-                    <div class="h-full bg-accent-600/40 rounded-lg" style="width: ${Math.min(100, count * 20)}%"></div>
+                <div class="flex-1 bg-[#FAFAFA] rounded-lg overflow-hidden h-6">
+                    <div class="h-full bg-purple-600/40 rounded-lg" style="width: ${Math.min(100, count * 20)}%"></div>
                 </div>
                 <span class="text-sm min-w-0">
-                    <span class="text-accent-400">@${brand}</span>
+                    <span class="text-purple-500">@${brand}</span>
                     <span class="text-gray-500 ml-1">${count}x</span>
                 </span>
             </div>
@@ -541,7 +541,7 @@ function renderCampaigns(camp) {
     // Top hashtags
     const hashtags = camp.top_hashtags || {};
     document.getElementById('topHashtags').innerHTML = Object.entries(hashtags).slice(0, 15).map(([tag, count]) => `
-        <span class="px-3 py-1.5 bg-dark-900 rounded-full text-sm hover:bg-accent-600/20 transition cursor-default">
+        <span class="px-3 py-1.5 bg-[#FAFAFA] rounded-full text-sm hover:bg-purple-600/20 transition cursor-default">
             #${tag} <span class="text-gray-500 ml-1">${count}</span>
         </span>
     `).join('');
@@ -565,7 +565,7 @@ function renderCampaigns(camp) {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#1f2937' } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#E5E7EB' } },
                     x: { grid: { display: false } },
                 },
             }
@@ -577,15 +577,15 @@ function renderCampaigns(camp) {
     if (sposts.length) {
         document.getElementById('sponsoredTable').classList.remove('hidden');
         document.getElementById('sponsoredBody').innerHTML = sposts.map(sp => `
-            <tr class="border-b border-gray-800">
-                <td class="py-2 px-3 text-gray-400">${sp.date?.slice(0, 10) || ''}</td>
+            <tr class="border-b border-gray-200">
+                <td class="py-2 px-3 text-gray-500">${sp.date?.slice(0, 10) || ''}</td>
                 <td class="py-2 px-3">
-                    <a href="https://www.instagram.com/p/${sp.post}/" target="_blank" class="text-accent-400 hover:underline font-mono">${sp.post}</a>
+                    <a href="https://www.instagram.com/p/${sp.post}/" target="_blank" class="text-purple-500 hover:underline font-mono">${sp.post}</a>
                 </td>
                 <td class="py-2 px-3">
                     ${(sp.signals || []).map(s => `<span class="inline-block px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded text-xs mr-1">${s}</span>`).join('')}
                 </td>
-                <td class="py-2 px-3 text-gray-400">${(sp.mentions || []).map(m => '@' + m).join(', ')}</td>
+                <td class="py-2 px-3 text-gray-500">${(sp.mentions || []).map(m => '@' + m).join(', ')}</td>
             </tr>
         `).join('');
     }
@@ -697,7 +697,7 @@ function showUnfollowerError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
     const btn = document.getElementById('scanBtn');
@@ -745,9 +745,9 @@ function renderUnfollowerDashboard(report) {
         { label: 'Unfollowed', value: comp.unfollower_count, color: 'text-red-400' },
         { label: 'New Followers', value: comp.new_follower_count, color: 'text-green-400' },
         { label: 'Net Change', value: (comp.net_change >= 0 ? '+' : '') + comp.net_change, color: comp.net_change >= 0 ? 'text-green-400' : 'text-red-400' },
-        { label: 'Snapshots', value: report.snapshot_count, color: 'text-accent-400' },
+        { label: 'Snapshots', value: report.snapshot_count, color: 'text-purple-500' },
     ].map(m => `
-        <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-2xl">${m.value}</div>
         </div>
@@ -802,7 +802,7 @@ function renderUnfollowerGenderChart(genderBreakdown) {
             maintainAspectRatio: false,
             cutout: '60%',
             plugins: {
-                legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, color: '#9ca3af' } },
+                legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, color: '#6B7280' } },
                 tooltip: {
                     callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' }
                 },
@@ -837,7 +837,7 @@ function renderAccountTypeChart(analysis) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#1f2937' } },
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#E5E7EB' } },
                 x: { grid: { display: false } },
             },
         }
@@ -868,7 +868,7 @@ function renderInsights(insights, comp) {
     }
 
     list.innerHTML = items.map(s =>
-        `<li class="flex gap-2 items-start"><span class="text-accent-400 flex-shrink-0 mt-0.5">&#8226;</span> ${s}</li>`
+        `<li class="flex gap-2 items-start"><span class="text-purple-500 flex-shrink-0 mt-0.5">&#8226;</span> ${s}</li>`
     ).join('');
 }
 
@@ -927,13 +927,13 @@ function renderHistoryChart(history) {
             scales: {
                 y: {
                     position: 'left',
-                    grid: { color: '#1f2937' },
-                    title: { display: true, text: 'Total Followers', color: '#9ca3af' },
+                    grid: { color: '#E5E7EB' },
+                    title: { display: true, text: 'Total Followers', color: '#6B7280' },
                 },
                 y1: {
                     position: 'right',
                     grid: { display: false },
-                    title: { display: true, text: 'Changes', color: '#9ca3af' },
+                    title: { display: true, text: 'Changes', color: '#6B7280' },
                     beginAtZero: true,
                 },
                 x: { grid: { display: false } },
@@ -963,15 +963,15 @@ function renderUnfollowerList(profiles) {
         const verifiedBadge = p.is_verified ? '<span class="text-blue-400 ml-1">&#10003;</span>' : '';
 
         return `
-            <div class="unfollower-item flex items-center gap-3 bg-dark-900 rounded-xl p-3 hover:bg-gray-800/50 transition"
+            <div class="unfollower-item flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-3 hover:bg-gray-100 transition"
                  data-gender="${p.gender}">
-                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold flex-shrink-0">
                     ${genderIcon}
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-1">
                         <a href="https://www.instagram.com/${p.username}/" target="_blank"
-                           class="text-accent-400 hover:underline font-semibold truncate">@${p.username}</a>
+                           class="text-purple-500 hover:underline font-semibold truncate">@${p.username}</a>
                         ${verifiedBadge}
                     </div>
                     <div class="text-xs text-gray-500 truncate">${p.full_name || 'No name'}</div>
@@ -998,8 +998,8 @@ function renderNewFollowerList(profiles) {
     noMsg.classList.add('hidden');
 
     list.innerHTML = profiles.map(p => `
-        <div class="flex items-center gap-3 bg-dark-900 rounded-xl p-3">
-            <div class="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center text-green-400 text-sm flex-shrink-0">+</div>
+        <div class="flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-3">
+            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-400 text-sm flex-shrink-0">+</div>
             <div class="flex-1 min-w-0">
                 <a href="https://www.instagram.com/${p.username}/" target="_blank"
                    class="text-green-400 hover:underline font-semibold text-sm truncate">@${p.username}</a>
@@ -1013,8 +1013,8 @@ function filterList(gender) {
     // Update active button
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === gender);
-        btn.classList.toggle('bg-accent-600', btn.dataset.filter === gender);
-        btn.classList.toggle('text-white', btn.dataset.filter === gender);
+        btn.classList.toggle('bg-purple-600', btn.dataset.filter === gender);
+        btn.classList.toggle('text-gray-900', btn.dataset.filter === gender);
     });
 
     if (gender === 'all') {
@@ -1101,7 +1101,7 @@ function showLurkerError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
     const btn = document.getElementById('scanBtn');
@@ -1120,12 +1120,12 @@ function renderLurkerDashboard(report) {
     // Summary cards
     document.getElementById('summaryCards').innerHTML = [
         { label: 'Followers', value: formatNumber(s.total_followers), color: 'text-blue-400' },
-        { label: 'Ghost Followers', value: formatNumber(s.ghost_followers_count), color: 'text-gray-400' },
+        { label: 'Ghost Followers', value: formatNumber(s.ghost_followers_count), color: 'text-gray-500' },
         { label: 'Secret Fans', value: s.secret_fans_count, color: 'text-pink-400' },
         { label: 'Story Stalkers', value: s.story_stalkers_count, color: 'text-cyan-400' },
         { label: 'Ghost %', value: s.ghost_followers_percentage + '%', color: s.ghost_followers_percentage > 50 ? 'text-red-400' : 'text-green-400' },
     ].map(m => `
-        <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-2xl">${m.value}</div>
         </div>
@@ -1197,7 +1197,7 @@ function renderGenderDoughnut(canvasId, genderData) {
             maintainAspectRatio: false,
             cutout: '60%',
             plugins: {
-                legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, color: '#9ca3af', font: { size: 11 } } },
+                legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, color: '#6B7280', font: { size: 11 } } },
                 tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } },
             },
         }
@@ -1214,18 +1214,18 @@ function renderTopEngagers(engagers) {
         const genderColor = e.gender === 'female' ? 'text-pink-400' : e.gender === 'male' ? 'text-blue-400' : 'text-gray-500';
 
         return `
-            <div class="bg-dark-900 rounded-xl p-3 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-accent-600/20 flex items-center justify-center text-sm font-bold flex-shrink-0 ${genderColor}">
+            <div class="bg-[#FAFAFA] rounded-xl p-3 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center text-sm font-bold flex-shrink-0 ${genderColor}">
                     ${medal || (i + 1)}
                 </div>
                 <div class="flex-1 min-w-0">
                     <a href="https://www.instagram.com/${e.username}/" target="_blank"
-                       class="text-accent-400 hover:underline font-semibold text-sm truncate block">@${e.username}</a>
+                       class="text-purple-500 hover:underline font-semibold text-sm truncate block">@${e.username}</a>
                     <div class="text-xs text-gray-500">${e.full_name || ''}</div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                    <div class="text-xs text-gray-400">${e.likes} likes, ${e.comments} comments</div>
-                    <div class="text-xs text-accent-400">${e.engagement_rate}% of posts</div>
+                    <div class="text-xs text-gray-500">${e.likes} likes, ${e.comments} comments</div>
+                    <div class="text-xs text-purple-500">${e.engagement_rate}% of posts</div>
                 </div>
             </div>
         `;
@@ -1252,8 +1252,8 @@ function renderSecretFans(fans) {
             : '<span class="text-gray-500">?</span>';
 
         return `
-            <div class="flex items-center gap-3 bg-dark-900 rounded-xl p-3 hover:bg-gray-800/50 transition">
-                <div class="w-10 h-10 rounded-full bg-pink-900/20 flex items-center justify-center text-lg font-bold flex-shrink-0">
+            <div class="flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-3 hover:bg-gray-100 transition">
+                <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-lg font-bold flex-shrink-0">
                     ${genderIcon}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -1293,8 +1293,8 @@ function renderStoryStalkers(stalkers) {
             : '';
 
         return `
-            <div class="flex items-center gap-3 bg-dark-900 rounded-xl p-3 hover:bg-gray-800/50 transition">
-                <div class="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center text-lg font-bold flex-shrink-0">
+            <div class="flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-3 hover:bg-gray-100 transition">
+                <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-lg font-bold flex-shrink-0">
                     ${genderIcon}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -1327,19 +1327,19 @@ function renderGhostList(profiles) {
         const privateBadge = p.is_private ? '<span class="px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded text-xs">Private</span>' : '';
 
         return `
-            <div class="ghost-item flex items-center gap-3 bg-dark-900 rounded-xl p-3 hover:bg-gray-800/50 transition"
+            <div class="ghost-item flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-3 hover:bg-gray-100 transition"
                  data-gender="${p.gender}">
-                <div class="w-10 h-10 rounded-full bg-gray-700/50 flex items-center justify-center text-lg font-bold flex-shrink-0">
+                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold flex-shrink-0">
                     ${genderIcon}
                 </div>
                 <div class="flex-1 min-w-0">
                     <a href="https://www.instagram.com/${p.username}/" target="_blank"
-                       class="text-gray-300 hover:underline font-semibold truncate block">@${p.username}</a>
+                       class="text-gray-600 hover:underline font-semibold truncate block">@${p.username}</a>
                     <div class="text-xs text-gray-600 truncate">${p.full_name || 'No name'}</div>
                 </div>
                 <div class="flex gap-2 items-center flex-shrink-0">
                     ${privateBadge}
-                    <span class="px-1.5 py-0.5 bg-gray-700/50 text-gray-500 rounded text-xs">Ghost</span>
+                    <span class="px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded text-xs">Ghost</span>
                 </div>
             </div>
         `;
@@ -1349,8 +1349,8 @@ function renderGhostList(profiles) {
 function filterGhosts(gender) {
     document.querySelectorAll('.ghost-filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === gender);
-        btn.classList.toggle('bg-accent-600', btn.dataset.filter === gender);
-        btn.classList.toggle('text-white', btn.dataset.filter === gender);
+        btn.classList.toggle('bg-purple-600', btn.dataset.filter === gender);
+        btn.classList.toggle('text-gray-900', btn.dataset.filter === gender);
     });
 
     if (gender === 'all') {
@@ -1422,7 +1422,7 @@ function showRelError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
     const btn = document.getElementById('scanBtn');
@@ -1442,11 +1442,11 @@ function renderRelDashboard(report) {
     document.getElementById('summaryCards').innerHTML = [
         { label: 'Followers', value: report.followers_count, color: 'text-blue-400' },
         { label: 'Following', value: report.following_count, color: 'text-purple-400' },
-        { label: 'Mutual', value: report.mutual_count, color: 'text-accent-400' },
+        { label: 'Mutual', value: report.mutual_count, color: 'text-purple-500' },
         { label: "Don't Follow Back", value: report.not_following_back_count, color: 'text-red-400' },
         { label: 'One-Way Followers', value: report.fans_count, color: 'text-green-400' },
     ].map(m => `
-        <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-2xl">${m.value}</div>
         </div>
@@ -1498,7 +1498,7 @@ function renderRelDashboard(report) {
     renderProfileList('fansList', allFansProfiles, 'text-green-400');
     if (report.fans_truncated) appendUpgradeButton('fansList', report.fans_count);
 
-    renderProfileList('mutualList', report.mutual || [], 'text-accent-400');
+    renderProfileList('mutualList', report.mutual || [], 'text-purple-500');
     if (report.mutual_truncated) appendUpgradeButton('mutualList', report.mutual_count);
 }
 
@@ -1548,8 +1548,8 @@ function renderProfileList(containerId, profiles, linkColor) {
         const privateBadge = p.is_private ? '<span class="px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded text-xs">Private</span>' : '';
 
         return `
-            <div class="rel-item flex items-center gap-3 bg-dark-900 rounded-xl p-2.5 hover:bg-gray-800/50 transition" data-gender="${p.gender}">
-                <div class="w-8 h-8 rounded-full bg-gray-700/50 flex items-center justify-center text-sm font-bold flex-shrink-0">
+            <div class="rel-item flex items-center gap-3 bg-[#FAFAFA] rounded-xl p-2.5 hover:bg-gray-100 transition" data-gender="${p.gender}">
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold flex-shrink-0">
                     ${genderIcon}
                 </div>
                 <div class="flex-1 min-w-0">
@@ -1588,7 +1588,7 @@ function renderDemographics(demo) {
             options: {
                 responsive: true, maintainAspectRatio: false, cutout: '55%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { padding: 8, usePointStyle: true, color: '#9ca3af', font: { size: 10 } } },
+                    legend: { position: 'bottom', labels: { padding: 8, usePointStyle: true, color: '#6B7280', font: { size: 10 } } },
                     tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(1) + '%' } },
                 },
             }
@@ -1608,10 +1608,10 @@ function renderDemographics(demo) {
     document.getElementById('languageList').innerHTML = langEntries.slice(0, 8).map(([lang, data]) => `
         <div>
             <div class="flex items-center justify-between text-sm mb-1">
-                <span class="text-gray-300">${lang}</span>
+                <span class="text-gray-600">${lang}</span>
                 <span class="text-gray-500">${data.percentage.toFixed(1)}% (${data.count})</span>
             </div>
-            <div class="h-1.5 bg-dark-900 rounded-full overflow-hidden">
+            <div class="h-1.5 bg-[#FAFAFA] rounded-full overflow-hidden">
                 <div class="h-full rounded-full" style="width: ${Math.max(3, (data.percentage / maxLang) * 100)}%; background: ${langColors[lang] || '#6b7280'}"></div>
             </div>
         </div>
@@ -1668,8 +1668,8 @@ function renderDemographics(demo) {
             return `
             <div class="flex items-center gap-2 text-sm mb-2">
                 <div class="w-2 h-2 rounded-full flex-shrink-0" style="background: ${countryColors[i] || '#6b7280'}"></div>
-                <span class="text-gray-300 flex-1">${countryFlags[country] || '&#127760;'} ${country}</span>
-                <span class="text-white font-semibold">${pct}%</span>
+                <span class="text-gray-600 flex-1">${countryFlags[country] || '&#127760;'} ${country}</span>
+                <span class="text-gray-900 font-semibold">${pct}%</span>
                 <span class="text-gray-600 text-xs">(${count})</span>
             </div>`;
         }).join('')
@@ -1679,8 +1679,8 @@ function renderDemographics(demo) {
 function filterNfb(gender) {
     document.querySelectorAll('.nfb-filter').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === gender);
-        btn.classList.toggle('bg-accent-600', btn.dataset.filter === gender);
-        btn.classList.toggle('text-white', btn.dataset.filter === gender);
+        btn.classList.toggle('bg-purple-600', btn.dataset.filter === gender);
+        btn.classList.toggle('text-gray-900', btn.dataset.filter === gender);
     });
     const filtered = gender === 'all' ? allNfbProfiles : allNfbProfiles.filter(p => p.gender === gender);
     renderProfileList('nfbList', filtered, 'text-red-400');
@@ -1689,8 +1689,8 @@ function filterNfb(gender) {
 function filterFans(gender) {
     document.querySelectorAll('.fans-filter').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === gender);
-        btn.classList.toggle('bg-accent-600', btn.dataset.filter === gender);
-        btn.classList.toggle('text-white', btn.dataset.filter === gender);
+        btn.classList.toggle('bg-purple-600', btn.dataset.filter === gender);
+        btn.classList.toggle('text-gray-900', btn.dataset.filter === gender);
     });
     const filtered = gender === 'all' ? allFansProfiles : allFansProfiles.filter(p => p.gender === gender);
     renderProfileList('fansList', filtered, 'text-green-400');
@@ -1754,7 +1754,7 @@ function showAdvisorError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
     const btn = document.getElementById('scanBtn');
@@ -1774,7 +1774,7 @@ function renderAdvisorDashboard(report) {
     recsList.innerHTML = recs.map(r =>
         `<li class="flex gap-3 items-start">
             <span class="text-yellow-400 text-lg flex-shrink-0">&#9733;</span>
-            <span class="text-gray-200">${r}</span>
+            <span class="text-gray-700">${r}</span>
         </li>`
     ).join('') || '<li class="text-gray-500">Not enough data for recommendations</li>';
 
@@ -1785,9 +1785,9 @@ function renderAdvisorDashboard(report) {
         { label: 'Posts Analyzed', value: report.posts_analyzed || 0, color: 'text-blue-400' },
         { label: 'Best Day', value: bestDay, color: 'text-yellow-400' },
         { label: 'Best Hour', value: bestHour, color: 'text-amber-400' },
-        { label: 'Followers', value: formatNumber(report.followers || 0), color: 'text-accent-400' },
+        { label: 'Followers', value: formatNumber(report.followers || 0), color: 'text-purple-500' },
     ].map(m => `
-        <div class="bg-dark-800 rounded-xl p-4 text-center border border-gray-800">
+        <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
             <div class="text-xs text-gray-500 uppercase mb-1">${m.label}</div>
             <div class="${m.color} font-bold text-xl">${m.value}</div>
         </div>
@@ -1872,7 +1872,7 @@ function showStudioError(msg) {
         const link = document.createElement('a');
         link.href = '/connect';
         link.textContent = 'Reconnect Instagram';
-        link.className = 'inline-block mt-3 px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg transition text-sm font-semibold';
+        link.className = 'inline-block mt-3 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-semibold';
         errorEl.parentElement.appendChild(link);
     }
     const btn = document.getElementById('scanBtn');
@@ -1924,10 +1924,10 @@ function renderStudioDashboard(report) {
         const statusLabel = status === 'above_benchmark' ? 'Above Benchmark' : status === 'below_benchmark' ? 'Below Benchmark' : 'At Benchmark';
         const statusIcon = status === 'above_benchmark' ? '&#9650;' : status === 'below_benchmark' ? '&#9660;' : '&#9654;';
         return `
-            <div class="bg-dark-900 rounded-xl p-4 text-center">
+            <div class="bg-[#FAFAFA] rounded-xl p-4 text-center border border-gray-100">
                 <div class="text-2xl mb-2">${p.icon}</div>
-                <div class="text-sm text-gray-400 mb-1">${p.label}</div>
-                <div class="text-sm font-semibold text-white mb-1">${d.yours || 'N/A'} <span class="text-gray-500">vs</span> ${d.benchmark || 'N/A'}</div>
+                <div class="text-sm text-gray-500 mb-1">${p.label}</div>
+                <div class="text-sm font-semibold text-gray-900 mb-1">${d.yours || 'N/A'} <span class="text-gray-500">vs</span> ${d.benchmark || 'N/A'}</div>
                 <div class="${statusColor} text-xs font-bold">${statusIcon} ${statusLabel}</div>
             </div>
         `;
@@ -1936,7 +1936,7 @@ function renderStudioDashboard(report) {
     // Insights
     const insights = report.insights || [];
     document.getElementById('studioInsights').innerHTML = insights.map(s =>
-        `<li class="flex gap-3 items-start"><span class="text-fuchsia-400 text-lg flex-shrink-0">&#9733;</span><span class="text-gray-200">${s}</span></li>`
+        `<li class="flex gap-3 items-start"><span class="text-fuchsia-400 text-lg flex-shrink-0">&#9733;</span><span class="text-gray-700">${s}</span></li>`
     ).join('') || '<li class="text-gray-500">Not enough data for recommendations</li>';
 
     // Content Ideas
@@ -1945,7 +1945,7 @@ function renderStudioDashboard(report) {
     for (const [cat, catIdeas] of Object.entries(ideas)) {
         ideasHtml += `<div class="mb-3"><div class="text-xs text-fuchsia-400 font-semibold uppercase mb-2">${cat}</div>`;
         ideasHtml += catIdeas.map(idea =>
-            `<div class="flex gap-2 items-start mb-2"><span class="text-yellow-400 flex-shrink-0">&#128161;</span><span class="text-gray-300 text-sm">${idea}</span></div>`
+            `<div class="flex gap-2 items-start mb-2"><span class="text-yellow-400 flex-shrink-0">&#128161;</span><span class="text-gray-600 text-sm">${idea}</span></div>`
         ).join('');
         ideasHtml += '</div>';
     }
@@ -1957,7 +1957,7 @@ function renderStudioDashboard(report) {
     for (const [cat, catTemplates] of Object.entries(templates)) {
         templatesHtml += `<div class="mb-3"><div class="text-xs text-violet-400 font-semibold uppercase mb-2">${cat}</div>`;
         templatesHtml += catTemplates.map(tmpl =>
-            `<div class="bg-dark-900 rounded-lg p-3 mb-2 text-sm text-gray-300 cursor-pointer hover:bg-dark-950 transition" onclick="navigator.clipboard.writeText(this.textContent.trim()); this.style.borderColor='#a78bfa'; setTimeout(()=>this.style.borderColor='',1000)" style="border: 1px solid transparent">
+            `<div class="bg-[#FAFAFA] rounded-lg p-3 mb-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 transition" onclick="navigator.clipboard.writeText(this.textContent.trim()); this.style.borderColor='#a78bfa'; setTimeout(()=>this.style.borderColor='',1000)" style="border: 1px solid transparent">
                 &#128221; ${tmpl}
             </div>`
         ).join('');
@@ -1968,22 +1968,22 @@ function renderStudioDashboard(report) {
     // Recommended Hashtags
     studioHashtags = report.recommended_hashtags || [];
     document.getElementById('recommendedHashtags').innerHTML = studioHashtags.map(h =>
-        `<span class="px-3 py-1.5 bg-dark-900 rounded-full text-sm hover:bg-fuchsia-600/20 transition cursor-pointer" onclick="navigator.clipboard.writeText('#${h}')">#${h}</span>`
+        `<span class="px-3 py-1.5 bg-[#FAFAFA] rounded-full text-sm hover:bg-fuchsia-600/20 transition cursor-pointer" onclick="navigator.clipboard.writeText('#${h}')">#${h}</span>`
     ).join('') || '<span class="text-gray-500">Not enough data</span>';
 
     // Benchmarks
     const benchmarks = report.benchmarks || {};
     document.getElementById('benchmarkCards').innerHTML = Object.entries(benchmarks).map(([cat, b]) => `
-        <div class="bg-dark-900 rounded-xl p-4">
+        <div class="bg-[#FAFAFA] rounded-xl p-4">
             <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">${catEmojis[cat] || '&#128200;'}</span>
-                <span class="font-bold text-white">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+                <span class="font-bold text-gray-900">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
             </div>
-            <div class="space-y-2 text-xs text-gray-400">
-                <div class="flex justify-between"><span>Avg Engagement</span><span class="text-white">${b.avg_engagement_rate}%</span></div>
-                <div class="flex justify-between"><span>Best Frequency</span><span class="text-white">${b.best_posting_frequency} posts/week</span></div>
-                <div class="flex justify-between"><span>Best Content</span><span class="text-white">${b.best_content_type}</span></div>
-                <div class="flex justify-between"><span>Peak Hours</span><span class="text-white">${(b.peak_hours || []).join(', ')}</span></div>
+            <div class="space-y-2 text-xs text-gray-500">
+                <div class="flex justify-between"><span>Avg Engagement</span><span class="text-gray-900">${b.avg_engagement_rate}%</span></div>
+                <div class="flex justify-between"><span>Best Frequency</span><span class="text-gray-900">${b.best_posting_frequency} posts/week</span></div>
+                <div class="flex justify-between"><span>Best Content</span><span class="text-gray-900">${b.best_content_type}</span></div>
+                <div class="flex justify-between"><span>Peak Hours</span><span class="text-gray-900">${(b.peak_hours || []).join(', ')}</span></div>
             </div>
             <div class="mt-3 flex flex-wrap gap-1">
                 ${(b.top_hashtags || []).slice(0, 5).map(h => `<span class="text-xs text-fuchsia-400">#${h}</span>`).join(' ')}
@@ -2023,7 +2023,7 @@ function renderHoursChart(bestHours) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + '% engagement' } } },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#1f2937' } },
+                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#E5E7EB' } },
                 x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
             },
         }
@@ -2053,7 +2053,7 @@ function renderTrendChart(trend) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + '% engagement' } } },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#1f2937' } },
+                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#E5E7EB' } },
                 x: { grid: { display: false } },
             },
         }
@@ -2080,7 +2080,7 @@ function renderTypeChart(typePerf) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + '% engagement' } } },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#1f2937' } },
+                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#E5E7EB' } },
                 x: { grid: { display: false } },
             },
         }
@@ -2088,10 +2088,10 @@ function renderTypeChart(typePerf) {
 
     // Details cards
     document.getElementById('typeDetails').innerHTML = Object.entries(typePerf).map(([k, v]) => `
-        <div class="bg-dark-900 rounded-lg p-3 text-center">
+        <div class="bg-[#FAFAFA] rounded-lg p-3 text-center">
             <div class="text-xs text-gray-500 mb-1">${typeLabels[k] || k}</div>
-            <div class="text-sm font-semibold text-white">${v.count} posts</div>
-            <div class="text-xs text-gray-400">${v.avg_likes} avg likes</div>
+            <div class="text-sm font-semibold text-gray-900">${v.count} posts</div>
+            <div class="text-xs text-gray-500">${v.avg_likes} avg likes</div>
         </div>
     `).join('');
 }
@@ -2123,7 +2123,7 @@ function renderCaptionChart(captionPerf) {
                 tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toFixed(2)}% eng (${counts[ctx.dataIndex]} posts)` } },
             },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#1f2937' } },
+                y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#E5E7EB' } },
                 x: { grid: { display: false }, title: { display: true, text: 'Caption length (chars)', color: '#6b7280' } },
             },
         }
@@ -2146,7 +2146,7 @@ function renderHashtagPerformance(hashPerf) {
                         <span class="text-sm text-green-400">#${t.hashtag}</span>
                         <span class="text-xs text-gray-500">${t.avg_engagement.toFixed(2)}% &middot; ${t.post_count} posts</span>
                     </div>
-                    <div class="h-1.5 bg-dark-900 rounded-full overflow-hidden">
+                    <div class="h-1.5 bg-[#FAFAFA] rounded-full overflow-hidden">
                         <div class="h-full bg-green-500/60 rounded-full" style="width: ${Math.max(5, (t.avg_engagement / maxEng) * 100)}%"></div>
                     </div>
                 </div>
@@ -2183,9 +2183,9 @@ function renderCorrelation(correlations) {
             : '';
 
         return `
-            <div class="bg-dark-900 rounded-xl p-4 flex items-center justify-between gap-4">
+            <div class="bg-[#FAFAFA] rounded-xl p-4 flex items-center justify-between gap-4">
                 <div>
-                    <div class="text-sm text-gray-300">${c.period_start} &rarr; ${c.period_end}</div>
+                    <div class="text-sm text-gray-600">${c.period_start} &rarr; ${c.period_end}</div>
                     <div class="text-xs text-gray-500">${c.posts_in_period} posts &middot; ${c.avg_engagement_in_period.toFixed(2)}% avg engagement</div>
                 </div>
                 <div class="flex items-center gap-3">

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,67 +8,86 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { dark: { 800: '#1a1a2e', 900: '#0f0f1a', 950: '#080812' }, accent: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' } } } }
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        purple: { 50: '#F5F0FF', 100: '#E8E0FF', 200: '#D4C4FF', 500: '#7C5CFC', 600: '#6B4CF0', 700: '#5A3CD4' },
+                        mint: { 50: '#EDFDF7', 100: '#D1FAE5', 400: '#2DD4A8', 500: '#22C498' },
+                        surface: { 50: '#FAFAFA', 100: '#F5F5F7', 200: '#EEEEF0', 300: '#E0E0E4' }
+                    }
+                }
+            }
         }
     </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #7C5CFC 0%, #2DD4A8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-shadow {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(124, 92, 252, 0.04);
+        }
+    </style>
 </head>
-<body class="bg-dark-950 text-gray-100 font-sans min-h-screen flex items-center justify-center">
+<body class="bg-surface-50 text-gray-900 font-sans min-h-screen flex items-center justify-center antialiased">
     <div class="w-full max-w-md mx-4">
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold bg-gradient-to-r from-accent-400 to-pink-400 bg-clip-text text-transparent">IGAI</h1>
+            <h1 class="text-4xl font-extrabold gradient-text">IGAI</h1>
             <p class="text-gray-500 mt-2">Create your account</p>
         </div>
 
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-4 text-sm text-red-400">
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600">
             {% for msg in messages %}{{ msg }}{% endfor %}
         </div>
         {% endif %}
         {% endwith %}
 
-        <form method="POST" class="bg-dark-800 rounded-2xl p-8 border border-gray-800 space-y-5">
+        <form method="POST" class="bg-white rounded-2xl p-8 border border-surface-200 space-y-5 card-shadow">
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Email</label>
+                <label class="block text-sm text-gray-600 font-medium mb-1">Email</label>
                 <input type="email" name="email" required autofocus
-                    class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
                     placeholder="you@email.com">
             </div>
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Display Name</label>
+                <label class="block text-sm text-gray-600 font-medium mb-1">Display Name</label>
                 <input type="text" name="display_name"
-                    class="w-full px-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+                    class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
                     placeholder="Your name">
             </div>
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Instagram Username</label>
+                <label class="block text-sm text-gray-600 font-medium mb-1">Instagram Username</label>
                 <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">@</span>
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
                     <input type="text" name="instagram_username"
-                        class="w-full pl-10 pr-4 py-3 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+                        class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
                         placeholder="your_instagram">
                 </div>
             </div>
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Password</label>
+                <label class="block text-sm text-gray-600 font-medium mb-1">Password</label>
                 <div class="relative">
                     <input type="password" name="password" id="password" required minlength="6"
-                        class="w-full px-4 py-3 pr-12 bg-dark-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+                        class="w-full px-4 py-3 pr-12 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
                         placeholder="Min 6 characters">
-                    <button type="button" onclick="togglePassword('password', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition">
+                    <button type="button" onclick="togglePassword('password', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     </button>
                 </div>
             </div>
             <button type="submit"
-                class="w-full py-3 bg-accent-600 hover:bg-accent-500 text-white font-semibold rounded-xl transition">
+                class="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl transition shadow-sm">
                 Create Account
             </button>
         </form>
 
         <p class="text-center text-gray-500 text-sm mt-6">
-            Already have an account? <a href="/login" class="text-accent-400 hover:underline">Sign in</a>
+            Already have an account? <a href="/login" class="text-purple-500 hover:underline font-medium">Sign in</a>
         </p>
 
         <script>

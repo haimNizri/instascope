@@ -1,18 +1,18 @@
-/* IGAI — minimal overrides */
+/* IGAI — light premium theme overrides */
 
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #0f0f1a;
+    background: #F5F5F7;
 }
 ::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: #D1D5DB;
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #4b5563;
+    background: #7C5CFC;
 }
 
 /* Fade in animation for dashboard sections */
@@ -43,11 +43,11 @@
 
 /* Input focus glow */
 input:focus {
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18);
 }
 
 /* Active filter button */
 .filter-btn.active {
-    background-color: #7c3aed;
+    background-color: #7C5CFC;
     color: white;
 }

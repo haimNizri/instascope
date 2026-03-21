@@ -5,16 +5,16 @@
 <!-- Loading overlay -->
 <div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
     <div class="relative mb-6">
-        <div class="w-16 h-16 border-4 border-gray-700 border-t-accent-500 rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
     </div>
-    <p id="progressText" class="text-lg text-gray-400 animate-pulse">Scanning...</p>
+    <p id="progressText" class="text-lg text-gray-500 animate-pulse">Scanning...</p>
 </div>
 
 <!-- Error state -->
 <div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
     <div class="text-5xl mb-4">&#9888;&#65039;</div>
-    <p id="errorText" class="text-xl text-red-400"></p>
-    <a href="/" class="mt-4 text-accent-400 hover:underline">&larr; Back to home</a>
+    <p id="errorText" class="text-xl text-red-500"></p>
+    <a href="/" class="mt-4 text-purple-500 hover:underline">&larr; Back to home</a>
 </div>
 
 <!-- Main content -->
@@ -23,39 +23,39 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
             <h1 class="text-3xl font-bold">
-                <span class="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Ghost Followers & Lurkers</span>
+                <span class="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">Ghost Followers & Lurkers</span>
             </h1>
-            <p class="text-gray-400 mt-1">@{{ username }}</p>
+            <p class="text-gray-500 mt-1">@{{ username }}</p>
         </div>
         <div class="flex gap-3 flex-wrap">
             <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-400">Posts to scan:</label>
-                <select id="postLimitSelect" class="bg-dark-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm">
+                <label class="text-sm text-gray-500">Posts to scan:</label>
+                <select id="postLimitSelect" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm shadow-sm">
                     <option value="10">10</option>
                     <option value="20" selected>20</option>
                     <option value="50">50</option>
                 </select>
             </div>
             <button onclick="startLurkerScan()" id="scanBtn"
-                class="px-6 py-3 bg-accent-600 hover:bg-accent-500 text-white font-semibold rounded-xl transition
+                class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition
                        disabled:opacity-50 disabled:cursor-not-allowed">
                 Scan Now
             </button>
-            <a href="/unfollowers/{{ username }}" class="px-6 py-3 bg-dark-800 border border-gray-700 text-gray-300 rounded-xl hover:border-accent-500 transition text-center">
+            <a href="/unfollowers/{{ username }}" class="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:border-purple-500 transition text-center shadow-sm">
                 Unfollower Tracker
             </a>
         </div>
     </div>
 
     <!-- First-time message -->
-    <div id="firstTimeMsg" class="hidden bg-dark-800 rounded-2xl p-8 border border-gray-800 text-center mb-6">
+    <div id="firstTimeMsg" class="hidden bg-white rounded-2xl p-8 border border-gray-200 text-center mb-6 shadow-sm">
         <div class="text-4xl mb-4">&#128123;</div>
-        <h2 class="text-xl font-semibold mb-2">Find Your Ghost Followers</h2>
-        <p class="text-gray-400 mb-4 max-w-lg mx-auto">
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">Find Your Ghost Followers</h2>
+        <p class="text-gray-500 mb-4 max-w-lg mx-auto">
             Discover who follows you but never engages, secret fans who interact without following,
             and non-followers who watch your stories.
         </p>
-        <p class="text-gray-500 text-sm mb-6">This scan scrapes followers, post likers/commenters, and story viewers.</p>
+        <p class="text-gray-400 text-sm mb-6">This scan scrapes followers, post likers/commenters, and story viewers.</p>
         <button onclick="startLurkerScan()"
             class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400
                    text-white font-semibold rounded-xl transition">
@@ -70,90 +70,90 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="summaryCards"></div>
 
         <!-- Insights -->
-        <div id="insightsBar" class="bg-dark-800 rounded-2xl p-4 mb-6 border border-gray-800">
-            <ul id="insightsList" class="space-y-2 text-sm text-gray-300"></ul>
+        <div id="insightsBar" class="bg-white rounded-2xl p-4 mb-6 border border-gray-200 shadow-sm">
+            <ul id="insightsList" class="space-y-2 text-sm text-gray-600"></ul>
         </div>
 
         <!-- Charts row -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Ghost follower gender -->
-            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
-                <h2 class="text-lg font-semibold mb-1">Ghost Followers</h2>
-                <p class="text-xs text-gray-500 mb-4">Follow you but never engage</p>
+            <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Ghost Followers</h2>
+                <p class="text-xs text-gray-400 mb-4">Follow you but never engage</p>
                 <div class="h-48">
                     <canvas id="ghostGenderChart"></canvas>
                 </div>
             </div>
 
             <!-- Secret fans gender -->
-            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
-                <h2 class="text-lg font-semibold mb-1">Secret Fans</h2>
-                <p class="text-xs text-gray-500 mb-4">Engage but don't follow</p>
+            <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Secret Fans</h2>
+                <p class="text-xs text-gray-400 mb-4">Engage but don't follow</p>
                 <div class="h-48">
                     <canvas id="fanGenderChart"></canvas>
                 </div>
             </div>
 
             <!-- Story stalkers gender -->
-            <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
-                <h2 class="text-lg font-semibold mb-1">Story Stalkers</h2>
-                <p class="text-xs text-gray-500 mb-4">Non-followers who view stories</p>
+            <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Story Stalkers</h2>
+                <p class="text-xs text-gray-400 mb-4">Non-followers who view stories</p>
                 <div id="stalkerChartContainer" class="h-48">
                     <canvas id="stalkerGenderChart"></canvas>
                 </div>
-                <div id="noStoryData" class="hidden text-center py-8 text-gray-500 text-sm">
+                <div id="noStoryData" class="hidden text-center py-8 text-gray-400 text-sm">
                     No story viewer data yet. Story viewers can only be captured while stories are live.
                 </div>
             </div>
         </div>
 
         <!-- Top Engagers -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
-            <h2 class="text-lg font-semibold mb-4">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 Top Engagers
-                <span class="text-xs text-gray-500 font-normal ml-2">Your most loyal followers</span>
+                <span class="text-xs text-gray-400 font-normal ml-2">Your most loyal followers</span>
             </h2>
             <div id="topEngagersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </div>
 
         <!-- Secret Fans -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
-            <h2 class="text-lg font-semibold mb-4">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 Secret Fans
-                <span id="secretFanBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-pink-500/20 text-pink-400"></span>
-                <span class="text-xs text-gray-500 font-normal ml-2">Engage with your content but don't follow you</span>
+                <span id="secretFanBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-pink-50 text-pink-500"></span>
+                <span class="text-xs text-gray-400 font-normal ml-2">Engage with your content but don't follow you</span>
             </h2>
             <div id="secretFansList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-            <div id="noSecretFans" class="hidden text-center py-8 text-gray-500">No secret fans detected</div>
+            <div id="noSecretFans" class="hidden text-center py-8 text-gray-400">No secret fans detected</div>
         </div>
 
         <!-- Story Stalkers -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800 mb-6">
-            <h2 class="text-lg font-semibold mb-4">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 Story Stalkers
-                <span id="stalkerBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-400"></span>
-                <span class="text-xs text-gray-500 font-normal ml-2">Non-followers who watch your stories</span>
+                <span id="stalkerBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-cyan-50 text-cyan-600"></span>
+                <span class="text-xs text-gray-400 font-normal ml-2">Non-followers who watch your stories</span>
             </h2>
             <div id="stalkerList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-            <div id="noStalkers" class="hidden text-center py-8 text-gray-500">
+            <div id="noStalkers" class="hidden text-center py-8 text-gray-400">
                 No story stalkers detected. Story data is captured from active stories only.
             </div>
         </div>
 
         <!-- Ghost Followers -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-gray-800">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold">
+                <h2 class="text-lg font-semibold text-gray-900">
                     Ghost Followers
-                    <span id="ghostBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-500/20 text-gray-400"></span>
+                    <span id="ghostBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500"></span>
                 </h2>
                 <div class="flex gap-2">
-                    <button onclick="filterGhosts('all')" class="ghost-filter-btn active px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300 hover:text-white transition" data-filter="all">All</button>
-                    <button onclick="filterGhosts('female')" class="ghost-filter-btn px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300 hover:text-white transition" data-filter="female">Female</button>
-                    <button onclick="filterGhosts('male')" class="ghost-filter-btn px-3 py-1 rounded-lg text-xs bg-dark-900 text-gray-300 hover:text-white transition" data-filter="male">Male</button>
+                    <button onclick="filterGhosts('all')" class="ghost-filter-btn active px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="all">All</button>
+                    <button onclick="filterGhosts('female')" class="ghost-filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="female">Female</button>
+                    <button onclick="filterGhosts('male')" class="ghost-filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="male">Male</button>
                 </div>
             </div>
-            <p class="text-xs text-gray-500 mb-4">These followers never liked or commented on your recent posts</p>
+            <p class="text-xs text-gray-400 mb-4">These followers never liked or commented on your recent posts</p>
             <div id="ghostList" class="space-y-2 max-h-96 overflow-y-auto"></div>
         </div>
     </div>
