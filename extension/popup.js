@@ -49,7 +49,7 @@ async function checkSession() {
 function showLoginForm() {
   document.getElementById("loginForm").style.display = "block";
   document.getElementById("mainView").style.display = "none";
-  setStatus("Sign in to InstaScope to get started", "info");
+  setStatus("Sign in to IGAI to get started", "info");
 }
 
 async function doLogin() {
@@ -137,7 +137,7 @@ async function connectInstagram() {
       return;
     }
 
-    setStatus("Sending session to InstaScope...", "info");
+    setStatus("Sending session to IGAI...", "info");
 
     // Send to our server
     const resp = await fetch(API_BASE + "/api/session", {
