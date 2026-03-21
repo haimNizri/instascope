@@ -789,32 +789,18 @@ def add_cors_for_session(response):
 @app.get("/api/session")
 @login_required
 def api_get_session():
-    """Check if a saved session exists."""
-    # Try DB first (cloud), then file (local)
-    sid = None
-    db_username = None
+    """Check if a saved session exists. Does NOT verify with Instagram (too expensive)."""
+    # Check DB for saved session
+    account = Account.query.filter(Account.session_id.isnot(None)).order_by(Account.updated_at.desc()).first()
+    if account and account.session_id:
+        return jsonify({"logged_in": True, "username": account.username})
 
-    accounts = Account.query.filter(Account.session_id.isnot(None)).order_by(Account.updated_at.desc()).first()
-    if accounts and accounts.session_id:
-        sid = accounts.session_id
-        db_username = accounts.username
+    # Check file
+    sid = load_saved_session_id()
+    if sid:
+        return jsonify({"logged_in": True, "username": "connected"})
 
-    if not sid:
-        sid = load_saved_session_id()
-
-    if not sid:
-        return jsonify({"logged_in": False})
-
-    # Quick verify
-    import instaloader as _il
-    L = _il.Instaloader()
-    L.context._session.cookies.set(
-        "sessionid", sid, domain=".instagram.com", path="/"
-    )
-    username = L.test_login()
-    if username:
-        return jsonify({"logged_in": True, "username": username})
-    return jsonify({"logged_in": False, "reason": "Session expired"})
+    return jsonify({"logged_in": False})
 
 
 def run_unfollower_scan(task_id, username, ig_user=None, ig_pass=None, session_id=None):
