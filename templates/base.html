@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -31,9 +32,8 @@
     <!-- Nav -->
     <nav class="bg-white/80 backdrop-blur-lg border-b border-surface-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2 text-xl font-bold">
-                <i data-lucide="scan-search" class="w-6 h-6 text-primary-500"></i>
-                <span class="text-gray-900 font-extrabold">IGAI</span>
+            <a href="/" class="flex items-center">
+                <img src="/static/logo.svg" alt="IGAI" class="h-9">
             </a>
             <div class="flex items-center gap-4">
                 <a href="/" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Home</a>
@@ -78,7 +78,7 @@
     </main>
 
     <footer class="border-t border-surface-200 mt-16 py-6 text-center text-gray-500 text-sm font-medium bg-white">
-        IGAI — Instagram Profile Analyzer
+        <img src="/static/logo.svg" alt="IGAI" class="h-6 inline-block opacity-50"> &mdash; Instagram Profile Analyzer
     </footer>
 
     <script src="/static/app.js"></script>
