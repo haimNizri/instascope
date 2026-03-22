@@ -13,7 +13,7 @@
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
         <div class="text-xs text-gray-500 uppercase mb-1">Total Users</div>
-        <div class="text-purple-500 font-bold text-2xl">{{ users|length }}</div>
+        <div class="text-primary-500 font-bold text-2xl">{{ users|length }}</div>
     </div>
     <div class="bg-white rounded-xl p-4 text-center border border-gray-200 shadow-sm">
         <div class="text-xs text-gray-500 uppercase mb-1">Active</div>
@@ -44,21 +44,21 @@
         </thead>
         <tbody id="userTable">
             {% for user in users %}
-            <tr class="border-b border-gray-100 hover:bg-surface-50 transition" id="user-row-{{ user.id }}">
+            <tr class="border-b border-gray-200 hover:bg-surface-50 transition" id="user-row-{{ user.id }}">
                 <td class="py-3 px-4">
                     <div class="font-semibold text-gray-900">{{ user.display_name or user.email }}</div>
                     <div class="text-xs text-gray-500">{{ user.email }}</div>
                 </td>
                 <td class="py-3 px-4">
                     {% if user.instagram_username %}
-                    <span class="text-purple-500 font-medium">@{{ user.instagram_username }}</span>
+                    <span class="text-primary-500 font-medium">@{{ user.instagram_username }}</span>
                     {% else %}
                     <span class="text-gray-300">—</span>
                     {% endif %}
                 </td>
                 <td class="py-3 px-4">
                     <select onchange="updateUser({{ user.id }}, {role: this.value})"
-                        class="bg-surface-50 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-500">
+                        class="bg-surface-50 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-primary-500">
                         <option value="user" {{ 'selected' if user.role == 'user' }}>User</option>
                         <option value="admin" {{ 'selected' if user.role == 'admin' }}>Admin</option>
                     </select>
@@ -66,13 +66,13 @@
                 <td class="py-3 px-4">
                     <div class="flex flex-col gap-1">
                         <select onchange="updateUser({{ user.id }}, {subscription_tier: this.value})"
-                            class="bg-surface-50 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-purple-500">
+                            class="bg-surface-50 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-primary-500">
                             <option value="free" {{ 'selected' if user.subscription_tier == 'free' or not user.subscription_tier }}>Free</option>
                             <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro ($6)</option>
                             <option value="creator" {{ 'selected' if user.subscription_tier == 'creator' }}>Creator ($12)</option>
                         </select>
                         {% if user.trial_expires_at and user.trial_days_left > 0 %}
-                        <span class="text-xs text-cyan-600">Trial: {{ user.trial_days_left }}d left</span>
+                        <span class="text-xs text-cyan-400">Trial: {{ user.trial_days_left }}d left</span>
                         {% endif %}
                     </div>
                 </td>
@@ -104,7 +104,7 @@
                             Trial
                         </button>
                         <button onclick="resetPassword({{ user.id }})"
-                            class="px-3 py-1 bg-purple-50 text-purple-500 rounded-lg text-xs hover:bg-purple-100 transition border border-purple-100">
+                            class="px-3 py-1 bg-primary-50 text-primary-500 rounded-lg text-xs hover:bg-primary-100 transition border border-primary-100">
                             Reset PW
                         </button>
                         {% if user.id != current_user.id %}

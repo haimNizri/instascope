@@ -27,7 +27,7 @@
 
     <!-- Loading -->
     <div id="loadingState" class="hidden text-center py-16">
-        <div class="w-12 h-12 border-4 border-surface-200 border-t-amber-500 rounded-full animate-spin mx-auto mb-4"></div>
+        <div class="w-12 h-12 border-4 border-gray-200 border-t-amber-500 rounded-full animate-spin mx-auto mb-4"></div>
         <p class="text-gray-500 animate-pulse">Analyzing your data with AI...</p>
     </div>
 
@@ -139,7 +139,7 @@ function renderInsights(data) {
                     <div class="flex items-center gap-2 mb-2 flex-wrap">
                         <h3 class="font-bold text-gray-900">${i.title}</h3>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${priorityBadge[i.priority] || ''}">${i.priority}</span>
-                        <span class="text-xs text-gray-400">${i.category}</span>
+                        <span class="text-xs text-gray-500">${i.category}</span>
                     </div>
                     <p class="text-sm text-gray-600 leading-relaxed">${i.text}</p>
                 </div>

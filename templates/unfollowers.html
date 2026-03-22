@@ -5,7 +5,7 @@
 <!-- Loading overlay -->
 <div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
     <div class="relative mb-6">
-        <div class="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin"></div>
     </div>
     <p id="progressText" class="text-lg text-gray-500 animate-pulse">Scanning followers...</p>
 </div>
@@ -14,7 +14,7 @@
 <div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
     <div class="text-5xl mb-4">&#9888;&#65039;</div>
     <p id="errorText" class="text-xl text-red-500"></p>
-    <a href="/" class="mt-4 text-purple-500 hover:underline">&larr; Back to home</a>
+    <a href="/" class="mt-4 text-primary-500 hover:underline">&larr; Back to home</a>
 </div>
 
 <!-- Main content -->
@@ -29,11 +29,11 @@
         </div>
         <div class="flex gap-3">
             <button onclick="startScan()" id="scanBtn"
-                class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition
+                class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition
                        disabled:opacity-50 disabled:cursor-not-allowed">
                 Scan Followers Now
             </button>
-            <a href="/dashboard/{{ username }}" class="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:border-purple-500 transition text-center shadow-sm">
+            <a href="/dashboard/{{ username }}" class="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:border-primary-500 transition text-center shadow-sm">
                 View Profile Analysis
             </a>
         </div>
@@ -54,7 +54,7 @@
         <div class="text-4xl mb-4">&#9989;</div>
         <h2 class="text-xl font-semibold text-gray-900 mb-2">First Snapshot Saved</h2>
         <p class="text-gray-500 mb-2">
-            We've recorded <span id="snapshotCount" class="text-purple-500 font-bold"></span> followers.
+            We've recorded <span id="snapshotCount" class="text-primary-500 font-bold"></span> followers.
         </p>
         <p class="text-gray-500">Run another scan later to detect who unfollowed you.</p>
         <p id="snapshotTime" class="text-gray-500 text-sm mt-4"></p>
@@ -86,7 +86,7 @@
             <!-- Insights -->
             <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Insights</h2>
-                <ul id="insightsList" class="space-y-3 text-sm text-gray-600"></ul>
+                <ul id="insightsList" class="space-y-3 text-sm text-gray-500"></ul>
             </div>
         </div>
 
@@ -106,14 +106,14 @@
                     <span id="unfollowerBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-500"></span>
                 </h2>
                 <div class="flex gap-2">
-                    <button onclick="filterList('all')" class="filter-btn active px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="all">All</button>
-                    <button onclick="filterList('female')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="female">Female</button>
-                    <button onclick="filterList('male')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="male">Male</button>
-                    <button onclick="filterList('unknown')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-gray-200 transition" data-filter="unknown">Unknown</button>
+                    <button onclick="filterList('all')" class="filter-btn active px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-surface-200 transition" data-filter="all">All</button>
+                    <button onclick="filterList('female')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-surface-200 transition" data-filter="female">Female</button>
+                    <button onclick="filterList('male')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-surface-200 transition" data-filter="male">Male</button>
+                    <button onclick="filterList('unknown')" class="filter-btn px-3 py-1 rounded-lg text-xs bg-surface-100 text-gray-600 hover:bg-surface-200 transition" data-filter="unknown">Unknown</button>
                 </div>
             </div>
             <div id="unfollowerList" class="space-y-2 max-h-96 overflow-y-auto"></div>
-            <div id="noUnfollowers" class="hidden text-center py-8 text-gray-400">
+            <div id="noUnfollowers" class="hidden text-center py-8 text-gray-500">
                 No unfollowers detected since last scan
             </div>
         </div>
@@ -125,7 +125,7 @@
                 <span id="newFollowerBadge" class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600"></span>
             </h2>
             <div id="newFollowerList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-            <div id="noNewFollowers" class="hidden text-center py-8 text-gray-400">
+            <div id="noNewFollowers" class="hidden text-center py-8 text-gray-500">
                 No new followers since last scan
             </div>
         </div>

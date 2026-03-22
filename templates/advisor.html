@@ -5,7 +5,7 @@
 <!-- Loading -->
 <div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
     <div class="relative mb-6">
-        <div class="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin"></div>
     </div>
     <p id="progressText" class="text-lg text-gray-500 animate-pulse">Analyzing content...</p>
 </div>
@@ -14,7 +14,7 @@
 <div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
     <div class="text-5xl mb-4">&#9888;&#65039;</div>
     <p id="errorText" class="text-xl text-red-500"></p>
-    <a href="/" class="mt-4 text-purple-500 hover:underline">&larr; Back to home</a>
+    <a href="/" class="mt-4 text-primary-500 hover:underline">&larr; Back to home</a>
 </div>
 
 <div id="advisorDashboard">
@@ -73,7 +73,7 @@
             <!-- Best posting times -->
             <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-1">Best Posting Times</h2>
-                <p class="text-xs text-gray-400 mb-4">Avg engagement rate by hour (UTC)</p>
+                <p class="text-xs text-gray-500 mb-4">Avg engagement rate by hour (UTC)</p>
                 <div class="h-56">
                     <canvas id="hoursChart"></canvas>
                 </div>
@@ -82,7 +82,7 @@
             <!-- Engagement trend -->
             <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h2 class="text-lg font-semibold text-gray-900 mb-1">Engagement Trend</h2>
-                <p class="text-xs text-gray-400 mb-4">Monthly avg engagement rate</p>
+                <p class="text-xs text-gray-500 mb-4">Monthly avg engagement rate</p>
                 <div class="h-56">
                     <canvas id="trendChart"></canvas>
                 </div>

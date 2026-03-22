@@ -15,9 +15,9 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        purple: { 50: '#F5F0FF', 100: '#E8E0FF', 200: '#D4C4FF', 500: '#7C5CFC', 600: '#6B4CF0', 700: '#5A3CD4' },
+                        primary: { 50: '#FFF0F3', 100: '#FFE0E8', 200: '#FFC0D0', 500: '#C4145A', 600: '#A61050', 700: '#8A0D42' },
                         mint: { 50: '#EDFDF7', 100: '#D1FAE5', 400: '#2DD4A8', 500: '#22C498', 600: '#1AAE85' },
-                        surface: { 50: '#FAFAFA', 100: '#F5F5F7', 200: '#EEEEF0', 300: '#E0E0E4' }
+                        surface: { 50: '#FEF6EE', 100: '#FDF0E4', 200: '#F0E6DC', 300: '#E0D6CC' }
                     }
                 }
             }
@@ -32,7 +32,7 @@
     <nav class="bg-white/80 backdrop-blur-lg border-b border-surface-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 text-xl font-bold">
-                <i data-lucide="scan-search" class="w-6 h-6 text-purple-500"></i>
+                <i data-lucide="scan-search" class="w-6 h-6 text-primary-500"></i>
                 <span class="text-gray-900 font-extrabold">IGAI</span>
             </a>
             <div class="flex items-center gap-4">
@@ -45,7 +45,7 @@
                     <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Advisor</a>
                     <a href="#" onclick="promptNav('studio')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Studio</a>
                     <a href="/planner" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Planner</a>
-                    <a href="#" onclick="promptNav('insights')" class="text-sm text-purple-500 hover:text-purple-700 transition font-semibold">Insights</a>
+                    <a href="#" onclick="promptNav('insights')" class="text-sm text-primary-500 hover:text-primary-700 transition font-semibold">Insights</a>
                     {% else %}
                     <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Relationships</a>
                     <a href="/unfollowers/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Unfollowers</a>
@@ -53,11 +53,11 @@
                     <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Advisor</a>
                     <a href="/studio/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Studio</a>
                     <a href="/planner" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Planner</a>
-                    <a href="/insights/{{ current_user.instagram_username }}" class="text-sm text-purple-500 hover:text-purple-700 transition font-semibold">Insights</a>
+                    <a href="/insights/{{ current_user.instagram_username }}" class="text-sm text-primary-500 hover:text-primary-700 transition font-semibold">Insights</a>
                     {% endif %}
                 {% endif %}
                 {% if current_user.is_authenticated and not current_user.is_pro %}
-                <a href="/pricing" class="text-sm text-purple-500 hover:text-purple-700 transition font-semibold">Upgrade</a>
+                <a href="/pricing" class="text-sm text-primary-500 hover:text-primary-700 transition font-semibold">Upgrade</a>
                 {% elif current_user.is_authenticated and current_user.is_pro and current_user.role != 'admin' %}
                 <a href="/billing" class="text-sm text-mint-500 hover:text-mint-600 transition font-medium">Pro</a>
                 {% endif %}
@@ -98,7 +98,7 @@
                     status.className = 'text-xs px-2 py-1 rounded-full bg-mint-50 text-mint-500 border border-mint-100 font-medium';
                 } else {
                     status.textContent = 'Not connected';
-                    status.className = 'text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-500 border border-purple-100 cursor-pointer font-medium';
+                    status.className = 'text-xs px-2 py-1 rounded-full bg-primary-50 text-primary-500 border border-primary-100 cursor-pointer font-medium';
                     status.onclick = () => window.location.href = '/connect';
                 }
             }

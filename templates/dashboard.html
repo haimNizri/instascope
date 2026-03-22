@@ -5,7 +5,7 @@
 <!-- Loading overlay -->
 <div id="loadingOverlay" class="flex flex-col items-center justify-center py-32">
     <div class="relative mb-6">
-        <div class="w-16 h-16 border-4 border-surface-200 border-t-purple-500 rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin"></div>
     </div>
     <p id="progressText" class="text-lg text-gray-500 animate-pulse">Connecting...</p>
 </div>
@@ -14,7 +14,7 @@
 <div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
     <div class="text-5xl mb-4">&#9888;&#65039;</div>
     <p id="errorText" class="text-xl text-red-500"></p>
-    <a href="/" class="mt-4 text-purple-500 hover:underline">&#8592; Try another profile</a>
+    <a href="/" class="mt-4 text-primary-500 hover:underline">&#8592; Try another profile</a>
 </div>
 
 <!-- Dashboard (hidden until loaded) -->
@@ -22,15 +22,15 @@
 
     <!-- Profile Header -->
     <div id="profileHeader" class="bg-white rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-center gap-6 border border-gray-200 shadow-sm">
-        <img id="profilePic" src="" alt="Profile" class="w-24 h-24 rounded-full border-2 border-purple-500 object-cover bg-surface-100">
+        <img id="profilePic" src="" alt="Profile" class="w-24 h-24 rounded-full border-2 border-primary-500 object-cover bg-surface-100">
         <div class="flex-1 text-center sm:text-left">
             <div class="flex items-center justify-center sm:justify-start gap-2 mb-1">
                 <h1 id="profileUsername" class="text-2xl font-bold text-gray-900"></h1>
                 <span id="verifiedBadge" class="hidden text-blue-500 text-xl" title="Verified">&#10003;</span>
             </div>
             <p id="profileName" class="text-gray-500"></p>
-            <p id="profileBio" class="text-gray-600 mt-2 text-sm max-w-xl"></p>
-            <a id="profileUrl" href="#" target="_blank" class="hidden text-purple-500 text-sm hover:underline mt-1 inline-block"></a>
+            <p id="profileBio" class="text-gray-500 mt-2 text-sm max-w-xl"></p>
+            <a id="profileUrl" href="#" target="_blank" class="hidden text-primary-500 text-sm hover:underline mt-1 inline-block"></a>
         </div>
         <div class="flex gap-6 text-center">
             <div>
@@ -64,11 +64,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <h3 class="text-sm font-semibold text-green-600 mb-2">Positive Signals</h3>
-                        <ul id="authPositives" class="space-y-1 text-sm text-gray-600"></ul>
+                        <ul id="authPositives" class="space-y-1 text-sm text-gray-500"></ul>
                     </div>
                     <div>
                         <h3 class="text-sm font-semibold text-red-500 mb-2">Red Flags</h3>
-                        <ul id="authFlags" class="space-y-1 text-sm text-gray-600"></ul>
+                        <ul id="authFlags" class="space-y-1 text-sm text-gray-500"></ul>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
             <div class="h-56">
                 <canvas id="ageChart"></canvas>
             </div>
-            <p class="text-center mt-2 text-sm text-gray-500">Primary: <span id="primaryAge" class="text-purple-500 font-semibold"></span></p>
+            <p class="text-center mt-2 text-sm text-gray-500">Primary: <span id="primaryAge" class="text-primary-500 font-semibold"></span></p>
         </div>
 
         <!-- Demographics -->
@@ -92,7 +92,7 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Demographics</h2>
             <div id="demoContent">
                 <div id="demoPlaceholder" class="text-gray-500 text-sm py-12 text-center">
-                    Run with <span class="text-purple-500 font-mono">--deep</span> and login to get gender & geographic demographics
+                    Run with <span class="text-primary-500 font-mono">--deep</span> and login to get gender & geographic demographics
                 </div>
                 <div id="demoCharts" class="hidden">
                     <div class="h-48 mb-4">

@@ -5,7 +5,7 @@
 <!-- Loading overlay -->
 <div id="loadingOverlay" class="hidden flex flex-col items-center justify-center py-32">
     <div class="relative mb-6">
-        <div class="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin"></div>
     </div>
     <p id="progressText" class="text-lg text-gray-500 animate-pulse">Scanning...</p>
 </div>
@@ -14,7 +14,7 @@
 <div id="errorState" class="hidden flex flex-col items-center justify-center py-32">
     <div class="text-5xl mb-4">&#9888;&#65039;</div>
     <p id="errorText" class="text-xl text-red-500"></p>
-    <a href="/" class="mt-4 text-purple-500 hover:underline">&larr; Back to home</a>
+    <a href="/" class="mt-4 text-primary-500 hover:underline">&larr; Back to home</a>
 </div>
 
 <div id="relDashboard">
@@ -28,7 +28,7 @@
         </div>
         <div class="flex gap-3">
             <button onclick="startRelScan()" id="scanBtn"
-                class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition
+                class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition
                        disabled:opacity-50 disabled:cursor-not-allowed">
                 Scan Now
             </button>
@@ -63,7 +63,7 @@
                     <h2 class="text-lg font-semibold text-red-500">Don't Follow You Back</h2>
                     <span id="nfbBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-500"></span>
                 </div>
-                <p class="text-xs text-gray-400 mb-3">You follow them but they don't follow you</p>
+                <p class="text-xs text-gray-500 mb-3">You follow them but they don't follow you</p>
 
                 <!-- Gender chart -->
                 <div id="nfbGenderSection" class="h-32 mb-3 relative">
@@ -87,7 +87,7 @@
                     <h2 class="text-lg font-semibold text-green-500">One-Way Followers</h2>
                     <span id="fansBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-600"></span>
                 </div>
-                <p class="text-xs text-gray-400 mb-3">Follow you but you don't follow them</p>
+                <p class="text-xs text-gray-500 mb-3">Follow you but you don't follow them</p>
 
                 <!-- Gender chart -->
                 <div id="fansGenderSection" class="h-32 mb-3 relative">
@@ -110,10 +110,10 @@
         <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-purple-500">Mutual Follows</h2>
-                    <p class="text-xs text-gray-400">You follow each other</p>
+                    <h2 class="text-lg font-semibold text-primary-500">Mutual Follows</h2>
+                    <p class="text-xs text-gray-500">You follow each other</p>
                 </div>
-                <span id="mutualBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-500"></span>
+                <span id="mutualBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-primary-50 text-primary-500"></span>
             </div>
             <div id="mutualList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto"></div>
         </div>
