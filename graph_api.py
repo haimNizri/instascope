@@ -130,12 +130,20 @@ def get_instagram_business_account(access_token):
     Raises:
         GraphAPIError: If the API calls fail.
     """
+    # Debug: check what permissions this token has
+    perm_resp = requests.get(
+        f"{BASE_URL}me/permissions",
+        params={"access_token": access_token},
+    )
+    print(f"[FB OAuth] Token permissions: {perm_resp.json()}")
+
     # List all pages the user manages
     resp = requests.get(
         f"{BASE_URL}me/accounts",
         params={"access_token": access_token},
     )
     data = resp.json()
+    print(f"[FB OAuth] me/accounts raw response: {data}")
     if "error" in data:
         raise GraphAPIError(
             f"Failed to list Facebook pages: "
