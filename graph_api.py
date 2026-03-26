@@ -141,16 +141,20 @@ def get_instagram_business_account(access_token):
         )
 
     pages = data.get("data", [])
+    print(f"[FB OAuth] Found {len(pages)} pages: {[p.get('name', p['id']) for p in pages]}")
     for page in pages:
         page_id = page["id"]
+        # Use page access token if available (required for some permissions)
+        page_token = page.get("access_token", access_token)
         resp2 = requests.get(
             f"{BASE_URL}{page_id}",
             params={
                 "fields": "instagram_business_account,name",
-                "access_token": access_token,
+                "access_token": page_token,
             },
         )
         page_data = resp2.json()
+        print(f"[FB OAuth] Page {page.get('name', page_id)}: {page_data}")
         if "error" in page_data:
             continue
 
