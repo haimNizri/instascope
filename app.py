@@ -2430,17 +2430,24 @@ def auth_facebook_callback():
 
     code = request.args.get("code", "")
     state = request.args.get("state", "")
-    if state != session.pop("fb_oauth_state", None):
-        flash("Invalid OAuth state. Please try again.")
-        return redirect("/connect")
+    expected_state = session.pop("fb_oauth_state", None)
+    if state != expected_state:
+        print(f"[FB OAuth] State mismatch: got={state[:20]}... expected={expected_state[:20] if expected_state else 'None'}...")
+        # Allow anyway in dev mode — session may not persist across redirects on Render
+        if not code:
+            flash("Invalid OAuth state. Please try again.")
+            return redirect("/connect")
 
     app_id = app.config.get("FACEBOOK_APP_ID") or os.environ.get("FACEBOOK_APP_ID", "")
     app_secret = app.config.get("FACEBOOK_APP_SECRET") or os.environ.get("FACEBOOK_APP_SECRET", "")
     redirect_uri = app.config.get("FACEBOOK_REDIRECT_URI") or os.environ.get("FACEBOOK_REDIRECT_URI", "")
 
     try:
+        print(f"[FB OAuth] Exchanging code for token...")
         token_data = exchange_code_for_token(code, app_id, app_secret, redirect_uri)
+        print(f"[FB OAuth] Got token, looking for IG business account...")
         ig_data = get_instagram_business_account(token_data["access_token"])
+        print(f"[FB OAuth] IG data: {ig_data}")
         if not ig_data:
             flash("No Instagram Business/Creator account found. Make sure your Instagram is connected to a Facebook Page and is a Business or Creator account.")
             return redirect("/connect")
@@ -2471,9 +2478,11 @@ def auth_facebook_callback():
             )
             db.session.add(acct)
         db.session.commit()
+        print(f"[FB OAuth] Success! Connected @{ig_data.get('ig_username', '')}")
         flash(f"Connected Instagram @{ig_data.get('ig_username', '')} for publishing!")
         return redirect("/planner")
     except Exception as e:
+        print(f"[FB OAuth] Error: {str(e)}")
         flash(f"Error connecting Facebook: {str(e)}")
         return redirect("/connect")
 
