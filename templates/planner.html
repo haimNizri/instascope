@@ -53,6 +53,30 @@
         </div>
 
         <div class="p-6 space-y-5">
+            <!-- Media Upload -->
+            <div>
+                <label class="block text-sm text-gray-500 mb-1">Media</label>
+                <div id="uploadZone" class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-primary-500 transition"
+                     ondragover="event.preventDefault(); this.classList.add('border-primary-500')"
+                     ondragleave="this.classList.remove('border-primary-500')"
+                     ondrop="event.preventDefault(); this.classList.remove('border-primary-500'); handleFileDrop(event.dataTransfer.files)"
+                     onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept="image/*,video/*" multiple class="hidden" onchange="handleFileDrop(this.files)">
+                    <div id="uploadPlaceholder">
+                        <div class="text-3xl mb-2">&#128247;</div>
+                        <p class="text-gray-500 text-sm">Drop photos or videos here, or click to browse</p>
+                        <p class="text-gray-400 text-xs mt-1">JPG, PNG, WEBP up to 8MB &middot; MP4, MOV up to 100MB</p>
+                    </div>
+                    <div id="uploadProgress" class="hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="uploadBar" class="bg-primary-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                        <p id="uploadText" class="text-primary-500 text-sm mt-2">Uploading...</p>
+                    </div>
+                </div>
+                <div id="mediaPreviews" class="flex gap-2 mt-2 flex-wrap"></div>
+            </div>
+
             <!-- Title / Topic -->
             <div>
                 <label class="block text-sm text-gray-500 mb-1">Topic / Idea</label>
@@ -207,6 +231,7 @@ function renderPosts() {
                 <div class="flex gap-2 flex-shrink-0">
                     <button onclick="editPost(${p.id})" class="px-3 py-1.5 bg-surface-100 text-gray-500 rounded-lg text-xs hover:text-gray-900 hover:bg-surface-200 transition">Edit</button>
                     ${p.status === 'scheduled' ? `<button onclick="markStatus(${p.id}, 'published')" class="px-3 py-1.5 bg-green-100 text-green-600 rounded-lg text-xs hover:bg-green-200 transition">Done</button>` : ''}
+                    ${p.status === 'scheduled' && p.media_url ? `<button onclick="publishPost(${p.id})" class="px-3 py-1.5 bg-primary-500 text-white rounded-lg text-xs hover:bg-primary-600 transition">Publish</button>` : ''}
                     ${p.status === 'draft' ? `<button onclick="markStatus(${p.id}, 'scheduled')" class="px-3 py-1.5 bg-emerald-100 text-emerald-600 rounded-lg text-xs hover:bg-emerald-200 transition">Schedule</button>` : ''}
                     <button onclick="deletePost(${p.id})" class="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs hover:bg-red-100 transition">&times;</button>
                 </div>
@@ -228,6 +253,15 @@ function setView(view) {
 
 function openPostEditor(postData) {
     editingPostId = postData ? postData.id : null;
+    uploadedMediaUrls = [];
+    document.getElementById('mediaPreviews').innerHTML = '';
+    if (postData?.media_url) {
+        uploadedMediaUrls = postData.media_urls || [postData.media_url];
+        uploadedMediaUrls.forEach(url => {
+            const thumb = url.replace('/upload/', '/upload/c_fill,w_300,h_300/');
+            addMediaPreview(thumb, url);
+        });
+    }
     document.getElementById('editorTitle').textContent = editingPostId ? 'Edit Post' : 'New Post';
     document.getElementById('postTitle').value = postData?.title || '';
     document.getElementById('postCaption').value = postData?.caption || '';
@@ -282,6 +316,8 @@ function savePost(status) {
         scheduled_at: getScheduleDateTime(),
         notes: document.getElementById('postNotes').value,
         status: status,
+        media_url: uploadedMediaUrls[0] || '',
+        media_urls: uploadedMediaUrls.length > 1 ? uploadedMediaUrls : null,
     };
 
     const url = editingPostId ? `/api/planner/posts/${editingPostId}` : '/api/planner/posts';
@@ -345,6 +381,166 @@ function aiGenerateAll() {
             }
         })
         .catch(err => { btn.innerHTML = '&#9889; AI Fill All'; btn.disabled = false; alert('Error: ' + err.message); });
+}
+
+// ── Graph API Publishing ─────────────────────────────────────────────────
+
+let graphConnected = false;
+
+fetch('/api/graph/status')
+    .then(r => r.json())
+    .then(data => {
+        graphConnected = data.connected;
+        if (data.connected && data.token_expired) {
+            // Show reconnect banner
+            const banner = document.createElement('div');
+            banner.className = 'bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 text-sm text-yellow-700 flex items-center justify-between';
+            banner.innerHTML = 'Your Instagram publishing connection has expired. <a href="/auth/facebook" class="font-semibold text-primary-500 hover:underline">Reconnect</a>';
+            document.querySelector('.max-w-6xl')?.prepend(banner);
+        }
+    })
+    .catch(() => {});
+
+function publishPost(postId) {
+    if (!graphConnected) {
+        alert('Connect your Instagram for publishing first. Go to the Connect page.');
+        return;
+    }
+    if (!confirm('Publish this post to Instagram now?')) return;
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
+
+    fetch(`/api/planner/posts/${postId}/publish`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                alert('Published to Instagram!');
+                loadPlannerPosts();
+            } else {
+                alert(data.error || 'Publishing failed');
+                btn.disabled = false;
+                btn.textContent = 'Publish';
+            }
+        })
+        .catch(err => {
+            alert('Error: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = 'Publish';
+        });
+}
+
+// ── Cloudinary Upload ────────────────────────────────────────────────────
+
+let cloudinaryConfig = null;
+let uploadedMediaUrls = [];
+
+fetch('/api/upload/config')
+    .then(r => r.json())
+    .then(data => { cloudinaryConfig = data; })
+    .catch(() => {});
+
+function handleFileDrop(files) {
+    if (!cloudinaryConfig || !cloudinaryConfig.cloud_name) {
+        alert('Media upload not configured. Contact admin.');
+        return;
+    }
+    Array.from(files).forEach(file => uploadToCloudinary(file));
+}
+
+function uploadToCloudinary(file) {
+    // Validate
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) { alert('Only images and videos are supported'); return; }
+    if (isImage && file.size > 8 * 1024 * 1024) { alert('Image must be under 8MB'); return; }
+    if (isVideo && file.size > 100 * 1024 * 1024) { alert('Video must be under 100MB'); return; }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', cloudinaryConfig.upload_preset);
+    formData.append('folder', 'igai');
+
+    document.getElementById('uploadProgress').classList.remove('hidden');
+    document.getElementById('uploadPlaceholder').classList.add('hidden');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloud_name}/auto/upload`);
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            document.getElementById('uploadBar').style.width = pct + '%';
+            document.getElementById('uploadText').textContent = `Uploading... ${pct}%`;
+        }
+    };
+
+    xhr.onload = () => {
+        document.getElementById('uploadProgress').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+
+        if (xhr.status === 200) {
+            const res = JSON.parse(xhr.responseText);
+            const thumbUrl = res.secure_url.replace('/upload/', '/upload/c_fill,w_300,h_300/');
+
+            // Register with backend
+            fetch('/api/upload/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: res.secure_url,
+                    public_id: res.public_id,
+                    thumbnail_url: thumbUrl,
+                    resource_type: res.resource_type,
+                    format: res.format,
+                    width: res.width,
+                    height: res.height,
+                    bytes: res.bytes,
+                }),
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    uploadedMediaUrls.push(res.secure_url);
+                    addMediaPreview(thumbUrl, res.secure_url);
+                    // Auto-set media_type
+                    if (uploadedMediaUrls.length > 1) {
+                        document.getElementById('postMediaType').value = 'carousel';
+                    } else if (res.resource_type === 'video') {
+                        document.getElementById('postMediaType').value = 'reel';
+                    }
+                }
+            });
+        } else {
+            alert('Upload failed. Please try again.');
+        }
+    };
+
+    xhr.onerror = () => {
+        document.getElementById('uploadProgress').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+        alert('Upload failed. Check your connection.');
+    };
+
+    xhr.send(formData);
+}
+
+function addMediaPreview(thumbUrl, fullUrl) {
+    const container = document.getElementById('mediaPreviews');
+    const div = document.createElement('div');
+    div.className = 'relative group';
+    div.innerHTML = `
+        <img src="${thumbUrl}" class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+        <button onclick="removeMedia(this, '${fullUrl}')" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>
+    `;
+    container.appendChild(div);
+}
+
+function removeMedia(btn, url) {
+    uploadedMediaUrls = uploadedMediaUrls.filter(u => u !== url);
+    btn.closest('.relative').remove();
+    if (uploadedMediaUrls.length <= 1) {
+        document.getElementById('postMediaType').value = 'image';
+    }
 }
 </script>
 {% endblock %}

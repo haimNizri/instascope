@@ -24,6 +24,7 @@
                 <li class="flex gap-2 text-gray-500"><span class="text-gray-500">&#10007;</span> Ghost followers & lurkers</li>
                 <li class="flex gap-2 text-gray-500"><span class="text-gray-500">&#10007;</span> Content Studio & Advisor</li>
                 <li class="flex gap-2 text-gray-500"><span class="text-gray-500">&#10007;</span> Automatic daily scans</li>
+                <li class="flex gap-2 text-gray-500"><span class="text-gray-400">&#10007;</span> Direct publishing</li>
             </ul>
             <div class="text-center text-gray-500 text-sm">Current plan</div>
         </div>
@@ -34,16 +35,17 @@
                 POPULAR
             </div>
             <div class="text-sm text-primary-500 uppercase font-semibold mb-2">Pro</div>
-            <div class="text-4xl font-bold text-gray-900 mb-1">$6<span class="text-lg text-gray-500 font-normal">/mo</span></div>
-            <div class="text-gray-500 text-sm mb-6">For active users</div>
+            <div class="text-4xl font-bold text-gray-900 mb-1">$9<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+            <div class="text-gray-500 text-sm mb-6">For active creators</div>
             <ul class="space-y-3 text-sm mb-8">
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> <strong>Unlimited</strong> scans & tracking</li>
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Gender & demographic analysis</li>
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Ghost followers & lurkers</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Content Studio & Advisor</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Content Advisor & Studio</li>
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Content Planner</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> <strong>20</strong> AI generations / month</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Automatic daily scans</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> <strong>30</strong> AI generations / month</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Smart Photo Picker (3/mo)</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Media uploads (50/mo)</li>
             </ul>
             {% if current_user.is_authenticated and current_user.subscription_tier == 'pro' %}
             <div class="text-center"><span class="px-6 py-3 bg-green-50 text-green-600 font-semibold rounded-xl inline-block border border-green-100">&#10003; Your Plan</span></div>
@@ -58,14 +60,14 @@
                 BEST VALUE
             </div>
             <div class="text-sm text-fuchsia-500 uppercase font-semibold mb-2">Creator</div>
-            <div class="text-4xl font-bold text-gray-900 mb-1">$12<span class="text-lg text-gray-500 font-normal">/mo</span></div>
-            <div class="text-gray-500 text-sm mb-6">For content creators</div>
+            <div class="text-4xl font-bold text-gray-900 mb-1">$19<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+            <div class="text-gray-500 text-sm mb-6">For serious creators</div>
             <ul class="space-y-3 text-sm mb-8">
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Everything in Pro</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> <strong>200</strong> AI generations / month</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> AI captions, hashtags & scheduling</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> AI content ideas & templates</li>
-                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> Niche benchmarking</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> <strong>Unlimited</strong> AI generations</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> <strong>Publish directly</strong> to Instagram</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> Unlimited Photo Picker & uploads</li>
+                <li class="flex gap-2 text-gray-700"><span class="text-fuchsia-500">&#9889;</span> AI Insights & cross-analysis</li>
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Priority support</li>
                 <li class="flex gap-2 text-gray-700"><span class="text-green-500">&#10003;</span> Early access to new features</li>
             </ul>

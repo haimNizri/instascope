@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}IGAI — Creator Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <span class="bg-gradient-to-r from-primary-500 to-pink-500 bg-clip-text text-transparent">Creator Dashboard</span>
+            </h1>
+            <p class="text-gray-500 mt-1">Your content performance at a glance</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="/planner" class="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm">+ New Post</a>
+            <a href="/photo-picker" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-semibold rounded-xl hover:border-primary-500 transition text-sm">Photo Picker</a>
+        </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm text-center">
+            <div class="text-3xl font-bold text-primary-500" id="statPublished">—</div>
+            <div class="text-xs text-gray-500 uppercase mt-1">Published</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm text-center">
+            <div class="text-3xl font-bold text-emerald-500" id="statScheduled">—</div>
+            <div class="text-xs text-gray-500 uppercase mt-1">Scheduled</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm text-center">
+            <div class="text-3xl font-bold text-gray-400" id="statDrafts">—</div>
+            <div class="text-xs text-gray-500 uppercase mt-1">Drafts</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm text-center">
+            <div class="text-3xl font-bold text-violet-500" id="statAI">—</div>
+            <div class="text-xs text-gray-500 uppercase mt-1">AI Used</div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Publishing activity chart -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">Publishing Activity</h2>
+            <p class="text-xs text-gray-400 mb-4">Posts by status over the last 30 days</p>
+            <div class="h-56">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Content mix chart -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">Content Mix</h2>
+            <p class="text-xs text-gray-400 mb-4">Post types breakdown</p>
+            <div class="h-56">
+                <canvas id="mixChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Publishing streak + AI usage -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Streak card -->
+        <div class="bg-gradient-to-br from-primary-500 to-pink-500 rounded-2xl p-6 text-white relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 16px 16px;"></div>
+            <div class="relative">
+                <div class="text-white/80 text-sm font-medium mb-1">Publishing Streak</div>
+                <div class="text-5xl font-bold mb-1" id="streakCount">0</div>
+                <div class="text-white/70 text-sm" id="streakLabel">days in a row</div>
+            </div>
+        </div>
+
+        <!-- AI generations -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-sm font-semibold text-gray-500 mb-3">AI Generations This Month</h2>
+            <div class="flex items-end gap-3 mb-3">
+                <span class="text-4xl font-bold text-gray-900" id="aiUsed">0</span>
+                <span class="text-gray-400 text-lg mb-1">/ <span id="aiLimit">0</span></span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-3">
+                <div id="aiBar" class="bg-gradient-to-r from-violet-500 to-primary-500 h-3 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-sm font-semibold text-gray-500 mb-3">Quick Actions</h2>
+            <div class="space-y-2">
+                <a href="/planner" class="flex items-center gap-3 p-3 bg-surface-50 rounded-xl hover:bg-surface-100 transition">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    <span class="text-sm text-gray-700 font-medium">Create a post</span>
+                </a>
+                <a href="/photo-picker" class="flex items-center gap-3 p-3 bg-surface-50 rounded-xl hover:bg-surface-100 transition">
+                    <i data-lucide="image-plus" class="w-4 h-4 text-pink-500"></i>
+                    <span class="text-sm text-gray-700 font-medium">Pick best photos</span>
+                </a>
+                <a href="/connect" class="flex items-center gap-3 p-3 bg-surface-50 rounded-xl hover:bg-surface-100 transition">
+                    <i data-lucide="link" class="w-4 h-4 text-primary-500"></i>
+                    <span class="text-sm text-gray-700 font-medium">Connect Instagram</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent & Upcoming posts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Recent published -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Recently Published</h2>
+            <div id="recentPosts" class="space-y-3">
+                <p class="text-gray-400 text-sm text-center py-4">No published posts yet</p>
+            </div>
+        </div>
+
+        <!-- Upcoming scheduled -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Upcoming Scheduled</h2>
+            <div id="upcomingPosts" class="space-y-3">
+                <p class="text-gray-400 text-sm text-center py-4">No scheduled posts yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load dashboard data
+fetch('/api/creator-dashboard')
+    .then(r => r.json())
+    .then(data => {
+        // Stats
+        document.getElementById('statPublished').textContent = data.published || 0;
+        document.getElementById('statScheduled').textContent = data.scheduled || 0;
+        document.getElementById('statDrafts').textContent = data.drafts || 0;
+        document.getElementById('statAI').textContent = data.ai_used || 0;
+
+        // Streak
+        document.getElementById('streakCount').textContent = data.streak || 0;
+        document.getElementById('streakLabel').textContent = (data.streak === 1 ? 'day' : 'days') + ' in a row';
+
+        // AI bar
+        const aiUsed = data.ai_used || 0;
+        const aiLimit = data.ai_limit || 1;
+        document.getElementById('aiUsed').textContent = aiUsed;
+        document.getElementById('aiLimit').textContent = aiLimit >= 9999 ? '\u221e' : aiLimit;
+        document.getElementById('aiBar').style.width = Math.min(100, Math.round(aiUsed / aiLimit * 100)) + '%';
+
+        // Activity chart
+        if (data.activity_labels && data.activity_data) {
+            new Chart(document.getElementById('activityChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.activity_labels,
+                    datasets: [{
+                        label: 'Posts',
+                        data: data.activity_data,
+                        backgroundColor: '#C4145A',
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f3f3f3' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Mix chart
+        if (data.mix_labels && data.mix_data) {
+            new Chart(document.getElementById('mixChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.mix_labels,
+                    datasets: [{
+                        data: data.mix_data,
+                        backgroundColor: ['#C4145A', '#EC4899', '#8B5CF6', '#10B981', '#F59E0B', '#06B6D4'],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 16, font: { size: 12 } } } }
+                }
+            });
+        }
+
+        // Recent posts
+        if (data.recent && data.recent.length) {
+            const typeIcons = { image: '\ud83d\udcf7', carousel: '\ud83d\udcda', reel: '\ud83c\udfac', story: '\u26aa', video: '\ud83c\udfa5' };
+            document.getElementById('recentPosts').innerHTML = data.recent.map(p => `
+                <div class="flex items-center gap-3 p-3 bg-surface-50 rounded-xl">
+                    <span class="text-lg">${typeIcons[p.media_type] || '\ud83d\udcf7'}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-900 truncate">${p.title || 'Untitled'}</div>
+                        <div class="text-xs text-gray-400">${p.published_at ? new Date(p.published_at).toLocaleDateString() : ''}</div>
+                    </div>
+                    ${p.ig_media_id ? '<span class="text-xs text-green-500 font-medium">Live</span>' : '<span class="text-xs text-gray-400">Draft</span>'}
+                </div>
+            `).join('');
+        }
+
+        // Upcoming posts
+        if (data.upcoming && data.upcoming.length) {
+            const typeIcons = { image: '\ud83d\udcf7', carousel: '\ud83d\udcda', reel: '\ud83c\udfac', story: '\u26aa', video: '\ud83c\udfa5' };
+            document.getElementById('upcomingPosts').innerHTML = data.upcoming.map(p => `
+                <div class="flex items-center gap-3 p-3 bg-surface-50 rounded-xl">
+                    <span class="text-lg">${typeIcons[p.media_type] || '\ud83d\udcf7'}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-900 truncate">${p.title || 'Untitled'}</div>
+                        <div class="text-xs text-gray-400">${p.scheduled_at ? new Date(p.scheduled_at).toLocaleDateString() + ' ' + new Date(p.scheduled_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'No date'}</div>
+                    </div>
+                    <span class="text-xs text-emerald-500 font-medium">Scheduled</span>
+                </div>
+            `).join('');
+        }
+    });
+
+lucide.createIcons();
+</script>
+{% endblock %}

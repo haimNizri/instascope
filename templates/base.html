@@ -38,13 +38,20 @@
             <div class="flex items-center gap-4">
                 <a href="/" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Home</a>
                 {% if current_user.is_authenticated and current_user.instagram_username %}
-                    {% if current_user.role == 'admin' %}
+                    {% if current_user.review_mode %}
+                    {# Meta review account — only creator tools #}
+                    <a href="/creator-dashboard" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Dashboard</a>
+                    <a href="/planner" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Planner</a>
+                    <a href="/photo-picker" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Photo Picker</a>
+                    {% elif current_user.role == 'admin' %}
                     <a href="#" onclick="promptNav('unfollowers')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Unfollowers</a>
                     <a href="#" onclick="promptNav('lurkers')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Lurkers</a>
                     <a href="#" onclick="promptNav('relationships')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Relationships</a>
                     <a href="#" onclick="promptNav('advisor')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Advisor</a>
                     <a href="#" onclick="promptNav('studio')" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Studio</a>
+                    <a href="/creator-dashboard" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Dashboard</a>
                     <a href="/planner" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Planner</a>
+                    <a href="/photo-picker" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Photo Picker</a>
                     <a href="#" onclick="promptNav('insights')" class="text-sm text-primary-500 hover:text-primary-700 transition font-semibold">Insights</a>
                     {% else %}
                     <a href="/relationships/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Relationships</a>
@@ -52,7 +59,9 @@
                     <a href="/lurkers/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Lurkers</a>
                     <a href="/advisor/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Advisor</a>
                     <a href="/studio/{{ current_user.instagram_username }}" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Studio</a>
+                    <a href="/creator-dashboard" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Dashboard</a>
                     <a href="/planner" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Planner</a>
+                    <a href="/photo-picker" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Photo Picker</a>
                     <a href="/insights/{{ current_user.instagram_username }}" class="text-sm text-primary-500 hover:text-primary-700 transition font-semibold">Insights</a>
                     {% endif %}
                 {% endif %}

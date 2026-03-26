@@ -9,7 +9,7 @@
     <p class="text-gray-500 text-lg">Instagram Analytics & Insights</p>
 </div>
 
-{% if current_user.role == 'admin' %}
+{% if current_user.role == 'admin' and not current_user.review_mode %}
 <!-- ── ADMIN VIEW: search any profile ────────────────────────────────── -->
 <div class="max-w-2xl mx-auto mb-12">
     <div class="flex gap-3 mb-4">
@@ -56,8 +56,101 @@
         {% endif %}
     </div>
 
+    {% if current_user.review_mode %}
+    <!-- Creator Suite hero banner -->
+    <div class="bg-gradient-to-r from-primary-500 to-pink-500 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <div class="relative">
+            <div class="flex items-center gap-2 text-white/80 text-sm font-semibold mb-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                AI-POWERED CREATOR SUITE
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Create, Perfect & Publish — All in One Place</h2>
+            <p class="text-white/80 max-w-xl">Upload your photos, let AI pick the best ones, generate captions & hashtags, then publish directly to Instagram. No switching between apps.</p>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Feature cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+        {% if current_user.review_mode %}
+        {# ── REVIEW MODE: Creator Suite dashboard ── #}
+
+        <!-- Creator Dashboard -->
+        <a href="/creator-dashboard"
+           class="bg-gradient-to-br from-primary-50 to-pink-50 rounded-2xl p-6 border border-primary-200 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center mb-4">
+                <i data-lucide="bar-chart-2" class="w-5 h-5 text-white"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Creator Dashboard</h3>
+            <p class="text-gray-500 text-sm">Your publishing stats, content mix, streak & upcoming posts at a glance</p>
+        </a>
+
+        <!-- Direct Publishing -->
+        <a href="/planner"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-primary-300 hover:shadow-md transition group shadow-sm relative overflow-hidden">
+            <div class="absolute top-3 right-3 px-2 py-0.5 bg-primary-500 text-white text-xs font-bold rounded-full">NEW</div>
+            <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center mb-4">
+                <i data-lucide="send" class="w-5 h-5 text-primary-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Publish to Instagram</h3>
+            <p class="text-gray-500 text-sm">Upload, edit & publish photos, carousels and Reels directly to your feed</p>
+        </a>
+
+        <!-- Smart Photo Picker -->
+        <a href="/photo-picker"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-pink-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center mb-4">
+                <i data-lucide="sparkles" class="w-5 h-5 text-pink-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Smart Photo Picker</h3>
+            <p class="text-gray-500 text-sm">Upload a photo dump — AI scores composition, lighting & appeal, picks your best shots</p>
+        </a>
+
+        <!-- AI Caption Writer -->
+        <a href="/planner"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-violet-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center mb-4">
+                <i data-lucide="pen-tool" class="w-5 h-5 text-violet-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">AI Caption Writer</h3>
+            <p class="text-gray-500 text-sm">Generate engaging captions, hashtags & CTAs tailored to your niche and style</p>
+        </a>
+
+        <!-- Content Planner -->
+        <a href="/planner"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <i data-lucide="calendar" class="w-5 h-5 text-emerald-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Content Planner</h3>
+            <p class="text-gray-500 text-sm">Plan your content calendar, schedule posts & track your publishing pipeline</p>
+        </a>
+
+        <!-- Carousel Builder -->
+        <a href="/photo-picker"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-blue-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
+                <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Carousel Builder</h3>
+            <p class="text-gray-500 text-sm">Select multiple photos, arrange them & publish as a carousel post in one click</p>
+        </a>
+
+        <!-- Best Time to Post -->
+        <a href="/planner"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-amber-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
+                <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Smart Scheduling</h3>
+            <p class="text-gray-500 text-sm">AI suggests the best day & time to post based on your audience for maximum reach</p>
+        </a>
+
+        {% else %}
+        {# ── NORMAL MODE: Full feature set ── #}
+
         <!-- Relationships -->
         <a href="/relationships/{{ current_user.instagram_username }}"
            class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-green-300 hover:shadow-md transition group shadow-sm">
@@ -83,7 +176,29 @@
             <span class="inline-block mt-3 text-xs text-amber-500">Free: one scan only</span>
             {% endif %}
         </a>
+        {% endif %}
 
+        <!-- Content Planner -->
+        <a href="/planner"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <i data-lucide="calendar" class="w-5 h-5 text-emerald-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Content Planner</h3>
+            <p class="text-gray-500 text-sm">Plan posts, upload media, generate captions & publish directly to Instagram</p>
+        </a>
+
+        <!-- Photo Picker -->
+        <a href="/photo-picker"
+           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-primary-300 hover:shadow-md transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center mb-4">
+                <i data-lucide="image-plus" class="w-5 h-5 text-primary-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-1 text-gray-900">Smart Photo Picker</h3>
+            <p class="text-gray-500 text-sm">Upload a photo dump, AI picks your best shots for Instagram</p>
+        </a>
+
+        {% if not current_user.review_mode %}
         <!-- AI Insights -->
         <a href="/insights/{{ current_user.instagram_username }}"
            class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-amber-300 hover:shadow-md transition group shadow-sm">
@@ -95,16 +210,6 @@
             {% if not current_user.is_pro and current_user.role != 'admin' %}
             <span class="inline-block mt-3 px-2 py-1 bg-purple-50 text-purple-500 rounded text-xs font-semibold">PRO</span>
             {% endif %}
-        </a>
-
-        <!-- Content Planner -->
-        <a href="/planner"
-           class="bg-white rounded-2xl p-6 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition group shadow-sm">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                <i data-lucide="calendar" class="w-5 h-5 text-emerald-500"></i>
-            </div>
-            <h3 class="text-lg font-semibold mb-1 text-gray-900">Content Planner</h3>
-            <p class="text-gray-500 text-sm">Plan posts, generate captions, schedule content & track publishing</p>
         </a>
 
         <!-- Content Studio -->
@@ -158,6 +263,7 @@
             <span class="inline-block mt-3 px-2 py-1 bg-purple-50 text-purple-500 rounded text-xs font-semibold">PRO</span>
             {% endif %}
         </a>
+        {% endif %}
     </div>
 </div>
 

@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     display_name = db.Column(db.String(128))
     role = db.Column(db.String(16), nullable=False, default="user")  # 'admin' or 'user'
     is_active = db.Column(db.Boolean, default=False)  # admin must approve
+    review_mode = db.Column(db.Boolean, default=False)  # Meta review account — only shows creator tools
     # Which Instagram accounts this user can view (comma-separated usernames, or '*' for all)
     allowed_accounts = db.Column(db.Text, default="")
     instagram_username = db.Column(db.String(64))  # their own IG username
@@ -75,11 +76,11 @@ class User(UserMixin, db.Model):
         if self.role == "admin":
             return 9999
         if self.subscription_tier == "creator" and self.subscription_status == "active":
-            return 200
+            return 9999
         if self.subscription_tier == "pro" and self.subscription_status == "active":
-            return 20
+            return 30
         if self.trial_expires_at and self.trial_expires_at > datetime.utcnow():
-            return 20  # trial gets pro-level AI
+            return 30  # trial gets pro-level AI
         return 3  # free users get 3 total (taste)
 
     @property
@@ -129,14 +130,52 @@ class User(UserMixin, db.Model):
             "lurkers": False,
             "advisor": False,
             "analysis_deep": False,
+            "photo_picker": False,
+            "publishing": False,
+            "media_upload": False,
+            "ai_insights": False,
         }
 
         allowed = free_features.get(feature, False)
         if not allowed:
             if feature == "unfollowers_first" and self.has_used_trial("unfollowers"):
                 return False, "You've used your free unfollower scan. Upgrade to Pro for unlimited scans."
-            return False, "This feature requires a Pro subscription ($6/month) or Creator ($12/month)."
+            return False, "This feature requires a Pro subscription ($9/month) or Creator ($19/month)."
         return True, "free"
+
+    def can_publish(self):
+        """Check if user can publish directly to Instagram (Creator only)."""
+        if self.role == "admin":
+            return True
+        return self.is_creator
+
+    def can_use_photo_picker(self):
+        """Check if user can use photo picker (Pro+)."""
+        if self.role == "admin":
+            return True
+        return self.is_pro
+
+    @property
+    def monthly_upload_limit(self):
+        """Max media uploads per month."""
+        if self.role == "admin":
+            return 9999
+        if self.is_creator:
+            return 9999
+        if self.is_pro:
+            return 50
+        return 0
+
+    @property
+    def monthly_picker_limit(self):
+        """Max photo picker batches per month."""
+        if self.role == "admin":
+            return 9999
+        if self.is_creator:
+            return 9999
+        if self.is_pro:
+            return 3
+        return 0
 
     def can_view(self, ig_username):
         """Check if this user can view a given Instagram account.
@@ -180,10 +219,15 @@ class PlannedPost(db.Model):
     hashtags = db.Column(db.Text)  # space-separated hashtags
     media_type = db.Column(db.String(16), default="image")  # image, video, carousel, reel, story
     media_url = db.Column(db.Text)  # uploaded image URL or path
+    media_urls = db.Column(db.JSON)  # list of URLs for carousel posts
     scheduled_at = db.Column(db.DateTime)
     status = db.Column(db.String(16), default="draft")  # draft, scheduled, published, skipped
     notes = db.Column(db.Text)
     category = db.Column(db.String(32))  # content category
+    ig_container_id = db.Column(db.String(64))  # Graph API container ID during publish
+    ig_media_id = db.Column(db.String(64))  # Graph API media ID after publish
+    published_at = db.Column(db.DateTime)  # actual publish timestamp
+    publish_error = db.Column(db.Text)  # error message if publish failed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -197,10 +241,14 @@ class PlannedPost(db.Model):
             "hashtags": self.hashtags,
             "media_type": self.media_type,
             "media_url": self.media_url,
+            "media_urls": self.media_urls,
             "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
             "status": self.status,
             "notes": self.notes,
             "category": self.category,
+            "ig_media_id": self.ig_media_id,
+            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "publish_error": self.publish_error,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -335,3 +383,45 @@ class StoryViewer(db.Model):
     viewer_full_name = db.Column(db.String(256))
     viewer_is_follower = db.Column(db.Boolean)
     viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class InstagramGraphAccount(db.Model):
+    """Instagram Business/Creator account connected via Facebook Graph API for publishing."""
+    __tablename__ = "instagram_graph_accounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    ig_user_id = db.Column(db.String(64), nullable=False)  # Instagram Business Account ID
+    ig_username = db.Column(db.String(64))
+    fb_page_id = db.Column(db.String(64))  # connected Facebook Page ID
+    fb_page_name = db.Column(db.String(256))
+    access_token = db.Column(db.Text, nullable=False)  # long-lived user access token
+    token_expires_at = db.Column(db.DateTime)  # 60-day expiry
+    token_refreshed_at = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("graph_accounts", lazy="dynamic"))
+
+
+class MediaAsset(db.Model):
+    """Uploaded media file stored in Cloudinary."""
+    __tablename__ = "media_assets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    batch_id = db.Column(db.String(36), index=True)  # groups photos from a single dump session
+    cloudinary_id = db.Column(db.String(256))  # Cloudinary public_id
+    url = db.Column(db.Text, nullable=False)  # full Cloudinary URL
+    thumbnail_url = db.Column(db.Text)  # auto-generated via Cloudinary transforms
+    resource_type = db.Column(db.String(16), default="image")  # 'image' or 'video'
+    format = db.Column(db.String(16))  # 'jpg', 'png', 'mp4', etc.
+    width = db.Column(db.Integer)
+    height = db.Column(db.Integer)
+    bytes = db.Column(db.Integer)
+    ai_score = db.Column(db.Float)  # Smart Photo Picker score (1-10)
+    ai_analysis = db.Column(db.JSON)  # detailed AI analysis breakdown
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("media_assets", lazy="dynamic"))

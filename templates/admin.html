@@ -29,6 +29,29 @@
     </div>
 </div>
 
+<!-- Create User -->
+<div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New User</h2>
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input type="email" id="newEmail" placeholder="Email" class="px-3 py-2 bg-surface-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary-500">
+        <input type="text" id="newName" placeholder="Display Name" class="px-3 py-2 bg-surface-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary-500">
+        <input type="text" id="newIG" placeholder="@instagram" class="px-3 py-2 bg-surface-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary-500">
+        <input type="password" id="newPassword" placeholder="Password (min 6)" class="px-3 py-2 bg-surface-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary-500">
+        <select id="newTier" class="px-3 py-2 bg-surface-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary-500">
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="creator" selected>Creator</option>
+        </select>
+        <button onclick="createUser()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg text-sm transition">
+            Create User
+        </button>
+    </div>
+    <label class="flex items-center gap-2 mt-3 text-sm text-gray-500">
+        <input type="checkbox" id="newReviewMode" class="rounded">
+        Review mode (Meta review account — only shows creator tools)
+    </label>
+</div>
+
 <!-- User list -->
 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
     <table class="w-full text-sm">
@@ -68,8 +91,8 @@
                         <select onchange="updateUser({{ user.id }}, {subscription_tier: this.value})"
                             class="bg-surface-50 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:outline-none focus:border-primary-500">
                             <option value="free" {{ 'selected' if user.subscription_tier == 'free' or not user.subscription_tier }}>Free</option>
-                            <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro ($6)</option>
-                            <option value="creator" {{ 'selected' if user.subscription_tier == 'creator' }}>Creator ($12)</option>
+                            <option value="pro" {{ 'selected' if user.subscription_tier == 'pro' }}>Pro ($9)</option>
+                            <option value="creator" {{ 'selected' if user.subscription_tier == 'creator' }}>Creator ($19)</option>
                         </select>
                         {% if user.trial_expires_at and user.trial_days_left > 0 %}
                         <span class="text-xs text-cyan-400">Trial: {{ user.trial_days_left }}d left</span>
@@ -84,6 +107,9 @@
                     {% endif %}
                     {% if user.instagram_verified %}
                     <span class="px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-600 border border-blue-100">IG Verified</span>
+                    {% endif %}
+                    {% if user.review_mode %}
+                    <span class="px-2 py-1 rounded-full text-xs bg-primary-50 text-primary-500 border border-primary-100">Review Mode</span>
                     {% endif %}
                 </td>
                 <td class="py-3 px-4">
@@ -102,6 +128,10 @@
                         <button onclick="grantTrial({{ user.id }})"
                             class="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-lg text-xs hover:bg-cyan-100 transition border border-cyan-100">
                             Trial
+                        </button>
+                        <button onclick="updateUser({{ user.id }}, {review_mode: {{ 'false' if user.review_mode else 'true' }}})"
+                            class="px-3 py-1 {{ 'bg-primary-500 text-white border-primary-500' if user.review_mode else 'bg-primary-50 text-primary-500 border-primary-100' }} rounded-lg text-xs hover:bg-primary-100 transition border">
+                            {{ 'Review ON' if user.review_mode else 'Review' }}
                         </button>
                         <button onclick="resetPassword({{ user.id }})"
                             class="px-3 py-1 bg-primary-50 text-primary-500 rounded-lg text-xs hover:bg-primary-100 transition border border-primary-100">
@@ -149,6 +179,32 @@ function resetPassword(userId) {
     if (!pw || pw.length < 6) { alert('Password must be at least 6 characters'); return; }
     updateUser(userId, { new_password: pw });
     alert('Password reset successfully');
+}
+
+function createUser() {
+    const email = document.getElementById('newEmail').value.trim();
+    const password = document.getElementById('newPassword').value;
+    if (!email || !password || password.length < 6) {
+        alert('Email and password (min 6 chars) required');
+        return;
+    }
+    fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: email,
+            password: password,
+            display_name: document.getElementById('newName').value.trim(),
+            instagram_username: document.getElementById('newIG').value.trim(),
+            subscription_tier: document.getElementById('newTier').value,
+            review_mode: document.getElementById('newReviewMode').checked,
+        }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.ok) { alert('User created!'); location.reload(); }
+        else alert(d.error || 'Error');
+    });
 }
 
 function deleteUser(userId) {

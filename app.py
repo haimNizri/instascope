@@ -16,8 +16,8 @@ from functools import wraps
 
 from config import Config
 from models import (
-    db, Account, FollowerSnapshot, FollowEvent,
-    PlannedPost, PostData, Report, ScanLog, StoryViewer, User,
+    db, Account, FollowerSnapshot, FollowEvent, InstagramGraphAccount,
+    MediaAsset, PlannedPost, PostData, Report, ScanLog, StoryViewer, User,
 )
 
 from analyzer import (
@@ -93,6 +93,23 @@ with app.app_context():
                 conn.execute(text("ALTER TABLE users ADD COLUMN ai_generations_used INTEGER DEFAULT 0"))
             if 'ai_reset_month' not in existing:
                 conn.execute(text("ALTER TABLE users ADD COLUMN ai_reset_month VARCHAR(7)"))
+            if 'review_mode' not in existing:
+                conn.execute(text("ALTER TABLE users ADD COLUMN review_mode BOOLEAN DEFAULT FALSE"))
+            conn.commit()
+    # Migrate planned_posts table for publishing fields
+    if 'planned_posts' in inspector.get_table_names():
+        existing_pp = [c['name'] for c in inspector.get_columns('planned_posts')]
+        with db.engine.connect() as conn:
+            if 'media_urls' not in existing_pp:
+                conn.execute(text("ALTER TABLE planned_posts ADD COLUMN media_urls JSON"))
+            if 'ig_container_id' not in existing_pp:
+                conn.execute(text("ALTER TABLE planned_posts ADD COLUMN ig_container_id VARCHAR(64)"))
+            if 'ig_media_id' not in existing_pp:
+                conn.execute(text("ALTER TABLE planned_posts ADD COLUMN ig_media_id VARCHAR(64)"))
+            if 'published_at' not in existing_pp:
+                conn.execute(text("ALTER TABLE planned_posts ADD COLUMN published_at TIMESTAMP"))
+            if 'publish_error' not in existing_pp:
+                conn.execute(text("ALTER TABLE planned_posts ADD COLUMN publish_error TEXT"))
             conn.commit()
 
 
@@ -579,10 +596,12 @@ def admin_update_user(user_id):
         user.set_password(data["new_password"])
     if "subscription_tier" in data and data["subscription_tier"] in ("free", "pro", "creator"):
         user.subscription_tier = data["subscription_tier"]
-        if data["subscription_tier"] == "pro":
+        if data["subscription_tier"] in ("pro", "creator"):
             user.subscription_status = "active"
         else:
             user.subscription_status = None
+    if "review_mode" in data:
+        user.review_mode = bool(data["review_mode"])
     if "trial_days" in data:
         days = int(data["trial_days"])
         if days > 0:
@@ -590,6 +609,35 @@ def admin_update_user(user_id):
             user.trial_expires_at = datetime.utcnow() + timedelta(days=days)
         else:
             user.trial_expires_at = None
+    db.session.commit()
+    return jsonify({"ok": True, "user": user.to_dict()})
+
+
+@app.post("/api/admin/users/create")
+@login_required
+@admin_required
+def admin_create_user():
+    """Create a new user from admin panel."""
+    data = request.json or {}
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+    if not email or not password or len(password) < 6:
+        return jsonify({"error": "Email and password (min 6 chars) required"}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already exists"}), 400
+    user = User(
+        email=email,
+        display_name=data.get("display_name", ""),
+        instagram_username=data.get("instagram_username", "").strip().lstrip("@"),
+        instagram_verified=bool(data.get("instagram_username")),
+        role="user",
+        is_active=True,
+        subscription_tier=data.get("subscription_tier", "free"),
+        subscription_status="active" if data.get("subscription_tier") in ("pro", "creator") else None,
+        review_mode=bool(data.get("review_mode")),
+    )
+    user.set_password(password)
+    db.session.add(user)
     db.session.commit()
     return jsonify({"ok": True, "user": user.to_dict()})
 
@@ -932,7 +980,7 @@ def api_unfollower_scan():
     if current_user.role != "admin" and not current_user.is_pro:
         if current_user.has_used_trial("unfollowers"):
             return jsonify({
-                "error": "You've used your free unfollower scan. Upgrade to Pro ($6/mo) for unlimited scans.",
+                "error": "You've used your free unfollower scan. Upgrade to Pro ($9/mo) for unlimited scans.",
                 "upgrade": True
             }), 403
         # Mark trial as used
@@ -1193,7 +1241,7 @@ def api_relationship_scan():
     if current_user.role != "admin" and not current_user.is_pro:
         if current_user.has_used_trial("relationships"):
             return jsonify({
-                "error": "You've used your free relationships scan. Upgrade to Pro ($6/mo) for unlimited scans.",
+                "error": "You've used your free relationships scan. Upgrade to Pro ($9/mo) for unlimited scans.",
                 "upgrade": True
             }), 403
         current_user.mark_trial_used("relationships")
@@ -1522,7 +1570,7 @@ def api_billing_webhook():
     if event_name == "subscription_created":
         # Detect tier from variant/product name or amount
         amount = attrs.get("first_subscription_item", {}).get("price", 0)
-        if amount and amount >= 1200:  # $12 in cents
+        if amount and amount >= 1900:  # $19 in cents
             user.subscription_tier = "creator"
         else:
             user.subscription_tier = "pro"
@@ -1816,9 +1864,9 @@ def api_generate_all():
     if not allowed:
         tier = current_user.subscription_tier or "free"
         if tier == "free":
-            msg = "You've used all 3 free AI generations. Upgrade to Pro ($6/mo) for 20/month or Creator ($12/mo) for 200/month."
+            msg = "You've used all 3 free AI generations. Upgrade to Pro ($9/mo) for 30/month or Creator ($19/mo) for unlimited."
         elif tier == "pro":
-            msg = "You've used all 20 AI generations this month. Upgrade to Creator ($12/mo) for 200/month."
+            msg = "You've used all 30 AI generations this month. Upgrade to Creator ($19/mo) for unlimited."
         else:
             msg = "You've reached your AI generation limit this month."
         return jsonify({"error": msg, "upgrade": True}), 403
@@ -2018,6 +2066,500 @@ def api_debug_env():
         "LEMONSQUEEZY_CHECKOUT_URL": "set" if os.environ.get("LEMONSQUEEZY_CHECKOUT_URL") else "NOT SET",
         "DATABASE_URL": "set" if os.environ.get("DATABASE_URL") else "NOT SET",
     })
+
+
+# ── Creator Dashboard ──────────────────────────────────────────────────────
+
+@app.route("/creator-dashboard")
+@login_required
+def creator_dashboard():
+    return render_template("creator_dashboard.html")
+
+
+@app.get("/api/creator-dashboard")
+@login_required
+def api_creator_dashboard():
+    """Return creator dashboard data — publishing stats, charts, recent posts."""
+    from datetime import timedelta
+    from sqlalchemy import func
+
+    posts = PlannedPost.query.filter_by(user_id=current_user.id).all()
+
+    published = [p for p in posts if p.status == 'published']
+    scheduled = [p for p in posts if p.status == 'scheduled']
+    drafts = [p for p in posts if p.status == 'draft']
+
+    # Publishing streak: count consecutive days with published posts going backward from today
+    streak = 0
+    if published:
+        pub_dates = sorted(set(
+            p.published_at.date() if p.published_at else p.updated_at.date()
+            for p in published if p.published_at or p.updated_at
+        ), reverse=True)
+        today = datetime.utcnow().date()
+        for i, d in enumerate(pub_dates):
+            expected = today - timedelta(days=i)
+            if d == expected:
+                streak += 1
+            else:
+                break
+
+    # Activity chart: posts created per day over last 14 days
+    activity_labels = []
+    activity_data = []
+    for i in range(13, -1, -1):
+        day = datetime.utcnow().date() - timedelta(days=i)
+        activity_labels.append(day.strftime('%b %d'))
+        count = sum(1 for p in posts if p.created_at and p.created_at.date() == day)
+        activity_data.append(count)
+
+    # Content mix
+    type_counts = {}
+    for p in posts:
+        t = p.media_type or 'image'
+        type_counts[t] = type_counts.get(t, 0) + 1
+    mix_labels = [t.capitalize() for t in type_counts.keys()]
+    mix_data = list(type_counts.values())
+    if not mix_labels:
+        mix_labels = ['Image', 'Carousel', 'Reel']
+        mix_data = [0, 0, 0]
+
+    # Recent published (last 5)
+    recent = sorted(published, key=lambda p: p.published_at or p.updated_at or p.created_at, reverse=True)[:5]
+
+    # Upcoming scheduled (next 5)
+    now = datetime.utcnow()
+    upcoming = sorted(
+        [p for p in scheduled if p.scheduled_at and p.scheduled_at > now],
+        key=lambda p: p.scheduled_at
+    )[:5]
+
+    return jsonify({
+        "published": len(published),
+        "scheduled": len(scheduled),
+        "drafts": len(drafts),
+        "ai_used": current_user.ai_limit - current_user.ai_remaining,
+        "ai_limit": current_user.ai_limit,
+        "streak": streak,
+        "activity_labels": activity_labels,
+        "activity_data": activity_data,
+        "mix_labels": mix_labels,
+        "mix_data": mix_data,
+        "recent": [p.to_dict() for p in recent],
+        "upcoming": [p.to_dict() for p in upcoming],
+    })
+
+
+# ── Photo Picker ───────────────────────────────────────────────────────────
+
+@app.route("/photo-picker")
+@login_required
+def photo_picker():
+    return render_template("photo_picker.html")
+
+
+@app.post("/api/photo-picker/analyze")
+@login_required
+def api_photo_picker_analyze():
+    """Analyze a batch of photos using Claude Vision API."""
+    data = request.get_json() or {}
+    batch_id = data.get("batch_id")
+    if not batch_id:
+        return jsonify({"error": "Missing batch_id"}), 400
+
+    assets = MediaAsset.query.filter_by(user_id=current_user.id, batch_id=batch_id).all()
+    if len(assets) < 3:
+        return jsonify({"error": "Need at least 3 photos to analyze"}), 400
+
+    # Check AI quota
+    allowed, remaining = current_user.use_ai_generation()
+    if not allowed:
+        return jsonify({"error": "AI generation limit reached. Upgrade your plan for more.", "upgrade": True}), 403
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+
+        # Build image content blocks (use URLs, limit to 15)
+        photos_to_analyze = assets[:15]
+        content = []
+        for i, asset in enumerate(photos_to_analyze):
+            # Use a smaller version for API efficiency
+            analysis_url = asset.url.replace("/upload/", "/upload/w_800,q_80/")
+            content.append({
+                "type": "image",
+                "source": {"type": "url", "url": analysis_url},
+            })
+            content.append({
+                "type": "text",
+                "text": f"Photo {i+1} (asset_id: {asset.id})",
+            })
+
+        content.append({
+            "type": "text",
+            "text": f"""You are an expert Instagram photographer and content strategist.
+Analyze these {len(photos_to_analyze)} photos and score each for Instagram-worthiness.
+
+For each photo return a JSON object:
+{{
+  "asset_id": <the asset_id shown above>,
+  "overall_score": <float 1.0-10.0>,
+  "composition": <float 1-10>,
+  "lighting": <float 1-10>,
+  "color_harmony": <float 1-10>,
+  "instagram_appeal": <float 1-10>,
+  "suggested_crop": "portrait|square|landscape",
+  "feedback": "<one sentence — what makes this photo good or bad for Instagram>"
+}}
+
+Return ONLY a JSON array of these objects, sorted from highest overall_score to lowest. No markdown, no explanation.""",
+        })
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": content}],
+        )
+
+        import json, re
+        raw = response.content[0].text.strip()
+        # Extract JSON array
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if not match:
+            return jsonify({"error": "AI returned invalid response"}), 500
+        scores = json.loads(match.group())
+
+        # Map scores to assets and store
+        asset_map = {a.id: a for a in photos_to_analyze}
+        results = []
+        for s in scores:
+            aid = s.get("asset_id")
+            if aid in asset_map:
+                asset = asset_map[aid]
+                asset.ai_score = s.get("overall_score", 0)
+                asset.ai_analysis = s
+                thumb = asset.thumbnail_url or asset.url.replace("/upload/", "/upload/c_fill,w_400,h_400/")
+                results.append({
+                    "asset_id": aid,
+                    "url": asset.url,
+                    "thumbnail_url": thumb,
+                    "score": s.get("overall_score", 0),
+                    "composition": s.get("composition", 0),
+                    "lighting": s.get("lighting", 0),
+                    "color_harmony": s.get("color_harmony", 0),
+                    "instagram_appeal": s.get("instagram_appeal", 0),
+                    "suggested_crop": s.get("suggested_crop", "square"),
+                    "feedback": s.get("feedback", ""),
+                })
+
+        # Sort by score descending
+        results.sort(key=lambda x: x["score"], reverse=True)
+        db.session.commit()
+
+        return jsonify({"ok": True, "results": results, "ai_remaining": remaining})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
+
+
+@app.get("/api/photo-picker/batch/<batch_id>")
+@login_required
+def api_photo_picker_batch(batch_id):
+    """Get results for a photo batch."""
+    assets = MediaAsset.query.filter_by(
+        user_id=current_user.id, batch_id=batch_id
+    ).order_by(MediaAsset.ai_score.desc().nullslast()).all()
+    return jsonify([{
+        "asset_id": a.id,
+        "url": a.url,
+        "thumbnail_url": a.thumbnail_url,
+        "score": a.ai_score,
+        "analysis": a.ai_analysis,
+    } for a in assets])
+
+
+@app.post("/api/photo-picker/to-planner")
+@login_required
+def api_photo_picker_to_planner():
+    """Create PlannedPost(s) from selected photo picker results."""
+    data = request.get_json() or {}
+    asset_ids = data.get("asset_ids", [])
+    mode = data.get("mode", "image")  # 'image' or 'carousel'
+
+    if not asset_ids:
+        return jsonify({"error": "No photos selected"}), 400
+
+    assets = MediaAsset.query.filter(
+        MediaAsset.id.in_(asset_ids),
+        MediaAsset.user_id == current_user.id,
+    ).all()
+
+    if not assets:
+        return jsonify({"error": "Photos not found"}), 404
+
+    if mode == "carousel":
+        # Create one carousel post with all photos
+        urls = [a.url for a in assets]
+        post = PlannedPost(
+            user_id=current_user.id,
+            title="Photo Picker Selection",
+            media_type="carousel",
+            media_url=urls[0],
+            media_urls=urls,
+            status="draft",
+            notes="Created from Smart Photo Picker",
+        )
+        db.session.add(post)
+    else:
+        # Create individual posts for each photo
+        for asset in assets:
+            post = PlannedPost(
+                user_id=current_user.id,
+                title="Photo Picker Selection",
+                media_type="image",
+                media_url=asset.url,
+                status="draft",
+                notes=f"AI Score: {asset.ai_score or 'N/A'} — {(asset.ai_analysis or {}).get('feedback', '')}",
+            )
+            db.session.add(post)
+
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ── Cloudinary Upload ──────────────────────────────────────────────────────
+
+@app.get("/api/upload/config")
+@login_required
+def api_upload_config():
+    """Return Cloudinary config for client-side direct upload."""
+    cloud_name = app.config.get("CLOUDINARY_CLOUD_NAME") or os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    upload_preset = app.config.get("CLOUDINARY_UPLOAD_PRESET") or os.environ.get("CLOUDINARY_UPLOAD_PRESET", "")
+    if not cloud_name:
+        return jsonify({"error": "Cloudinary not configured"}), 500
+    return jsonify({"cloud_name": cloud_name, "upload_preset": upload_preset})
+
+
+@app.post("/api/upload/signature")
+@login_required
+def api_upload_signature():
+    """Generate signed upload params for Cloudinary (needed for video uploads)."""
+    import cloudinary.utils
+    import time as _time
+    api_key = app.config.get("CLOUDINARY_API_KEY") or os.environ.get("CLOUDINARY_API_KEY", "")
+    api_secret = app.config.get("CLOUDINARY_API_SECRET") or os.environ.get("CLOUDINARY_API_SECRET", "")
+    cloud_name = app.config.get("CLOUDINARY_CLOUD_NAME") or os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    if not api_secret:
+        return jsonify({"error": "Cloudinary not configured"}), 500
+    timestamp = int(_time.time())
+    folder = f"igai/{current_user.id}"
+    params = {"timestamp": timestamp, "folder": folder}
+    signature = cloudinary.utils.api_sign_request(params, api_secret)
+    return jsonify({
+        "cloud_name": cloud_name,
+        "api_key": api_key,
+        "timestamp": timestamp,
+        "signature": signature,
+        "folder": folder,
+    })
+
+
+@app.post("/api/upload/complete")
+@login_required
+def api_upload_complete():
+    """Register an uploaded media asset after client-side Cloudinary upload."""
+    data = request.get_json() or {}
+    url = data.get("url", "")
+    if not url:
+        return jsonify({"error": "Missing url"}), 400
+
+    from models import MediaAsset
+    asset = MediaAsset(
+        user_id=current_user.id,
+        batch_id=data.get("batch_id"),
+        cloudinary_id=data.get("public_id", ""),
+        url=url,
+        thumbnail_url=data.get("thumbnail_url", ""),
+        resource_type=data.get("resource_type", "image"),
+        format=data.get("format", ""),
+        width=data.get("width"),
+        height=data.get("height"),
+        bytes=data.get("bytes"),
+    )
+    db.session.add(asset)
+    db.session.commit()
+    return jsonify({"ok": True, "asset_id": asset.id, "url": asset.url, "thumbnail_url": asset.thumbnail_url})
+
+
+# ── Facebook OAuth / Instagram Graph API ───────────────────────────────────
+
+@app.get("/auth/facebook")
+@login_required
+def auth_facebook():
+    """Start Facebook OAuth flow for Instagram publishing."""
+    from graph_api import get_facebook_auth_url
+    app_id = app.config.get("FACEBOOK_APP_ID") or os.environ.get("FACEBOOK_APP_ID", "")
+    redirect_uri = app.config.get("FACEBOOK_REDIRECT_URI") or os.environ.get("FACEBOOK_REDIRECT_URI", "")
+    if not app_id or not redirect_uri:
+        flash("Facebook app not configured. Contact admin.")
+        return redirect("/connect")
+    import secrets
+    state = secrets.token_urlsafe(32)
+    from flask import session
+    session["fb_oauth_state"] = state
+    url = get_facebook_auth_url(app_id, redirect_uri, state)
+    return redirect(url)
+
+
+@app.get("/auth/facebook/callback")
+@login_required
+def auth_facebook_callback():
+    """Handle Facebook OAuth callback."""
+    from flask import session
+    from graph_api import exchange_code_for_token, get_instagram_business_account
+
+    error = request.args.get("error")
+    if error:
+        flash(f"Facebook login failed: {request.args.get('error_description', error)}")
+        return redirect("/connect")
+
+    code = request.args.get("code", "")
+    state = request.args.get("state", "")
+    if state != session.pop("fb_oauth_state", None):
+        flash("Invalid OAuth state. Please try again.")
+        return redirect("/connect")
+
+    app_id = app.config.get("FACEBOOK_APP_ID") or os.environ.get("FACEBOOK_APP_ID", "")
+    app_secret = app.config.get("FACEBOOK_APP_SECRET") or os.environ.get("FACEBOOK_APP_SECRET", "")
+    redirect_uri = app.config.get("FACEBOOK_REDIRECT_URI") or os.environ.get("FACEBOOK_REDIRECT_URI", "")
+
+    try:
+        token_data = exchange_code_for_token(code, app_id, app_secret, redirect_uri)
+        ig_data = get_instagram_business_account(token_data["access_token"])
+        if not ig_data:
+            flash("No Instagram Business/Creator account found. Make sure your Instagram is connected to a Facebook Page and is a Business or Creator account.")
+            return redirect("/connect")
+
+        from models import InstagramGraphAccount
+        from datetime import timedelta
+        # Upsert: update existing or create new
+        existing = InstagramGraphAccount.query.filter_by(user_id=current_user.id).first()
+        if existing:
+            existing.ig_user_id = ig_data["ig_user_id"]
+            existing.ig_username = ig_data.get("ig_username", "")
+            existing.fb_page_id = ig_data["fb_page_id"]
+            existing.fb_page_name = ig_data.get("fb_page_name", "")
+            existing.access_token = token_data["access_token"]
+            existing.token_expires_at = datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 5184000))
+            existing.token_refreshed_at = datetime.utcnow()
+            existing.is_active = True
+        else:
+            acct = InstagramGraphAccount(
+                user_id=current_user.id,
+                ig_user_id=ig_data["ig_user_id"],
+                ig_username=ig_data.get("ig_username", ""),
+                fb_page_id=ig_data["fb_page_id"],
+                fb_page_name=ig_data.get("fb_page_name", ""),
+                access_token=token_data["access_token"],
+                token_expires_at=datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 5184000)),
+                token_refreshed_at=datetime.utcnow(),
+            )
+            db.session.add(acct)
+        db.session.commit()
+        flash(f"Connected Instagram @{ig_data.get('ig_username', '')} for publishing!")
+        return redirect("/planner")
+    except Exception as e:
+        flash(f"Error connecting Facebook: {str(e)}")
+        return redirect("/connect")
+
+
+@app.get("/api/graph/status")
+@login_required
+def api_graph_status():
+    """Check if user has active Graph API connection."""
+    from models import InstagramGraphAccount
+    acct = InstagramGraphAccount.query.filter_by(user_id=current_user.id, is_active=True).first()
+    if not acct:
+        return jsonify({"connected": False})
+    expired = acct.token_expires_at and acct.token_expires_at < datetime.utcnow()
+    return jsonify({
+        "connected": True,
+        "ig_username": acct.ig_username,
+        "fb_page_name": acct.fb_page_name,
+        "token_expired": expired,
+        "expires_at": acct.token_expires_at.isoformat() if acct.token_expires_at else None,
+    })
+
+
+@app.post("/api/graph/disconnect")
+@login_required
+def api_graph_disconnect():
+    """Disconnect Graph API account."""
+    from models import InstagramGraphAccount
+    acct = InstagramGraphAccount.query.filter_by(user_id=current_user.id).first()
+    if acct:
+        acct.is_active = False
+        db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.post("/api/planner/posts/<int:post_id>/publish")
+@login_required
+def api_publish_post(post_id):
+    """Publish a planned post to Instagram via Graph API."""
+    post = PlannedPost.query.filter_by(id=post_id, user_id=current_user.id).first()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    # Check tier — Creator only
+    if not current_user.is_creator:
+        return jsonify({"error": "Direct publishing requires Creator plan ($19/mo)", "upgrade": True}), 403
+
+    from models import InstagramGraphAccount
+    graph_acct = InstagramGraphAccount.query.filter_by(user_id=current_user.id, is_active=True).first()
+    if not graph_acct:
+        return jsonify({"error": "No Instagram publishing account connected. Go to Connect page to set up."}), 400
+
+    # Refresh token if needed
+    from graph_api import refresh_token_if_needed, publish_photo, publish_carousel, publish_reel, GraphAPIError
+    app_id = app.config.get("FACEBOOK_APP_ID") or os.environ.get("FACEBOOK_APP_ID", "")
+    app_secret = app.config.get("FACEBOOK_APP_SECRET") or os.environ.get("FACEBOOK_APP_SECRET", "")
+    refresh_token_if_needed(graph_acct, app_id, app_secret)
+    db.session.commit()
+
+    # Build caption with hashtags
+    caption = post.caption or ""
+    if post.hashtags:
+        caption = caption.rstrip() + "\n\n" + post.hashtags
+
+    # Check media
+    if not post.media_url and not post.media_urls:
+        return jsonify({"error": "Post has no media. Upload an image or video first."}), 400
+
+    try:
+        if post.media_type == "carousel" and post.media_urls:
+            result = publish_carousel(graph_acct.access_token, graph_acct.ig_user_id, post.media_urls, caption)
+        elif post.media_type in ("reel", "video"):
+            result = publish_reel(graph_acct.access_token, graph_acct.ig_user_id, post.media_url, caption)
+        else:
+            result = publish_photo(graph_acct.access_token, graph_acct.ig_user_id, post.media_url, caption)
+
+        post.ig_media_id = result.get("id")
+        post.published_at = datetime.utcnow()
+        post.status = "published"
+        post.publish_error = None
+        db.session.commit()
+        return jsonify({"ok": True, "ig_media_id": post.ig_media_id})
+
+    except GraphAPIError as e:
+        post.publish_error = str(e)
+        db.session.commit()
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        post.publish_error = str(e)
+        db.session.commit()
+        return jsonify({"error": f"Publishing failed: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

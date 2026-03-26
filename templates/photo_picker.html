@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}IGAI — Smart Photo Picker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold">
+                <span class="bg-gradient-to-r from-primary-500 to-pink-500 bg-clip-text text-transparent">Smart Photo Picker</span>
+            </h1>
+            <p class="text-gray-500 mt-1">Upload photos, AI picks your best shots</p>
+        </div>
+        <button onclick="analyzePhotos()" id="analyzeBtn" disabled
+            class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition
+                   disabled:opacity-50 disabled:cursor-not-allowed">
+            Analyze with AI
+        </button>
+    </div>
+
+    <!-- Upload zone -->
+    <div id="uploadZone" class="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center cursor-pointer hover:border-primary-500 transition mb-6"
+         ondragover="event.preventDefault(); this.classList.add('border-primary-500', 'bg-primary-50')"
+         ondragleave="this.classList.remove('border-primary-500', 'bg-primary-50')"
+         ondrop="event.preventDefault(); this.classList.remove('border-primary-500', 'bg-primary-50'); handlePickerDrop(event.dataTransfer.files)"
+         onclick="document.getElementById('pickerFileInput').click()">
+        <input type="file" id="pickerFileInput" accept="image/*" multiple class="hidden" onchange="handlePickerDrop(this.files)">
+        <div class="text-5xl mb-3">&#128247;</div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Drop your photo dump here</h2>
+        <p class="text-gray-500">Upload 3-20 photos and AI will rank them by Instagram-worthiness</p>
+        <p class="text-gray-400 text-sm mt-2">JPG, PNG, WEBP &middot; up to 8MB each</p>
+    </div>
+
+    <!-- Upload progress -->
+    <div id="uploadingBar" class="hidden bg-white rounded-xl p-4 border border-gray-200 mb-6">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-500">Uploading photos...</span>
+            <span id="uploadCount" class="text-sm text-primary-500 font-semibold">0/0</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="uploadProgressBar" class="bg-primary-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- Photo grid (before analysis) -->
+    <div id="photoGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6"></div>
+
+    <!-- Analysis loading -->
+    <div id="analysisLoading" class="hidden text-center py-16">
+        <div class="w-12 h-12 border-4 border-gray-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-gray-500 animate-pulse">AI is analyzing your photos...</p>
+        <p class="text-gray-400 text-sm mt-1">Scoring composition, lighting, colors, and Instagram appeal</p>
+    </div>
+
+    <!-- Results (after analysis) -->
+    <div id="resultsSection" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Results — Best to Worst</h2>
+            <div class="flex gap-2">
+                <button onclick="selectTopN(3)" class="px-3 py-1.5 bg-surface-100 text-gray-600 rounded-lg text-xs hover:bg-surface-200 transition">Top 3</button>
+                <button onclick="selectTopN(5)" class="px-3 py-1.5 bg-surface-100 text-gray-600 rounded-lg text-xs hover:bg-surface-200 transition">Top 5</button>
+                <button onclick="selectAll()" class="px-3 py-1.5 bg-surface-100 text-gray-600 rounded-lg text-xs hover:bg-surface-200 transition">Select All</button>
+            </div>
+        </div>
+        <div id="resultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6"></div>
+
+        <!-- Action bar -->
+        <div class="sticky bottom-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 -mx-4 px-4 py-4 flex items-center justify-between">
+            <span id="selectedCount" class="text-sm text-gray-500">0 photos selected</span>
+            <div class="flex gap-3">
+                <button onclick="sendToPlanner('image')" id="plannerBtn" disabled
+                    class="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Use in Planner
+                </button>
+                <button onclick="sendToPlanner('carousel')" id="carouselBtn" disabled
+                    class="px-6 py-3 bg-white border-2 border-primary-500 text-primary-500 font-semibold rounded-xl hover:bg-primary-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Create Carousel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let pickerPhotos = []; // {url, thumbnail_url, asset_id, file_name}
+let analysisResults = []; // {asset_id, url, thumbnail_url, score, analysis}
+let selectedPhotos = new Set();
+let batchId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+let cloudConfig = null;
+
+// Load Cloudinary config
+fetch('/api/upload/config').then(r => r.json()).then(d => { cloudConfig = d; });
+
+function handlePickerDrop(files) {
+    if (!cloudConfig || !cloudConfig.cloud_name) { alert('Upload not configured'); return; }
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) { alert('Please select image files'); return; }
+    if (pickerPhotos.length + imageFiles.length > 20) { alert('Maximum 20 photos per batch'); return; }
+
+    document.getElementById('uploadingBar').classList.remove('hidden');
+    let uploaded = 0;
+    const total = imageFiles.length;
+    document.getElementById('uploadCount').textContent = `0/${total}`;
+
+    imageFiles.forEach(file => {
+        if (file.size > 8 * 1024 * 1024) { alert(`${file.name} is too large (max 8MB)`); uploaded++; return; }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', cloudConfig.upload_preset);
+        formData.append('folder', 'igai/picker');
+
+        fetch(`https://api.cloudinary.com/v1_1/${cloudConfig.cloud_name}/image/upload`, {
+            method: 'POST', body: formData,
+        })
+        .then(r => r.json())
+        .then(res => {
+            const thumbUrl = res.secure_url.replace('/upload/', '/upload/c_fill,w_400,h_400/');
+            // Register asset
+            return fetch('/api/upload/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: res.secure_url, public_id: res.public_id, thumbnail_url: thumbUrl,
+                    resource_type: 'image', format: res.format, width: res.width, height: res.height,
+                    bytes: res.bytes, batch_id: batchId,
+                }),
+            }).then(r => r.json()).then(data => {
+                pickerPhotos.push({ url: res.secure_url, thumbnail_url: thumbUrl, asset_id: data.asset_id, file_name: file.name });
+                addPhotoToGrid(thumbUrl, file.name);
+            });
+        })
+        .catch(err => console.error('Upload error:', err))
+        .finally(() => {
+            uploaded++;
+            document.getElementById('uploadCount').textContent = `${uploaded}/${total}`;
+            document.getElementById('uploadProgressBar').style.width = `${Math.round(uploaded/total*100)}%`;
+            if (uploaded >= total) {
+                setTimeout(() => document.getElementById('uploadingBar').classList.add('hidden'), 500);
+                document.getElementById('analyzeBtn').disabled = pickerPhotos.length < 3;
+            }
+        });
+    });
+}
+
+function addPhotoToGrid(thumbUrl, name) {
+    const grid = document.getElementById('photoGrid');
+    const div = document.createElement('div');
+    div.className = 'relative group';
+    div.innerHTML = `
+        <img src="${thumbUrl}" class="w-full aspect-square object-cover rounded-xl border border-gray-200">
+        <div class="absolute bottom-2 left-2 right-2 text-xs text-white bg-black/50 rounded-lg px-2 py-1 truncate">${name}</div>
+    `;
+    grid.appendChild(div);
+}
+
+function analyzePhotos() {
+    if (pickerPhotos.length < 3) { alert('Upload at least 3 photos'); return; }
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+    document.getElementById('analysisLoading').classList.remove('hidden');
+
+    fetch('/api/photo-picker/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batch_id: batchId }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('analysisLoading').classList.add('hidden');
+        btn.textContent = 'Analyze with AI';
+        btn.disabled = false;
+        if (data.error) { alert(data.error); return; }
+        analysisResults = data.results || [];
+        renderResults();
+        if (data.ai_remaining !== undefined) {
+            btn.textContent = `Re-analyze (${data.ai_remaining} AI left)`;
+        }
+    })
+    .catch(err => {
+        document.getElementById('analysisLoading').classList.add('hidden');
+        btn.textContent = 'Analyze with AI';
+        btn.disabled = false;
+        alert('Error: ' + err.message);
+    });
+}
+
+function renderResults() {
+    document.getElementById('resultsSection').classList.remove('hidden');
+    document.getElementById('photoGrid').classList.add('hidden');
+    document.getElementById('uploadZone').classList.add('hidden');
+
+    const grid = document.getElementById('resultsGrid');
+    grid.innerHTML = analysisResults.map((r, i) => {
+        const scoreColor = r.score >= 8 ? 'bg-green-500' : r.score >= 6 ? 'bg-yellow-500' : r.score >= 4 ? 'bg-orange-500' : 'bg-red-500';
+        return `
+        <div class="relative cursor-pointer group" onclick="toggleSelect(${r.asset_id})" id="result-${r.asset_id}">
+            <img src="${r.thumbnail_url}" class="w-full aspect-square object-cover rounded-xl border-2 border-gray-200 transition">
+            <div class="absolute top-2 left-2 ${scoreColor} text-white text-xs font-bold px-2 py-1 rounded-lg">${r.score.toFixed(1)}</div>
+            <div class="absolute top-2 right-2 w-6 h-6 rounded-full border-2 border-white bg-white/80 flex items-center justify-center text-xs select-check opacity-0 group-hover:opacity-100 transition">&#10003;</div>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent rounded-b-xl p-3">
+                <div class="text-white text-xs font-medium">#${i + 1}</div>
+                <div class="text-white/80 text-xs truncate">${r.feedback || ''}</div>
+            </div>
+        </div>`;
+    }).join('');
+    updateSelectedCount();
+}
+
+function toggleSelect(assetId) {
+    if (selectedPhotos.has(assetId)) {
+        selectedPhotos.delete(assetId);
+    } else {
+        selectedPhotos.add(assetId);
+    }
+    // Visual feedback
+    const el = document.getElementById('result-' + assetId);
+    if (el) {
+        const img = el.querySelector('img');
+        const check = el.querySelector('.select-check');
+        if (selectedPhotos.has(assetId)) {
+            img.classList.remove('border-gray-200');
+            img.classList.add('border-primary-500');
+            check.classList.remove('opacity-0', 'bg-white/80');
+            check.classList.add('opacity-100', 'bg-primary-500', 'text-white');
+        } else {
+            img.classList.add('border-gray-200');
+            img.classList.remove('border-primary-500');
+            check.classList.add('opacity-0', 'bg-white/80');
+            check.classList.remove('opacity-100', 'bg-primary-500', 'text-white');
+        }
+    }
+    updateSelectedCount();
+}
+
+function selectTopN(n) {
+    selectedPhotos.clear();
+    analysisResults.slice(0, n).forEach(r => selectedPhotos.add(r.asset_id));
+    renderResults(); // re-render to update checkmarks
+    // Re-apply selections
+    selectedPhotos.forEach(id => {
+        const el = document.getElementById('result-' + id);
+        if (el) {
+            el.querySelector('img').classList.replace('border-gray-200', 'border-primary-500');
+            const check = el.querySelector('.select-check');
+            check.classList.remove('opacity-0', 'bg-white/80');
+            check.classList.add('opacity-100', 'bg-primary-500', 'text-white');
+        }
+    });
+    updateSelectedCount();
+}
+
+function selectAll() {
+    selectedPhotos.clear();
+    analysisResults.forEach(r => selectedPhotos.add(r.asset_id));
+    renderResults();
+    selectedPhotos.forEach(id => {
+        const el = document.getElementById('result-' + id);
+        if (el) {
+            el.querySelector('img').classList.replace('border-gray-200', 'border-primary-500');
+            const check = el.querySelector('.select-check');
+            check.classList.remove('opacity-0', 'bg-white/80');
+            check.classList.add('opacity-100', 'bg-primary-500', 'text-white');
+        }
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const n = selectedPhotos.size;
+    document.getElementById('selectedCount').textContent = `${n} photo${n !== 1 ? 's' : ''} selected`;
+    document.getElementById('plannerBtn').disabled = n === 0;
+    document.getElementById('carouselBtn').disabled = n < 2;
+}
+
+function sendToPlanner(mode) {
+    if (selectedPhotos.size === 0) return;
+    const assetIds = Array.from(selectedPhotos);
+
+    fetch('/api/photo-picker/to-planner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ asset_ids: assetIds, mode: mode }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            window.location.href = '/planner';
+        } else {
+            alert(data.error || 'Failed');
+        }
+    });
+}
+</script>
+{% endblock %}

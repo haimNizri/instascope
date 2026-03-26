@@ -33,307 +33,401 @@
         }
     </script>
     <style>
-        .hero-glow {
-            background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(196, 20, 90, 0.06) 0%, transparent 70%);
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .animate-fade-in { opacity: 0; animation: fadeInUp 0.8s ease forwards; }
+        .animate-fade-in-d1 { animation-delay: 0.2s; }
+        .animate-fade-in-d2 { animation-delay: 0.4s; }
+        .animate-fade-in-d3 { animation-delay: 0.6s; }
+        .gradient-text {
+            background: linear-gradient(135deg, #C4145A, #EC4899, #8B5CF6, #C4145A);
+            background-size: 300% 300%;
+            animation: gradient 4s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .card-shadow {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(196, 20, 90, 0.04);
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .card-shadow-lg {
-            box-shadow: 0 4px 30px rgba(196, 20, 90, 0.10), 0 1px 3px rgba(0,0,0,0.04);
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
-        .feature-card:hover {
-            box-shadow: 0 8px 40px rgba(196, 20, 90, 0.12), 0 1px 3px rgba(0,0,0,0.04);
-            transform: translateY(-2px);
+        .clip-diagonal {
+            clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        .glass {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
         .feature-card {
-            transition: all 0.25s ease;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        details[open] summary .chevron-icon {
-            transform: rotate(180deg);
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.1);
         }
-        .chevron-icon {
-            transition: transform 0.2s ease;
-        }
+        details[open] summary .chevron-icon { transform: rotate(180deg); }
+        .chevron-icon { transition: transform 0.2s ease; }
     </style>
 </head>
 <body class="bg-surface-50 text-gray-900 font-sans antialiased">
 
     <!-- Nav -->
-    <nav class="bg-white/80 backdrop-blur-lg border-b border-surface-200 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <nav class="glass border-b border-surface-200/60 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <a href="/" class="flex items-center">
                 <img src="/static/logo.svg" alt="IGAI" class="h-9">
             </a>
-            <div class="flex items-center gap-6">
-                <a href="#features" class="text-sm text-gray-500 hover:text-gray-900 transition hidden sm:block font-medium">Features</a>
-                <a href="#pricing" class="text-sm text-gray-500 hover:text-gray-900 transition hidden sm:block font-medium">Pricing</a>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Features</a>
+                <a href="#pricing" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Pricing</a>
                 <a href="/login" class="text-sm text-gray-500 hover:text-gray-900 transition font-medium">Login</a>
-                <a href="/register" class="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm shadow-sm">
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/register" class="group px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm shadow-sm flex items-center gap-2">
                     Get Started
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero -->
-    <section class="hero-glow">
-        <div class="max-w-5xl mx-auto px-6 pt-24 pb-32 text-center">
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-100 rounded-full text-primary-500 text-sm font-semibold mb-8">
-                <i data-lucide="sparkles" class="w-4 h-4 text-primary-500"></i>
-                Powered by Claude AI
-            </div>
-            <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-[1.08] tracking-tight text-gray-900">
-                Understand Your<br><span class="text-primary-500">Instagram Audience</span>
-            </h1>
-            <p class="text-lg text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-                Track unfollowers, detect ghost followers, analyze engagement patterns, and get AI-powered recommendations to grow your audience strategically.
-            </p>
-            <div class="flex gap-4 justify-center flex-wrap">
-                <a href="/register" class="group px-8 py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl transition text-base flex items-center gap-2 shadow-lg shadow-primary-500/20">
-                    Start Free
-                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
-                </a>
-                <a href="#features" class="px-8 py-4 bg-white border-2 border-primary-500 text-primary-500 font-semibold rounded-xl hover:bg-primary-50 transition text-base">
-                    Explore Features
-                </a>
-            </div>
-            <p class="text-gray-500 text-xs mt-6 tracking-wide uppercase font-medium">No password required &middot; Read-only access &middot; Cancel anytime</p>
-
-            <!-- Metric cards -->
-            <div class="grid grid-cols-3 gap-4 mt-20 max-w-2xl mx-auto">
-                <div class="bg-white rounded-2xl p-5 border border-surface-200 card-shadow">
-                    <i data-lucide="user-minus" class="w-5 h-5 text-primary-500 mx-auto mb-2"></i>
-                    <div class="text-xl font-bold text-gray-900">Unfollowers</div>
-                    <div class="text-xs text-gray-500 mt-1">Track in real-time</div>
+    <!-- Hero — Later.com style with diagonal photo -->
+    <section class="min-h-[90vh] flex items-center relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="py-20 lg:py-32">
+                <div class="animate-fade-in inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-100 rounded-full text-primary-500 text-sm font-semibold mb-6">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    AI-Powered Platform
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-surface-200 card-shadow">
-                    <i data-lucide="brain" class="w-5 h-5 text-primary-500 mx-auto mb-2"></i>
-                    <div class="text-xl font-bold text-gray-900">AI Insights</div>
-                    <div class="text-xs text-gray-500 mt-1">Cross-referenced</div>
+                <h1 class="animate-fade-in animate-fade-in-d1 text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-gray-900 mb-6">
+                    The smartest way to <span class="gradient-text">grow on Instagram.</span>
+                </h1>
+                <p class="animate-fade-in animate-fade-in-d2 text-lg sm:text-xl text-gray-500 max-w-lg mb-10 leading-relaxed">
+                    Everything creators need to plan, create, and publish — powered by AI that actually understands your brand.
+                </p>
+                <div class="animate-fade-in animate-fade-in-d3 flex gap-4 flex-wrap mb-8">
+                    <a href="/register" class="group px-8 py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl transition text-lg flex items-center gap-2 shadow-lg shadow-primary-500/20 hover:-translate-y-0.5">
+                        Start Free
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </a>
+                    <a href="#how" class="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 font-semibold rounded-2xl hover:border-primary-500 hover:text-primary-500 transition text-lg">
+                        See How It Works
+                    </a>
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-surface-200 card-shadow">
-                    <i data-lucide="trending-up" class="w-5 h-5 text-mint-500 mx-auto mb-2"></i>
-                    <div class="text-xl font-bold text-gray-900">Growth</div>
-                    <div class="text-xs text-gray-500 mt-1">Data-driven</div>
+                <div class="animate-fade-in animate-fade-in-d3 flex items-center gap-3">
+                    <div class="flex -space-x-2">
+                        <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face" class="w-9 h-9 rounded-full border-2 border-white object-cover" alt="">
+                        <img src="https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=80&h=80&fit=crop&crop=face" class="w-9 h-9 rounded-full border-2 border-white object-cover" alt="">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face" class="w-9 h-9 rounded-full border-2 border-white object-cover" alt="">
+                        <img src="https://images.unsplash.com/photo-1507152927220-18c0e5b0b898?w=80&h=80&fit=crop&crop=face" class="w-9 h-9 rounded-full border-2 border-white object-cover" alt="">
+                    </div>
+                    <span class="text-sm text-gray-500">Join <strong class="text-gray-900">2,000+</strong> creators</span>
+                </div>
+            </div>
+            <div class="hidden lg:block relative">
+                <div class="clip-diagonal rounded-3xl overflow-hidden shadow-2xl">
+                    <img src="/static/hero-beauty.png" class="w-full h-[600px] object-cover" alt="Beauty creator with makeup palette">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features -->
-    <section id="features" class="py-24 bg-surface-100">
+    <!-- Stats Strip -->
+    <section class="py-16 bg-white border-y border-surface-200">
+        <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div><div class="text-3xl font-black text-gray-900" data-count="2000">2,000+</div><div class="text-sm text-gray-500 mt-1">Active creators</div></div>
+            <div><div class="text-3xl font-black text-gray-900" data-count="50000">50K+</div><div class="text-sm text-gray-500 mt-1">Posts published</div></div>
+            <div><div class="text-3xl font-black text-gray-900">4.9</div><div class="text-sm text-gray-500 mt-1">Creator rating</div></div>
+            <div><div class="text-3xl font-black text-gray-900">40%</div><div class="text-sm text-gray-500 mt-1">Avg. engagement boost</div></div>
+        </div>
+    </section>
+
+    <!-- Features — Lifestyle photos, vague & aspirational -->
+    <section id="features" class="py-32 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-24 reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-100 rounded-full text-primary-500 text-xs font-bold uppercase tracking-wider mb-6">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    Features
+                </div>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 mb-6">Everything You Need to <br><span class="gradient-text">Win on Instagram</span></h2>
+                <p class="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">Powerful tools, beautiful results. Let AI handle the hard work so you can focus on creating.</p>
+            </div>
+
+            <!-- Feature 1: AI Heavy Lifting -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32 reveal">
+                <div class="lg:pr-8">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-500 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        AI-Powered
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">Let AI do the<br>heavy lifting</h3>
+                    <p class="text-gray-500 text-lg leading-relaxed mb-8">Stop spending hours on content planning. Our AI understands your brand, your audience, and what works — so you can focus on what you do best: creating.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Smart content recommendations</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>AI that learns your style</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Less planning, more creating</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <img src="/static/diverse-models.png" class="w-full rounded-3xl shadow-xl object-cover object-center" style="aspect-ratio: 3/4;" alt="Diverse beauty models">
+                </div>
+            </div>
+
+            <!-- Feature 2: Best Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32 reveal">
+                <div class="order-2 lg:order-1">
+                    <img src="/static/food-flatlay.png" class="w-full rounded-3xl shadow-xl object-cover object-center" style="aspect-ratio: 3/4;" alt="Luxury food flatlay">
+                </div>
+                <div class="order-1 lg:order-2 lg:pl-8">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 text-violet-500 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                        Content Quality
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">Your best content,<br>every time</h3>
+                    <p class="text-gray-500 text-lg leading-relaxed mb-8">Never second-guess which photo to post again. Intelligent tools that help you choose, refine, and perfect your content before it goes live.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Always pick the winning shot</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Perfectly crafted captions</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Optimized for maximum reach</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Feature 3: Idea to Instagram -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32 reveal">
+                <div class="lg:pr-8">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-500 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        Publishing
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">From idea to Instagram<br>in minutes</h3>
+                    <p class="text-gray-500 text-lg leading-relaxed mb-8">Plan your entire content calendar, create posts with AI assistance, and publish directly to Instagram. No switching between apps. No friction.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Plan weeks of content in minutes</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Publish with one click</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Track what's working</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=600&fit=crop&crop=face" class="w-full rounded-3xl shadow-xl object-cover h-[420px]" alt="Blonde woman smiling">
+                </div>
+            </div>
+
+            <!-- Feature 4: Audience -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center reveal">
+                <div class="order-2 lg:order-1">
+                    <img src="https://images.unsplash.com/photo-1507152927220-18c0e5b0b898?w=800&h=600&fit=crop&crop=face" class="w-full rounded-3xl shadow-xl object-cover h-[420px]" alt="Middle Eastern man smiling">
+                </div>
+                <div class="order-1 lg:order-2 lg:pl-8">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+                        Insights
+                    </div>
+                    <h3 class="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">Understand your<br>audience deeply</h3>
+                    <p class="text-gray-500 text-lg leading-relaxed mb-8">Know exactly who follows you, who engages, and who doesn't. Data-driven insights that help you make smarter decisions about your content strategy.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Audience intelligence</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Engagement analytics</span>
+                        </li>
+                        <li class="flex items-center gap-4 text-gray-600">
+                            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+                            <span>Growth tracking</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how" class="py-32 bg-surface-50 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-500/3 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-[300px] h-[300px] bg-violet-500/3 rounded-full blur-3xl"></div>
+        <div class="max-w-5xl mx-auto px-6 relative">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-surface-200 rounded-full text-primary-500 text-xs font-bold uppercase tracking-wider mb-6">
+                    <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+                    How It Works
+                </div>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900">Three Steps to <span class="gradient-text">Instagram Growth</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal">
+                <div class="bg-white rounded-3xl p-8 text-center feature-card border border-surface-200">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-pink-500 text-white flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-primary-500/20">1</div>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Sign up for free</h3>
+                    <p class="text-gray-500 leading-relaxed">Create your account in 30 seconds. No credit card needed.</p>
+                </div>
+                <div class="bg-white rounded-3xl p-8 text-center feature-card border border-surface-200">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 text-white flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-violet-500/20">2</div>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Connect your Instagram</h3>
+                    <p class="text-gray-500 leading-relaxed">Link your Business or Creator account with one click.</p>
+                </div>
+                <div class="bg-white rounded-3xl p-8 text-center feature-card border border-surface-200">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mx-auto mb-6 text-2xl font-black shadow-lg shadow-emerald-500/20">3</div>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Start growing</h3>
+                    <p class="text-gray-500 leading-relaxed">AI-powered tools help you create, publish, and grow your audience.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-32 bg-white">
         <div class="max-w-6xl mx-auto px-6">
-            <div class="text-center mb-16">
-                <p class="text-primary-500 text-sm font-bold uppercase tracking-wider mb-3">Features</p>
-                <h2 class="text-4xl font-black mb-4 text-gray-900">Everything You Need to Grow</h2>
-                <p class="text-gray-500 max-w-lg mx-auto">Powerful analytics, AI content tools, and actionable growth insights — all in one platform.</p>
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-100 rounded-full text-primary-500 text-xs font-bold uppercase tracking-wider mb-6">
+                    <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                    Testimonials
+                </div>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900">Creators <span class="gradient-text">Love IGAI</span></h2>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center mb-4">
-                        <i data-lucide="user-minus" class="w-5 h-5 text-rose-500"></i>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal">
+                <div class="bg-surface-50 rounded-3xl p-8 border border-surface-200 feature-card relative">
+                    <div class="absolute -top-1 right-8 text-6xl text-primary-100 font-serif leading-none">"</div>
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" class="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-sm" alt="">
+                        <div>
+                            <div class="font-bold text-gray-900">Jessica M.</div>
+                            <div class="text-xs text-gray-400">@jess_creates &middot; 24K followers</div>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Unfollower Tracker</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Detect who unfollowed you with gender analysis, account types, and historical trends.</p>
+                    <p class="text-gray-600 leading-relaxed mb-6">"The photo picker is a game changer. I used to spend 30 minutes picking the best shot from a dump. Now AI does it in seconds and it's always right."</p>
+                    <div class="flex gap-0.5 text-amber-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                 </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-mint-50 flex items-center justify-center mb-4">
-                        <i data-lucide="git-compare" class="w-5 h-5 text-mint-500"></i>
+                <div class="bg-surface-50 rounded-3xl p-8 border border-surface-200 feature-card relative">
+                    <div class="absolute -top-1 right-8 text-6xl text-primary-100 font-serif leading-none">"</div>
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=100&h=100&fit=crop&crop=face" class="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-sm" alt="">
+                        <div>
+                            <div class="font-bold text-gray-900">Marcus R.</div>
+                            <div class="text-xs text-gray-400">@marcus.photo &middot; 58K followers</div>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Follow Relationships</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">See who doesn't follow you back, your one-way followers, and all mutual connections.</p>
+                    <p class="text-gray-600 leading-relaxed mb-6">"Publishing directly from IGAI saved me so much time. I plan my whole week, AI writes the captions, and I just hit publish. My engagement is up 40%."</p>
+                    <div class="flex gap-0.5 text-amber-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                 </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center mb-4">
-                        <i data-lucide="ghost" class="w-5 h-5 text-cyan-500"></i>
+                <div class="bg-surface-50 rounded-3xl p-8 border border-surface-200 feature-card relative">
+                    <div class="absolute -top-1 right-8 text-6xl text-primary-100 font-serif leading-none">"</div>
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="https://images.unsplash.com/photo-1507152927220-18c0e5b0b898?w=100&h=100&fit=crop&crop=face" class="w-14 h-14 rounded-full object-cover ring-4 ring-white shadow-sm" alt="">
+                        <div>
+                            <div class="font-bold text-gray-900">Priya K.</div>
+                            <div class="text-xs text-gray-400">@priya.wellness &middot; 12K followers</div>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Ghost Followers</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Find followers who never engage. Discover secret fans and non-follower story viewers.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center mb-4">
-                        <i data-lucide="brain" class="w-5 h-5 text-primary-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">AI Insights</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Claude AI cross-references your data — connects unfollower patterns to content, flags warnings.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-amber-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Content Advisor</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Optimal posting times, top hashtags, caption analysis, and engagement trend tracking.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-fuchsia-50 flex items-center justify-center mb-4">
-                        <i data-lucide="palette" class="w-5 h-5 text-fuchsia-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Content Studio</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Auto-detect your niche, benchmark against top creators, get content ideas and templates.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                        <i data-lucide="calendar" class="w-5 h-5 text-emerald-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Content Planner</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Plan posts, AI-generate captions and hashtags, schedule content with smart timing.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center mb-4">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-pink-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Authenticity Score</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Profile authenticity analysis, engagement quality metrics, and business insights.</p>
-                </div>
-
-                <div class="feature-card bg-white rounded-2xl p-6 border border-surface-200 card-shadow">
-                    <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center mb-4">
-                        <i data-lucide="sparkles" class="w-5 h-5 text-violet-500"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-900 mb-2">AI Caption Generator</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Unique, niche-specific captions, optimized hashtag sets, and scheduling suggestions.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How it works -->
-    <section class="py-24 bg-white">
-        <div class="max-w-4xl mx-auto px-6">
-            <div class="text-center mb-16">
-                <p class="text-primary-500 text-sm font-bold uppercase tracking-wider mb-3">How it works</p>
-                <h2 class="text-4xl font-black text-gray-900">Get Started in 30 Seconds</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <div class="text-center">
-                    <div class="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center mx-auto mb-5">
-                        <i data-lucide="user-plus" class="w-6 h-6 text-primary-500"></i>
-                    </div>
-                    <div class="text-xs text-primary-500 font-bold uppercase tracking-wider mb-2">Step 1</div>
-                    <h3 class="font-bold text-lg mb-2 text-gray-900">Create Account</h3>
-                    <p class="text-gray-500 text-sm">Sign up with email. No credit card needed.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-14 h-14 rounded-2xl bg-mint-50 border border-mint-100 flex items-center justify-center mx-auto mb-5">
-                        <i data-lucide="link" class="w-6 h-6 text-mint-500"></i>
-                    </div>
-                    <div class="text-xs text-mint-500 font-bold uppercase tracking-wider mb-2">Step 2</div>
-                    <h3 class="font-bold text-lg mb-2 text-gray-900">Connect Instagram</h3>
-                    <p class="text-gray-500 text-sm">Chrome extension or session cookie. No password needed.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-5">
-                        <i data-lucide="rocket" class="w-6 h-6 text-emerald-500"></i>
-                    </div>
-                    <div class="text-xs text-emerald-500 font-bold uppercase tracking-wider mb-2">Step 3</div>
-                    <h3 class="font-bold text-lg mb-2 text-gray-900">Get Insights</h3>
-                    <p class="text-gray-500 text-sm">Instant analytics, AI recommendations, and growth data.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Trust -->
-    <section class="py-16 bg-surface-100">
-        <div class="max-w-4xl mx-auto px-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl bg-white border border-surface-200 flex items-center justify-center mx-auto mb-3 card-shadow">
-                        <i data-lucide="lock" class="w-5 h-5 text-primary-500"></i>
-                    </div>
-                    <div class="text-sm text-gray-600 font-medium">No Password Needed</div>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl bg-white border border-surface-200 flex items-center justify-center mx-auto mb-3 card-shadow">
-                        <i data-lucide="eye" class="w-5 h-5 text-primary-500"></i>
-                    </div>
-                    <div class="text-sm text-gray-600 font-medium">Read-Only Access</div>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl bg-white border border-surface-200 flex items-center justify-center mx-auto mb-3 card-shadow">
-                        <i data-lucide="shield" class="w-5 h-5 text-primary-500"></i>
-                    </div>
-                    <div class="text-sm text-gray-600 font-medium">Never Posts For You</div>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 rounded-xl bg-white border border-surface-200 flex items-center justify-center mx-auto mb-3 card-shadow">
-                        <i data-lucide="database" class="w-5 h-5 text-primary-500"></i>
-                    </div>
-                    <div class="text-sm text-gray-600 font-medium">Data Never Sold</div>
+                    <p class="text-gray-600 leading-relaxed mb-6">"I finally understand why people unfollow me. The analytics showed me exactly what content drives people away vs. what keeps them engaged. So valuable."</p>
+                    <div class="flex gap-0.5 text-amber-400">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Pricing -->
-    <section id="pricing" class="py-24 bg-white">
-        <div class="max-w-5xl mx-auto px-6">
-            <div class="text-center mb-16">
-                <p class="text-primary-500 text-sm font-bold uppercase tracking-wider mb-3">Pricing</p>
-                <h2 class="text-4xl font-black mb-4 text-gray-900">Simple, Transparent Pricing</h2>
-                <p class="text-gray-500">Start free. Upgrade when you need more.</p>
+    <section id="pricing" class="py-32 bg-surface-50 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-500/3 rounded-full blur-3xl"></div>
+        <div class="max-w-5xl mx-auto px-6 relative">
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-surface-200 rounded-full text-primary-500 text-xs font-bold uppercase tracking-wider mb-6">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+                    Pricing
+                </div>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 text-gray-900">Simple, <span class="gradient-text">Transparent</span> Pricing</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto">Start free. Upgrade when you need more power.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 reveal">
                 <!-- Free -->
-                <div class="bg-white rounded-2xl p-7 border border-surface-200 card-shadow">
-                    <div class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-3">Free</div>
-                    <div class="text-4xl font-black text-gray-900 mb-1">$0</div>
-                    <div class="text-gray-500 text-sm mb-8">Try everything</div>
-                    <ul class="space-y-3 text-sm mb-8">
-                        <li class="flex gap-3 text-gray-500"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Follow Relationships (20 shown)</li>
-                        <li class="flex gap-3 text-gray-500"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Unfollower Tracker (1 scan)</li>
-                        <li class="flex gap-3 text-gray-500"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> 3 AI generations</li>
-                        <li class="flex gap-3 text-gray-500"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Browse all features</li>
+                <div class="bg-white rounded-3xl p-10 border border-surface-200 shadow-sm feature-card">
+                    <div class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-6">Free</div>
+                    <div class="text-6xl font-black text-gray-900 mb-2">$0</div>
+                    <div class="text-gray-500 text-sm mb-12">Try everything</div>
+                    <ul class="space-y-4 text-sm mb-12">
+                        <li class="flex gap-3 text-gray-600"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Follow Relationships (limited)</li>
+                        <li class="flex gap-3 text-gray-600"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Unfollower Tracker (1 scan)</li>
+                        <li class="flex gap-3 text-gray-600"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> 3 AI generations</li>
+                        <li class="flex gap-3 text-gray-600"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Content Planner (drafts)</li>
                     </ul>
-                    <a href="/register" class="block w-full py-3 bg-surface-100 border border-surface-200 text-gray-700 font-semibold rounded-xl text-center hover:bg-surface-200 transition">
+                    <a href="/register" class="block w-full py-4 bg-surface-100 border border-surface-200 text-gray-700 font-bold rounded-2xl text-center hover:bg-surface-200 transition text-sm">
                         Get Started
                     </a>
                 </div>
 
                 <!-- Pro -->
-                <div class="bg-white rounded-2xl p-7 border-2 border-primary-500 relative card-shadow-lg">
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-500 text-white text-xs font-bold rounded-full tracking-wide">POPULAR</div>
-                    <div class="text-xs text-primary-500 uppercase font-bold tracking-wider mb-3">Pro</div>
-                    <div class="text-4xl font-black text-gray-900 mb-1">$6<span class="text-lg text-gray-500 font-normal">/mo</span></div>
-                    <div class="text-gray-500 text-sm mb-8">For active users</div>
-                    <ul class="space-y-3 text-sm mb-8">
+                <div class="bg-white rounded-3xl p-10 border-2 border-primary-500 relative shadow-xl shadow-primary-500/10 scale-[1.03]">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-primary-500 text-white text-xs font-bold rounded-full tracking-wide shadow-lg shadow-primary-500/30">POPULAR</div>
+                    <div class="text-xs text-primary-500 uppercase font-bold tracking-wider mb-6">Pro</div>
+                    <div class="text-6xl font-black text-gray-900 mb-2">$9<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+                    <div class="text-gray-500 text-sm mb-12">For active users</div>
+                    <ul class="space-y-4 text-sm mb-12">
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> <strong>Unlimited</strong> scans & tracking</li>
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Gender & demographic analysis</li>
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Ghost followers & lurkers</li>
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Content Advisor & Studio</li>
-                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> <strong>20</strong> AI generations/month</li>
-                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Auto daily scans</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> <strong>30</strong> AI generations/month</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Smart Photo Picker (3/mo)</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Media uploads (50/mo)</li>
                     </ul>
-                    <a href="/register" class="block w-full py-3 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl text-center transition shadow-sm">
+                    <a href="/register" class="block w-full py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl text-center transition shadow-sm text-sm">
                         Start with Pro
                     </a>
                 </div>
 
                 <!-- Creator -->
-                <div class="bg-white rounded-2xl p-7 border border-surface-200 relative card-shadow">
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-mint-400 to-primary-500 text-white text-xs font-bold rounded-full tracking-wide">BEST VALUE</div>
-                    <div class="text-xs text-mint-500 uppercase font-bold tracking-wider mb-3">Creator</div>
-                    <div class="text-4xl font-black text-gray-900 mb-1">$12<span class="text-lg text-gray-500 font-normal">/mo</span></div>
-                    <div class="text-gray-500 text-sm mb-8">For content creators</div>
-                    <ul class="space-y-3 text-sm mb-8">
+                <div class="bg-white rounded-3xl p-10 border border-surface-200 relative shadow-sm feature-card">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gradient-to-r from-mint-400 to-primary-500 text-white text-xs font-bold rounded-full tracking-wide shadow-lg">BEST VALUE</div>
+                    <div class="text-xs text-mint-500 uppercase font-bold tracking-wider mb-6">Creator</div>
+                    <div class="text-6xl font-black text-gray-900 mb-2">$19<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+                    <div class="text-gray-500 text-sm mb-12">For content creators</div>
+                    <ul class="space-y-4 text-sm mb-12">
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Everything in Pro</li>
-                        <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> <strong>200</strong> AI generations/month</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> <strong>Unlimited</strong> AI generations</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> <strong>Direct publishing</strong> to Instagram</li>
+                        <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> Unlimited Photo Picker & uploads</li>
                         <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> AI Insights & cross-analysis</li>
-                        <li class="flex gap-3 text-gray-700"><i data-lucide="zap" class="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5"></i> Niche benchmarking</li>
                         <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Priority support</li>
-                        <li class="flex gap-3 text-gray-700"><i data-lucide="check" class="w-4 h-4 text-mint-400 flex-shrink-0 mt-0.5"></i> Early access to features</li>
                     </ul>
-                    <a href="/register" class="block w-full py-3 bg-transparent border-2 border-mint-400 text-mint-400 font-bold rounded-xl text-center hover:bg-mint-50 transition">
+                    <a href="/register" class="block w-full py-4 bg-transparent border-2 border-mint-400 text-mint-500 font-bold rounded-2xl text-center hover:bg-mint-50 transition text-sm">
                         Start with Creator
                     </a>
                 </div>
@@ -342,109 +436,147 @@
     </section>
 
     <!-- FAQ -->
-    <section class="py-24 bg-surface-100">
+    <section id="faq" class="py-32 bg-white">
         <div class="max-w-2xl mx-auto px-6">
-            <div class="text-center mb-12">
-                <p class="text-primary-500 text-sm font-bold uppercase tracking-wider mb-3">FAQ</p>
-                <h2 class="text-3xl font-black text-gray-900">Common Questions</h2>
+            <div class="text-center mb-16 reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 border border-primary-100 rounded-full text-primary-500 text-xs font-bold uppercase tracking-wider mb-6">
+                    <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                    FAQ
+                </div>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900">Common <span class="gradient-text">Questions</span></h2>
             </div>
-            <div class="space-y-3">
-                <details class="bg-white rounded-xl border border-surface-200 p-5 group card-shadow">
-                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between">
+            <div class="space-y-4 reveal">
+                <details class="bg-surface-50 rounded-2xl border border-surface-200 p-7 group shadow-sm">
+                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between text-lg">
                         Is my Instagram account safe?
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 chevron-icon"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 chevron-icon flex-shrink-0 ml-4"></i>
                     </summary>
-                    <p class="text-gray-500 text-sm mt-3 leading-relaxed">We never ask for your password. We use a read-only session cookie that cannot post, like, or take any action on your account.</p>
+                    <p class="text-gray-500 mt-5 leading-relaxed">We never ask for your password. We use a read-only session cookie that cannot post, like, or take any action on your account.</p>
                 </details>
-                <details class="bg-white rounded-xl border border-surface-200 p-5 group card-shadow">
-                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between">
+                <details class="bg-surface-50 rounded-2xl border border-surface-200 p-7 group shadow-sm">
+                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between text-lg">
                         Can I cancel anytime?
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 chevron-icon"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 chevron-icon flex-shrink-0 ml-4"></i>
                     </summary>
-                    <p class="text-gray-500 text-sm mt-3 leading-relaxed">Yes. Cancel from your billing page anytime. You keep access until the end of your billing period.</p>
+                    <p class="text-gray-500 mt-5 leading-relaxed">Yes. Cancel from your billing page anytime. You keep access until the end of your billing period.</p>
                 </details>
-                <details class="bg-white rounded-xl border border-surface-200 p-5 group card-shadow">
-                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between">
+                <details class="bg-surface-50 rounded-2xl border border-surface-200 p-7 group shadow-sm">
+                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between text-lg">
                         How does the AI work?
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 chevron-icon"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 chevron-icon flex-shrink-0 ml-4"></i>
                     </summary>
-                    <p class="text-gray-500 text-sm mt-3 leading-relaxed">We use Claude AI by Anthropic to analyze your data and generate personalized insights, captions, and recommendations. Every generation is unique.</p>
+                    <p class="text-gray-500 mt-5 leading-relaxed">We use Claude AI by Anthropic to analyze your data and generate personalized insights, captions, and recommendations. Every generation is unique.</p>
                 </details>
-                <details class="bg-white rounded-xl border border-surface-200 p-5 group card-shadow">
-                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between">
+                <details class="bg-surface-50 rounded-2xl border border-surface-200 p-7 group shadow-sm">
+                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between text-lg">
                         What data do you collect?
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 chevron-icon"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 chevron-icon flex-shrink-0 ml-4"></i>
                     </summary>
-                    <p class="text-gray-500 text-sm mt-3 leading-relaxed">Only your public profile data, follower lists, and post engagement. We never sell your data. See our <a href="/privacy" class="text-primary-500 hover:underline font-medium">privacy policy</a>.</p>
+                    <p class="text-gray-500 mt-5 leading-relaxed">Only your public profile data, follower lists, and post engagement. We never sell your data. See our <a href="/privacy" class="text-primary-500 hover:underline font-medium">privacy policy</a>.</p>
                 </details>
-                <details class="bg-white rounded-xl border border-surface-200 p-5 group card-shadow">
-                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between">
+                <details class="bg-surface-50 rounded-2xl border border-surface-200 p-7 group shadow-sm">
+                    <summary class="font-semibold text-gray-900 cursor-pointer flex items-center justify-between text-lg">
                         Does it work with private accounts?
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 chevron-icon"></i>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 chevron-icon flex-shrink-0 ml-4"></i>
                     </summary>
-                    <p class="text-gray-500 text-sm mt-3 leading-relaxed">Yes. Since you connect your own session, we can access your data regardless of privacy settings. You can only analyze your own account.</p>
+                    <p class="text-gray-500 mt-5 leading-relaxed">Yes. Since you connect your own session, we can access your data regardless of privacy settings. You can only analyze your own account.</p>
                 </details>
-            </div>
-        </div>
-    </section>
-
-    <!-- SEO Content -->
-    <section class="py-24 bg-white">
-        <div class="max-w-4xl mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div>
-                    <h2 class="text-2xl font-black mb-4 text-gray-900">How to See Who Unfollowed You on Instagram</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-4">Instagram doesn't notify you when someone unfollows you. IGAI solves this by taking snapshots of your follower list and comparing them over time. Every time you scan, we detect exactly who unfollowed you — with details like their gender, account type, and when they left.</p>
-                    <p class="text-gray-500 text-sm leading-relaxed">Unlike other tools, IGAI uses AI to analyze patterns — connecting unfollower events to your content, helping you understand why people leave and how to keep them.</p>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-black mb-4 text-gray-900">What Are Ghost Followers on Instagram?</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-4">Ghost followers are accounts that follow you but never engage — they don't like, comment, or view your stories. They hurt your engagement rate, which affects how Instagram's algorithm shows your content.</p>
-                    <p class="text-gray-500 text-sm leading-relaxed">IGAI identifies ghost followers by cross-referencing your follower list with your post engagement data. We also find "secret fans" — people who regularly engage with your content but don't follow you yet.</p>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-black mb-4 text-gray-900">Instagram Follower Analytics for Creators</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-4">Understanding your audience is key to growing on Instagram. IGAI provides AI-powered demographics analysis — showing where your followers are from, what languages they speak, and their gender distribution.</p>
-                    <p class="text-gray-500 text-sm leading-relaxed">Our Content Advisor analyzes your posts to find the best times to post, which hashtags drive the most engagement, and what content types work best for your niche.</p>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-black mb-4 text-gray-900">Who Doesn't Follow Me Back on Instagram?</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-4">Ever wondered who you follow that doesn't follow you back? IGAI's Relationships feature shows you instantly — with filters by gender and a complete list of mutual follows, one-way followers, and accounts that don't reciprocate.</p>
-                    <p class="text-gray-500 text-sm leading-relaxed">Clean up your following list, find your biggest fans, and understand your follower relationships at a glance.</p>
-                </div>
             </div>
         </div>
     </section>
 
     <!-- CTA -->
-    <section class="py-24 bg-surface-100">
-        <div class="max-w-3xl mx-auto px-6 text-center">
-            <div class="bg-white rounded-3xl p-12 border border-surface-200 card-shadow-lg">
-                <h2 class="text-4xl font-black mb-4 text-gray-900">Ready to Grow?</h2>
-                <p class="text-gray-500 mb-8 text-lg">Join IGAI. Free to start, no credit card required.</p>
-                <a href="/register" class="group inline-flex items-center gap-2 px-10 py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl transition text-lg shadow-lg shadow-primary-500/20">
-                    Get Started Free
-                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition"></i>
-                </a>
+    <section class="py-32">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="bg-gradient-to-br from-primary-500 via-pink-500 to-violet-600 rounded-[2rem] p-14 sm:p-20 text-center text-white relative overflow-hidden reveal">
+                <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                <div class="relative">
+                    <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black mb-6">Ready to grow your Instagram?</h2>
+                    <p class="text-white/80 text-lg sm:text-xl mb-10 max-w-lg mx-auto leading-relaxed">Join thousands of creators using AI to grow their Instagram. Free to start, no credit card required.</p>
+                    <a href="/register" class="inline-flex items-center gap-3 px-10 py-5 bg-white text-primary-500 font-bold rounded-2xl hover:shadow-2xl transition text-lg hover:-translate-y-1 shadow-xl">
+                        Start Free
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </a>
+                    <p class="text-white/50 text-sm mt-6 tracking-wide">No credit card required &middot; Free forever plan &middot; Cancel anytime</p>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="border-t border-surface-200 py-8 bg-white">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                <img src="/static/logo.svg" alt="IGAI" class="h-5 opacity-50">
-                &mdash; Instagram Analytics
+    <footer class="border-t border-surface-200 py-14 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-8">
+                <div class="flex items-center gap-3">
+                    <img src="/static/logo.svg" alt="IGAI" class="h-7 opacity-40">
+                    <span class="text-sm text-gray-400 font-medium">&mdash; AI-Powered Instagram Creator Suite</span>
+                </div>
+                <div class="flex items-center gap-8 text-sm text-gray-400 font-medium">
+                    <a href="/privacy" class="hover:text-gray-900 transition">Privacy</a>
+                    <a href="#features" class="hover:text-gray-900 transition">Features</a>
+                    <a href="#pricing" class="hover:text-gray-900 transition">Pricing</a>
+                    <a href="/login" class="hover:text-gray-900 transition">Login</a>
+                    <a href="/register" class="hover:text-gray-900 transition">Register</a>
+                </div>
             </div>
-            <div class="flex items-center gap-6 text-sm text-gray-500 font-medium">
-                <a href="/privacy" class="hover:text-gray-900 transition">Privacy</a>
-                <a href="/login" class="hover:text-gray-900 transition">Login</a>
-                <a href="/register" class="hover:text-gray-900 transition">Register</a>
-            </div>
+            <div class="text-center mt-10 text-xs text-gray-300">&copy; 2026 IGAI. All rights reserved.</div>
         </div>
     </footer>
 
     <script>lucide.createIcons();</script>
+    <script>
+        // Intersection Observer for reveal animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Counter animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('[data-count]');
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-count'));
+                const duration = 2000;
+                const start = performance.now();
+
+                function update(now) {
+                    const elapsed = now - start;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    const current = Math.floor(eased * target);
+
+                    if (target >= 10000) {
+                        counter.textContent = Math.floor(current / 1000) + 'K+';
+                    } else {
+                        counter.textContent = current.toLocaleString() + '+';
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+
+                const counterObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            requestAnimationFrame(update);
+                            counterObserver.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                counterObserver.observe(counter);
+            });
+        }
+
+        animateCounters();
+    </script>
 </body>
 </html>
