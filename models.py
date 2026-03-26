@@ -98,10 +98,12 @@ class User(UserMixin, db.Model):
         if self.ai_reset_month != current_month:
             self.ai_reset_month = current_month
             self.ai_generations_used = 0
-        if self.ai_generations_used >= self.ai_limit:
+        used = int(self.ai_generations_used or 0)
+        limit = int(self.ai_limit or 3)
+        if used >= limit:
             return False, 0
-        self.ai_generations_used = (self.ai_generations_used or 0) + 1
-        return True, self.ai_limit - self.ai_generations_used
+        self.ai_generations_used = used + 1
+        return True, limit - self.ai_generations_used
 
     def has_used_trial(self, feature):
         """Check if user already used their free trial for a feature."""
