@@ -1931,29 +1931,13 @@ Return ONLY this JSON (no markdown, no explanation):
                 "remove_urls": remove_urls,
             })
 
-        # Build recommended URLs list
+        # Build recommended URLs list from AI's selection
         recommended_nums = ai_result.get("recommended", [])
         recommended_urls = [urls[n - 1] for n in recommended_nums if 0 <= n - 1 < len(urls)]
 
-        # Safety check: if AI recommended too many (>80% of total), apply stricter filtering
-        if len(recommended_urls) > max(6, len(urls) * 0.6):
-            remove_set = set()
-            for g in similar_groups:
-                for u in g.get("remove_urls", []):
-                    remove_set.add(u)
-            # Keep only photos scoring >= 5 that aren't duplicates
-            recommended_urls = [r["url"] for r in results if r["score"] >= 5 and r["url"] not in remove_set]
-            recommendation_reason += " (Auto-filtered: AI was too lenient, applied stricter duplicate/quality removal.)"
-
-        # Fallback: if still empty or AI didn't return recommended
+        # Fallback only if AI returned empty recommended list
         if not recommended_urls:
-            remove_set = set()
-            for g in similar_groups:
-                for u in g.get("remove_urls", []):
-                    remove_set.add(u)
-            recommended_urls = [r["url"] for r in results if r["score"] >= 5 and r["url"] not in remove_set]
-        if not recommended_urls:
-            recommended_urls = [urls[0]]  # Always keep at least one
+            recommended_urls = [urls[0]]
 
         recommendation_reason = ai_result.get("recommendation_reason", "")
 
