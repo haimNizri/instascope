@@ -1898,7 +1898,7 @@ Return ONLY this JSON (no markdown, no explanation):
         })
 
         response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-sonnet-4-5-20241022",
             max_tokens=1024,
             messages=[{"role": "user", "content": content}],
         )
