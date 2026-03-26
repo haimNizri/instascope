@@ -13,6 +13,8 @@ import requests
 BASE_URL = "https://graph.facebook.com/v21.0/"
 
 OAUTH_SCOPES = [
+    "instagram_basic",
+    "instagram_content_publish",
     "pages_manage_posts",
     "pages_read_engagement",
     "pages_show_list",
