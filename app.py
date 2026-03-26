@@ -1905,10 +1905,14 @@ Return ONLY this JSON (no markdown, no explanation):
 
         import re
         raw = response.content[0].text.strip()
+        print(f"[AI Review] Raw response: {raw[:500]}")
         match = re.search(r'\{[\s\S]*\}', raw)
         if not match:
             return jsonify({"error": "AI returned invalid response"}), 500
         ai_result = json.loads(match.group())
+        print(f"[AI Review] Recommended photos: {ai_result.get('recommended', 'NONE')}")
+        print(f"[AI Review] Similar groups: {ai_result.get('similar_groups', 'NONE')}")
+        print(f"[AI Review] Reason: {ai_result.get('recommendation_reason', 'NONE')}")
 
         # Map results back to URLs
         results = []
