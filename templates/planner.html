@@ -407,6 +407,9 @@ fetch('/api/graph/status')
     })
     .catch(() => {});
 
+let reviewSelectedUrls = [];
+let reviewPostId = null;
+
 function publishPost(postId) {
     if (!graphConnected) {
         alert('Connect your Instagram for publishing first. Go to the Connect page.');
@@ -416,46 +419,53 @@ function publishPost(postId) {
     const post = allPosts.find(p => p.id == postId);
     if (!post) return;
 
+    reviewPostId = postId;
     const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
+    reviewSelectedUrls = [...allUrls];
     const caption = post.caption || '';
     const hashtags = post.hashtags || '';
     const fullCaption = caption + (hashtags ? '\n\n' + hashtags : '');
 
-    // Build review modal
     const overlay = document.createElement('div');
     overlay.id = 'publishReviewOverlay';
     overlay.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-    const photosHtml = allUrls.length > 0
-        ? `<div class="flex gap-2 overflow-x-auto pb-2">${allUrls.map((u, i) =>
-            `<img src="${u.replace('/upload/', '/upload/c_fill,w_240,h_300/')}" class="w-40 h-48 object-cover rounded-lg border border-gray-200 flex-shrink-0" title="Image ${i+1}">`
-          ).join('')}</div>`
-        : '<p class="text-gray-400 text-sm">No media attached</p>';
-
     overlay.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-1">Review Before Publishing</h3>
                 <p class="text-sm text-gray-500 mb-4">This will be posted to <strong>@${graphUsername || 'Instagram'}</strong></p>
 
                 <div class="mb-4">
-                    <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Photos (${allUrls.length})</p>
-                    ${photosHtml}
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-semibold text-gray-500 uppercase">Photos <span id="reviewPhotoCount">(${allUrls.length})</span></p>
+                        ${allUrls.length >= 2 ? `<button onclick="aiReviewPhotos()" id="aiReviewBtn" class="px-3 py-1 bg-fuchsia-100 text-fuchsia-600 rounded-lg text-xs font-semibold hover:bg-fuchsia-200 transition">AI Review</button>` : ''}
+                    </div>
+                    <div id="reviewPhotosGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        ${allUrls.map((u, i) => `
+                            <div class="review-photo relative group cursor-pointer" data-url="${u}" onclick="toggleReviewPhoto(this)">
+                                <img src="${u.replace('/upload/', '/upload/c_fill,w_200,h_200/')}" class="w-full aspect-square object-cover rounded-lg border-2 border-primary-500">
+                                <div class="absolute top-1.5 right-1.5 w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-xs font-bold review-check">&#10003;</div>
+                                <div class="review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 hidden"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p id="reviewSimilarWarning" class="hidden text-xs text-amber-600 mt-2 bg-amber-50 rounded-lg p-2"></p>
                 </div>
 
                 <div class="mb-4">
                     <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Caption</p>
-                    <div class="bg-surface-50 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">${fullCaption || '<span class="text-gray-400">No caption</span>'}</div>
+                    <div class="bg-surface-50 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">${fullCaption || '<span class="text-gray-400">No caption</span>'}</div>
                 </div>
 
                 <div class="mb-4">
                     <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Type</p>
-                    <span class="text-sm text-gray-700">${post.media_type === 'carousel' ? 'Carousel (' + allUrls.length + ' images)' : post.media_type === 'reel' ? 'Reel' : 'Single Photo'}</span>
+                    <span id="reviewType" class="text-sm text-gray-700">${post.media_type === 'carousel' ? 'Carousel (' + allUrls.length + ' images)' : post.media_type === 'reel' ? 'Reel' : 'Single Photo'}</span>
                 </div>
 
                 <div class="flex gap-3 mt-6">
-                    <button id="confirmPublishBtn" onclick="confirmPublish(${postId})" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm">
+                    <button id="confirmPublishBtn" onclick="confirmPublish()" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm">
                         Publish Now
                     </button>
                     <button onclick="document.getElementById('publishReviewOverlay').remove()" class="flex-1 px-4 py-2.5 bg-surface-100 text-gray-600 font-semibold rounded-xl hover:bg-surface-200 transition text-sm">
@@ -468,26 +478,146 @@ function publishPost(postId) {
     document.body.appendChild(overlay);
 }
 
-function confirmPublish(postId) {
+function toggleReviewPhoto(el) {
+    const url = el.dataset.url;
+    const img = el.querySelector('img');
+    const check = el.querySelector('.review-check');
+    const isSelected = reviewSelectedUrls.includes(url);
+
+    if (isSelected) {
+        reviewSelectedUrls = reviewSelectedUrls.filter(u => u !== url);
+        img.className = img.className.replace('border-primary-500', 'border-gray-200 opacity-40');
+        check.classList.add('hidden');
+    } else {
+        reviewSelectedUrls.push(url);
+        img.className = img.className.replace('border-gray-200 opacity-40', 'border-primary-500');
+        check.classList.remove('hidden');
+    }
+
+    const count = reviewSelectedUrls.length;
+    document.getElementById('reviewPhotoCount').textContent = `(${count} selected)`;
+    document.getElementById('reviewType').textContent = count > 1 ? `Carousel (${count} images)` : count === 1 ? 'Single Photo' : 'No photos selected';
+    document.getElementById('confirmPublishBtn').disabled = count === 0;
+}
+
+function aiReviewPhotos() {
+    const btn = document.getElementById('aiReviewBtn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+
+    const post = allPosts.find(p => p.id == reviewPostId);
+    const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
+
+    fetch('/api/planner/ai-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: allUrls }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.textContent = 'AI Review';
+        btn.disabled = false;
+        if (data.error) { alert(data.error); return; }
+
+        const photos = document.querySelectorAll('.review-photo');
+        const results = data.results || [];
+        const similarGroups = data.similar_groups || [];
+
+        // Apply scores
+        results.forEach(r => {
+            photos.forEach(el => {
+                if (el.dataset.url === r.url) {
+                    const badge = el.querySelector('.review-badge');
+                    badge.classList.remove('hidden');
+                    const score = r.score.toFixed(1);
+                    if (r.score >= 7) {
+                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-green-500/90 text-white';
+                        badge.textContent = score + ' Best';
+                    } else if (r.score >= 5) {
+                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-yellow-500/90 text-white';
+                        badge.textContent = score + ' OK';
+                    } else {
+                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-red-500/90 text-white';
+                        badge.textContent = score + ' Weak';
+                    }
+                }
+            });
+        });
+
+        // Show similar warnings
+        if (similarGroups.length > 0) {
+            const warn = document.getElementById('reviewSimilarWarning');
+            warn.classList.remove('hidden');
+            const groupTexts = similarGroups.map(g => `Photos ${g.photos.join(' & ')} look similar — consider keeping only the best one`);
+            warn.innerHTML = '&#9888; ' + groupTexts.join('<br>&#9888; ');
+
+            // Auto-deselect lower-scored duplicates
+            similarGroups.forEach(g => {
+                if (g.keep_url && g.remove_urls) {
+                    g.remove_urls.forEach(url => {
+                        const el = document.querySelector(`.review-photo[data-url="${url}"]`);
+                        if (el && reviewSelectedUrls.includes(url)) {
+                            toggleReviewPhoto(el);
+                        }
+                    });
+                }
+            });
+        }
+    })
+    .catch(err => {
+        btn.textContent = 'AI Review';
+        btn.disabled = false;
+        alert('AI review failed: ' + err.message);
+    });
+}
+
+function confirmPublish() {
+    if (reviewSelectedUrls.length === 0) { alert('Select at least one photo'); return; }
+
     const btn = document.getElementById('confirmPublishBtn');
     btn.disabled = true;
     btn.textContent = 'Publishing...';
 
-    fetch(`/api/planner/posts/${postId}/publish`, { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('publishReviewOverlay')?.remove();
-            if (data.ok) {
-                alert('Published to Instagram!');
-                loadPlannerPosts();
-            } else {
-                alert(data.error || 'Publishing failed');
-            }
+    // Update the post with selected urls before publishing
+    const post = allPosts.find(p => p.id == reviewPostId);
+    const originalUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
+    const needsUpdate = reviewSelectedUrls.length !== originalUrls.length || !reviewSelectedUrls.every((u, i) => u === originalUrls[i]);
+
+    const doPublish = () => {
+        fetch(`/api/planner/posts/${reviewPostId}/publish`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('publishReviewOverlay')?.remove();
+                if (data.ok) {
+                    alert('Published to Instagram!');
+                    loadPlannerPosts();
+                } else {
+                    alert(data.error || 'Publishing failed');
+                }
+            })
+            .catch(err => {
+                document.getElementById('publishReviewOverlay')?.remove();
+                alert('Error: ' + err.message);
+            });
+    };
+
+    if (needsUpdate) {
+        // Save updated photo selection first
+        const mediaType = reviewSelectedUrls.length > 1 ? 'carousel' : 'image';
+        fetch(`/api/planner/posts/${reviewPostId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                media_url: reviewSelectedUrls[0],
+                media_urls: reviewSelectedUrls.length > 1 ? reviewSelectedUrls : null,
+                media_type: mediaType,
+            }),
         })
-        .catch(err => {
-            document.getElementById('publishReviewOverlay')?.remove();
-            alert('Error: ' + err.message);
-        });
+        .then(r => r.json())
+        .then(() => doPublish());
+    } else {
+        doPublish();
+    }
 }
 
 // ── Cloudinary Upload ────────────────────────────────────────────────────

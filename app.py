@@ -1851,6 +1851,96 @@ def api_planner_delete(post_id):
     return jsonify({"ok": True})
 
 
+@app.post("/api/planner/ai-review")
+@login_required
+def api_planner_ai_review():
+    """AI-review photos for publishing: score each and detect similar ones."""
+    data = request.get_json() or {}
+    urls = data.get("urls", [])
+    if len(urls) < 2:
+        return jsonify({"error": "Need at least 2 photos to review"}), 400
+
+    allowed, remaining = current_user.use_ai_generation()
+    if not allowed:
+        return jsonify({"error": "AI generation limit reached. Upgrade your plan for more.", "upgrade": True}), 403
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+
+        content = []
+        for i, url in enumerate(urls[:10]):
+            analysis_url = url.replace("/upload/", "/upload/w_600,q_70/")
+            content.append({"type": "image", "source": {"type": "url", "url": analysis_url}})
+            content.append({"type": "text", "text": f"Photo {i+1}"})
+
+        content.append({
+            "type": "text",
+            "text": f"""You are an expert Instagram content reviewer. Analyze these {len(urls[:10])} photos.
+
+For each photo return:
+- score (1.0-10.0): Instagram-worthiness
+- feedback: one short sentence
+
+Also identify groups of similar/duplicate photos (same scene, same subject, very similar composition).
+
+Return ONLY this JSON (no markdown):
+{{
+  "scores": [
+    {{"photo": 1, "score": 8.5, "feedback": "Great lighting and composition"}},
+    ...
+  ],
+  "similar_groups": [
+    {{"photos": [1, 3], "reason": "Same scene from similar angle", "keep": 1}},
+    ...
+  ]
+}}
+
+"keep" is the photo number with the highest quality in each similar group. If no photos are similar, return empty similar_groups array.""",
+        })
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": content}],
+        )
+
+        import re
+        raw = response.content[0].text.strip()
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if not match:
+            return jsonify({"error": "AI returned invalid response"}), 500
+        ai_result = json.loads(match.group())
+
+        # Map results back to URLs
+        results = []
+        for s in ai_result.get("scores", []):
+            idx = s.get("photo", 0) - 1
+            if 0 <= idx < len(urls):
+                results.append({"url": urls[idx], "score": s.get("score", 5), "feedback": s.get("feedback", "")})
+
+        similar_groups = []
+        for g in ai_result.get("similar_groups", []):
+            photo_nums = g.get("photos", [])
+            keep_num = g.get("keep", photo_nums[0] if photo_nums else 1)
+            keep_idx = keep_num - 1
+            keep_url = urls[keep_idx] if 0 <= keep_idx < len(urls) else None
+            remove_urls = [urls[n - 1] for n in photo_nums if n != keep_num and 0 <= n - 1 < len(urls)]
+            similar_groups.append({
+                "photos": photo_nums,
+                "reason": g.get("reason", "Similar photos"),
+                "keep_url": keep_url,
+                "remove_urls": remove_urls,
+            })
+
+        db.session.commit()
+        return jsonify({"ok": True, "results": results, "similar_groups": similar_groups, "ai_remaining": remaining})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"AI review failed: {str(e)}"}), 500
+
+
 @app.post("/api/planner/generate-all")
 @login_required
 def api_generate_all():
