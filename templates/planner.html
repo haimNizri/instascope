@@ -210,12 +210,16 @@ function renderPosts() {
     list.innerHTML = filtered.map(p => {
         const schedStr = p.scheduled_at ? new Date(p.scheduled_at).toLocaleString() : 'No schedule';
         const hashCount = p.hashtags ? p.hashtags.split(' ').filter(h => h.startsWith('#')).length : 0;
+        const allUrls = p.media_urls || (p.media_url ? [p.media_url] : []);
+        const thumbHtml = allUrls.length > 0
+            ? `<div class="flex gap-1 flex-shrink-0">${allUrls.slice(0, 4).map((u, i) =>
+                `<img src="${u.replace('/upload/', '/upload/c_fill,w_60,h_60/')}" class="w-12 h-12 rounded-lg object-cover border border-gray-200" title="Image ${i+1}">`
+              ).join('')}${allUrls.length > 4 ? `<div class="w-12 h-12 rounded-lg bg-surface-100 flex items-center justify-center text-xs text-gray-500 border border-gray-200">+${allUrls.length - 4}</div>` : ''}</div>`
+            : `<div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center text-xl flex-shrink-0">${typeIcons[p.media_type] || '&#128248;'}</div>`;
         return `
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center text-xl flex-shrink-0">
-                    ${typeIcons[p.media_type] || '&#128248;'}
-                </div>
+                ${thumbHtml}
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 class="font-semibold text-gray-900 truncate">${p.title || 'Untitled'}</h3>
