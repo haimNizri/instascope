@@ -13,6 +13,7 @@ import requests
 BASE_URL = "https://graph.facebook.com/v21.0/"
 
 OAUTH_SCOPES = [
+    "business_management",
     "instagram_basic",
     "instagram_content_publish",
     "pages_manage_posts",
@@ -140,7 +141,10 @@ def get_instagram_business_account(access_token):
     # List all pages the user manages
     resp = requests.get(
         f"{BASE_URL}me/accounts",
-        params={"access_token": access_token},
+        params={
+            "access_token": access_token,
+            "fields": "id,name,access_token,instagram_business_account",
+        },
     )
     data = resp.json()
     print(f"[FB OAuth] me/accounts raw response: {data}")
@@ -151,24 +155,51 @@ def get_instagram_business_account(access_token):
         )
 
     pages = data.get("data", [])
+
+    # If no pages found via me/accounts, try via me/businesses for Business Manager pages
+    if not pages:
+        print("[FB OAuth] No pages via me/accounts, trying Business Manager path...")
+        biz_resp = requests.get(
+            f"{BASE_URL}me/businesses",
+            params={"access_token": access_token},
+        )
+        biz_data = biz_resp.json()
+        print(f"[FB OAuth] me/businesses: {biz_data}")
+        for biz in biz_data.get("data", []):
+            biz_id = biz["id"]
+            pages_resp = requests.get(
+                f"{BASE_URL}{biz_id}/owned_pages",
+                params={
+                    "access_token": access_token,
+                    "fields": "id,name,access_token,instagram_business_account",
+                },
+            )
+            pages_data = pages_resp.json()
+            print(f"[FB OAuth] Business {biz.get('name', biz_id)} owned_pages: {pages_data}")
+            pages.extend(pages_data.get("data", []))
+
     print(f"[FB OAuth] Found {len(pages)} pages: {[p.get('name', p['id']) for p in pages]}")
     for page in pages:
         page_id = page["id"]
-        # Use page access token if available (required for some permissions)
         page_token = page.get("access_token", access_token)
-        resp2 = requests.get(
-            f"{BASE_URL}{page_id}",
-            params={
-                "fields": "instagram_business_account,name",
-                "access_token": page_token,
-            },
-        )
-        page_data = resp2.json()
-        print(f"[FB OAuth] Page {page.get('name', page_id)}: {page_data}")
-        if "error" in page_data:
-            continue
 
-        ig_account = page_data.get("instagram_business_account")
+        # Check if instagram_business_account was already included in the response
+        ig_account = page.get("instagram_business_account")
+        if not ig_account:
+            resp2 = requests.get(
+                f"{BASE_URL}{page_id}",
+                params={
+                    "fields": "instagram_business_account,name",
+                    "access_token": page_token,
+                },
+            )
+            page_data = resp2.json()
+            print(f"[FB OAuth] Page {page.get('name', page_id)}: {page_data}")
+            if "error" in page_data:
+                continue
+            ig_account = page_data.get("instagram_business_account")
+        else:
+            print(f"[FB OAuth] Page {page.get('name', page_id)} has IG account: {ig_account}")
         if ig_account:
             # Fetch the IG username
             ig_user_id = ig_account["id"]
