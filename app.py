@@ -1876,30 +1876,29 @@ def api_planner_ai_review():
 
         content.append({
             "type": "text",
-            "text": f"""You are a strict Instagram content curator. Your job is to ELIMINATE weak and duplicate photos. Be ruthless.
+            "text": f"""You are a strict Instagram curator. You MUST eliminate duplicates and weak photos.
 
-Analyze these {len(urls[:10])} photos:
+I have {len(urls[:10])} photos. You MUST NOT recommend all of them. Your job is to CUT photos.
 
-STEP 1 - Score each photo (1.0-10.0) for Instagram quality.
-STEP 2 - Find ALL similar/duplicate photos. Two photos are "similar" if they show the same scene, same subject, same type of content (e.g. two food flatlay shots, two screenshots, two selfies). Be aggressive — if they look like they could be from the same photoshoot or same category, they are similar.
-STEP 3 - From each similar group, keep ONLY the single best photo. Remove all others.
-STEP 4 - Also remove any photo scoring below 5.0.
-STEP 5 - The final recommended list should have VARIETY — different subjects, different compositions. Ideal carousel is 3-6 diverse photos.
+RULES:
+1. Score each photo 1-10 for Instagram quality
+2. Screenshots, ads, text-heavy images = score 2-3 (NOT Instagram content)
+3. If multiple photos show the same subject/scene/category (e.g. multiple food shots, multiple selfies, multiple screenshots), they are SIMILAR — keep only the BEST ONE from each group
+4. Remove everything below score 6
+5. Final selection MUST be 3-6 photos maximum with DIFFERENT subjects
+6. You MUST recommend FEWER photos than the total. If given 11 photos, recommend 3-5.
 
-IMPORTANT: Do NOT recommend all photos. A good carousel has variety. If you have 10 food photos, keep only the 1-2 best. If you have 3 similar screenshots, keep only 1.
+Example: If I give you 5 food photos, 3 screenshots, 2 portraits, 1 group photo:
+- similar_groups: food[1,2,3,4,5] keep best, screenshots[6,7,8] keep best, portraits[9,10] keep best
+- recommended: [best_food, best_portrait, group_photo] = 3 photos
 
-Return ONLY this JSON (no markdown, no explanation):
-{{
-  "scores": [{{"photo": 1, "score": 8.5, "feedback": "Great lighting"}}],
-  "similar_groups": [{{"photos": [1, 5, 7], "reason": "All food flatlay shots", "keep": 1}}],
-  "recommended": [1, 2, 4],
-  "recommendation_reason": "Kept 3 diverse photos. Removed 4 duplicate food shots and 2 similar screenshots."
-}}""",
+Return ONLY valid JSON:
+{{"scores":[{{"photo":1,"score":7.5,"feedback":"Nice food flatlay"}}],"similar_groups":[{{"photos":[1,5,7],"reason":"All food shots","keep":1}}],"recommended":[1,2,4],"recommendation_reason":"Kept 3 diverse photos from 11"}}""",
         })
 
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1024,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2048,
             messages=[{"role": "user", "content": content}],
         )
 
