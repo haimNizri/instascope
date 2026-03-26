@@ -1808,6 +1808,8 @@ def api_planner_create():
         status=data.get("status", "draft"),
         notes=data.get("notes", ""),
         category=data.get("category", ""),
+        media_url=data.get("media_url", ""),
+        media_urls=data.get("media_urls"),
     )
     db.session.add(post)
     db.session.commit()
@@ -1831,6 +1833,8 @@ def api_planner_update(post_id):
     if "status" in data: post.status = data["status"]
     if "notes" in data: post.notes = data["notes"]
     if "category" in data: post.category = data["category"]
+    if "media_url" in data: post.media_url = data["media_url"]
+    if "media_urls" in data: post.media_urls = data["media_urls"]
     db.session.commit()
     return jsonify({"ok": True, "post": post.to_dict()})
 
