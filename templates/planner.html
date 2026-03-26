@@ -432,11 +432,15 @@ function publishPost(postId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ urls: allUrls }),
         })
-        .then(r => r.json())
+        .then(r => {
+            console.log('[AI Review] Response status:', r.status);
+            return r.json();
+        })
         .then(data => {
             removeAiLoadingOverlay();
+            console.log('[AI Review] Data:', JSON.stringify(data).substring(0, 500));
             if (data.error) {
-                // If AI fails, show modal without AI data
+                console.error('[AI Review] Error:', data.error);
                 reviewAiResults = null;
                 showReviewModal(post);
                 return;
@@ -444,13 +448,15 @@ function publishPost(postId) {
             reviewAiResults = data;
             // Auto-select only recommended photos
             const recommended = (data.recommended || []);
+            console.log('[AI Review] Recommended URLs:', recommended.length, 'of', allUrls.length);
             if (recommended.length > 0) {
-                reviewSelectedUrls = recommended;
+                reviewSelectedUrls = [...recommended];
             }
             showReviewModal(post);
         })
-        .catch(() => {
+        .catch(err => {
             removeAiLoadingOverlay();
+            console.error('[AI Review] Fetch error:', err);
             reviewAiResults = null;
             showReviewModal(post);
         });
