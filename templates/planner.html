@@ -390,11 +390,13 @@ function aiGenerateAll() {
 // ── Graph API Publishing ─────────────────────────────────────────────────
 
 let graphConnected = false;
+let graphUsername = '';
 
 fetch('/api/graph/status')
     .then(r => r.json())
     .then(data => {
         graphConnected = data.connected;
+        graphUsername = data.ig_username || '';
         if (data.connected && data.token_expired) {
             // Show reconnect banner
             const banner = document.createElement('div');
@@ -410,28 +412,81 @@ function publishPost(postId) {
         alert('Connect your Instagram for publishing first. Go to the Connect page.');
         return;
     }
-    if (!confirm('Publish this post to Instagram now?')) return;
 
-    const btn = event.target;
+    const post = allPosts.find(p => p.id == postId);
+    if (!post) return;
+
+    const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
+    const caption = post.caption || '';
+    const hashtags = post.hashtags || '';
+    const fullCaption = caption + (hashtags ? '\n\n' + hashtags : '');
+
+    // Build review modal
+    const overlay = document.createElement('div');
+    overlay.id = 'publishReviewOverlay';
+    overlay.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    const photosHtml = allUrls.length > 0
+        ? `<div class="flex gap-2 overflow-x-auto pb-2">${allUrls.map((u, i) =>
+            `<img src="${u.replace('/upload/', '/upload/c_fill,w_240,h_300/')}" class="w-40 h-48 object-cover rounded-lg border border-gray-200 flex-shrink-0" title="Image ${i+1}">`
+          ).join('')}</div>`
+        : '<p class="text-gray-400 text-sm">No media attached</p>';
+
+    overlay.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Review Before Publishing</h3>
+                <p class="text-sm text-gray-500 mb-4">This will be posted to <strong>@${graphUsername || 'Instagram'}</strong></p>
+
+                <div class="mb-4">
+                    <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Photos (${allUrls.length})</p>
+                    ${photosHtml}
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Caption</p>
+                    <div class="bg-surface-50 rounded-lg p-3 text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">${fullCaption || '<span class="text-gray-400">No caption</span>'}</div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Type</p>
+                    <span class="text-sm text-gray-700">${post.media_type === 'carousel' ? 'Carousel (' + allUrls.length + ' images)' : post.media_type === 'reel' ? 'Reel' : 'Single Photo'}</span>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button id="confirmPublishBtn" onclick="confirmPublish(${postId})" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm">
+                        Publish Now
+                    </button>
+                    <button onclick="document.getElementById('publishReviewOverlay').remove()" class="flex-1 px-4 py-2.5 bg-surface-100 text-gray-600 font-semibold rounded-xl hover:bg-surface-200 transition text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function confirmPublish(postId) {
+    const btn = document.getElementById('confirmPublishBtn');
     btn.disabled = true;
     btn.textContent = 'Publishing...';
 
     fetch(`/api/planner/posts/${postId}/publish`, { method: 'POST' })
         .then(r => r.json())
         .then(data => {
+            document.getElementById('publishReviewOverlay')?.remove();
             if (data.ok) {
                 alert('Published to Instagram!');
                 loadPlannerPosts();
             } else {
                 alert(data.error || 'Publishing failed');
-                btn.disabled = false;
-                btn.textContent = 'Publish';
             }
         })
         .catch(err => {
+            document.getElementById('publishReviewOverlay')?.remove();
             alert('Error: ' + err.message);
-            btn.disabled = false;
-            btn.textContent = 'Publish';
         });
 }
 
