@@ -330,6 +330,20 @@ def publish_photo(access_token, ig_user_id, image_url, caption):
     return {"id": data["id"]}
 
 
+def _ensure_ig_aspect_ratio(url):
+    """Apply Cloudinary transformation to ensure Instagram-compatible aspect ratio.
+
+    Instagram requires aspect ratios between 4:5 (portrait) and 1.91:1 (landscape).
+    This adds a Cloudinary c_pad transformation to fit images within those bounds.
+    """
+    if "cloudinary" not in url:
+        return url
+    # Add c_pad with 4:5 aspect ratio (safest for IG) and white background
+    if "/upload/" in url:
+        return url.replace("/upload/", "/upload/c_pad,ar_4:5,b_white,g_center/")
+    return url
+
+
 def publish_carousel(access_token, ig_user_id, image_urls, caption):
     """Publish a carousel (multi-image) post to Instagram.
 
@@ -348,6 +362,7 @@ def publish_carousel(access_token, ig_user_id, image_urls, caption):
     # Step 1: create child containers
     children_ids = []
     for url in image_urls:
+        url = _ensure_ig_aspect_ratio(url)
         resp = requests.post(
             f"{BASE_URL}{ig_user_id}/media",
             data={
