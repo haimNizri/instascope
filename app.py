@@ -1876,13 +1876,15 @@ def api_planner_ai_review():
 
         content.append({
             "type": "text",
-            "text": f"""You are an expert Instagram content reviewer. Analyze these {len(urls[:10])} photos.
+            "text": f"""You are an expert Instagram content strategist. Analyze these {len(urls[:10])} photos and pick the BEST selection for an Instagram carousel post.
 
-For each photo return:
-- score (1.0-10.0): Instagram-worthiness
+For each photo:
+- score (1.0-10.0): Instagram-worthiness (composition, lighting, color, appeal)
 - feedback: one short sentence
 
-Also identify groups of similar/duplicate photos (same scene, same subject, very similar composition).
+Identify groups of similar/duplicate photos (same scene, similar angle, same subject). From each similar group, keep only the best one.
+
+Then recommend which photos to publish — pick the best ones, remove weak photos (score < 5) and duplicates. Aim for 3-10 photos. Quality over quantity.
 
 Return ONLY this JSON (no markdown):
 {{
@@ -1893,10 +1895,12 @@ Return ONLY this JSON (no markdown):
   "similar_groups": [
     {{"photos": [1, 3], "reason": "Same scene from similar angle", "keep": 1}},
     ...
-  ]
+  ],
+  "recommended": [1, 4, 5],
+  "recommendation_reason": "Removed photo 2 (weak lighting) and photo 3 (duplicate of 1). Kept 3 strongest photos with good variety."
 }}
 
-"keep" is the photo number with the highest quality in each similar group. If no photos are similar, return empty similar_groups array.""",
+"recommended" is the list of photo numbers to publish, in order. "keep" in similar_groups is the best photo in each group. If no photos are similar, return empty similar_groups.""",
         })
 
         response = client.messages.create(
@@ -1933,8 +1937,30 @@ Return ONLY this JSON (no markdown):
                 "remove_urls": remove_urls,
             })
 
+        # Build recommended URLs list
+        recommended_nums = ai_result.get("recommended", [])
+        recommended_urls = [urls[n - 1] for n in recommended_nums if 0 <= n - 1 < len(urls)]
+        # Fallback: if AI didn't return recommended, use all photos scoring >= 5 minus duplicates
+        if not recommended_urls:
+            remove_set = set()
+            for g in similar_groups:
+                for u in g.get("remove_urls", []):
+                    remove_set.add(u)
+            recommended_urls = [r["url"] for r in results if r["score"] >= 5 and r["url"] not in remove_set]
+        if not recommended_urls:
+            recommended_urls = [urls[0]]  # Always keep at least one
+
+        recommendation_reason = ai_result.get("recommendation_reason", "")
+
         db.session.commit()
-        return jsonify({"ok": True, "results": results, "similar_groups": similar_groups, "ai_remaining": remaining})
+        return jsonify({
+            "ok": True,
+            "results": results,
+            "similar_groups": similar_groups,
+            "recommended": recommended_urls,
+            "recommendation_reason": recommendation_reason,
+            "ai_remaining": remaining,
+        })
 
     except Exception as e:
         db.session.rollback()

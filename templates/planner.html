@@ -409,6 +409,7 @@ fetch('/api/graph/status')
 
 let reviewSelectedUrls = [];
 let reviewPostId = null;
+let reviewAiResults = null;
 
 function publishPost(postId) {
     if (!graphConnected) {
@@ -422,9 +423,122 @@ function publishPost(postId) {
     reviewPostId = postId;
     const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
     reviewSelectedUrls = [...allUrls];
+
+    // For multi-photo posts, run AI first then show modal
+    if (allUrls.length >= 2) {
+        showAiLoadingOverlay(allUrls.length);
+        fetch('/api/planner/ai-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: allUrls }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            removeAiLoadingOverlay();
+            if (data.error) {
+                // If AI fails, show modal without AI data
+                reviewAiResults = null;
+                showReviewModal(post);
+                return;
+            }
+            reviewAiResults = data;
+            // Auto-select only recommended photos
+            const recommended = (data.recommended || []);
+            if (recommended.length > 0) {
+                reviewSelectedUrls = recommended;
+            }
+            showReviewModal(post);
+        })
+        .catch(() => {
+            removeAiLoadingOverlay();
+            reviewAiResults = null;
+            showReviewModal(post);
+        });
+    } else {
+        // Single photo — show modal directly
+        reviewAiResults = null;
+        showReviewModal(post);
+    }
+}
+
+function showAiLoadingOverlay(count) {
+    const overlay = document.createElement('div');
+    overlay.id = 'aiLoadingOverlay';
+    overlay.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-xl p-8 text-center max-w-sm">
+            <div class="w-12 h-12 border-4 border-gray-200 border-t-fuchsia-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">AI is reviewing your photos</h3>
+            <p class="text-sm text-gray-500">Analyzing ${count} photos for quality, composition, and duplicates...</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function removeAiLoadingOverlay() {
+    document.getElementById('aiLoadingOverlay')?.remove();
+}
+
+function showReviewModal(post) {
+    const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
     const caption = post.caption || '';
     const hashtags = post.hashtags || '';
     const fullCaption = caption + (hashtags ? '\n\n' + hashtags : '');
+    const ai = reviewAiResults;
+
+    // Build photo cards with AI data
+    const photosHtml = allUrls.map((u, i) => {
+        const isSelected = reviewSelectedUrls.includes(u);
+        const aiScore = ai ? (ai.results || []).find(r => r.url === u) : null;
+        const scoreNum = aiScore ? aiScore.score : null;
+        const feedback = aiScore ? aiScore.feedback : '';
+
+        let badgeHtml = '';
+        let rankHtml = '';
+        if (scoreNum !== null) {
+            const color = scoreNum >= 7 ? 'bg-green-500' : scoreNum >= 5 ? 'bg-yellow-500' : 'bg-red-500';
+            const label = scoreNum >= 7 ? 'Best' : scoreNum >= 5 ? 'OK' : 'Weak';
+            badgeHtml = `<div class="absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 ${color}/90 text-white">${scoreNum.toFixed(1)} ${label}</div>`;
+            // Show rank number for recommended
+            const recIdx = (ai.recommended || []).indexOf(u);
+            if (recIdx >= 0) rankHtml = `<div class="absolute top-1.5 left-1.5 w-5 h-5 bg-fuchsia-500 text-white rounded-full flex items-center justify-center text-xs font-bold">${recIdx + 1}</div>`;
+        }
+
+        return `
+            <div class="review-photo relative group cursor-pointer" data-url="${u}" onclick="toggleReviewPhoto(this)" title="${feedback}">
+                <img src="${u.replace('/upload/', '/upload/c_fill,w_200,h_200/')}" class="w-full aspect-square object-cover rounded-lg border-2 ${isSelected ? 'border-primary-500' : 'border-gray-200 opacity-40'}">
+                <div class="absolute top-1.5 right-1.5 w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-xs font-bold review-check ${isSelected ? '' : 'hidden'}">&#10003;</div>
+                ${rankHtml}
+                ${badgeHtml}
+            </div>`;
+    }).join('');
+
+    // AI recommendation summary
+    let aiSummaryHtml = '';
+    if (ai) {
+        const recCount = (ai.recommended || []).length;
+        const removedCount = allUrls.length - recCount;
+        const similarGroups = ai.similar_groups || [];
+
+        let summaryParts = [];
+        if (recCount > 0) summaryParts.push(`Selected <strong>${recCount}</strong> best photos`);
+        if (removedCount > 0) summaryParts.push(`removed <strong>${removedCount}</strong> weaker ones`);
+        if (similarGroups.length > 0) summaryParts.push(`found <strong>${similarGroups.length}</strong> similar group${similarGroups.length > 1 ? 's' : ''}`);
+
+        const similarHtml = similarGroups.map(g =>
+            `<span class="text-amber-600">Photos ${g.photos.join(' & ')} look similar — kept the best</span>`
+        ).join('<br>');
+
+        aiSummaryHtml = `
+            <div class="bg-fuchsia-50 border border-fuchsia-200 rounded-xl p-3 mb-4">
+                <p class="text-sm text-fuchsia-700 font-semibold mb-1">AI Recommendation</p>
+                <p class="text-xs text-fuchsia-600">${summaryParts.join(', ')}</p>
+                ${similarHtml ? `<p class="text-xs mt-1">${similarHtml}</p>` : ''}
+                <p class="text-xs text-gray-500 mt-1">Click photos to adjust the selection</p>
+            </div>`;
+    }
+
+    const selCount = reviewSelectedUrls.length;
 
     const overlay = document.createElement('div');
     overlay.id = 'publishReviewOverlay';
@@ -435,23 +549,15 @@ function publishPost(postId) {
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-1">Review Before Publishing</h3>
-                <p class="text-sm text-gray-500 mb-4">This will be posted to <strong>@${graphUsername || 'Instagram'}</strong></p>
+                <p class="text-sm text-gray-500 mb-4">Posting to <strong>@${graphUsername || 'Instagram'}</strong></p>
+
+                ${aiSummaryHtml}
 
                 <div class="mb-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Photos <span id="reviewPhotoCount">(${allUrls.length})</span></p>
-                        ${allUrls.length >= 2 ? `<button onclick="aiReviewPhotos()" id="aiReviewBtn" class="px-3 py-1 bg-fuchsia-100 text-fuchsia-600 rounded-lg text-xs font-semibold hover:bg-fuchsia-200 transition">AI Review</button>` : ''}
-                    </div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Photos <span id="reviewPhotoCount">(${selCount} of ${allUrls.length} selected)</span></p>
                     <div id="reviewPhotosGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        ${allUrls.map((u, i) => `
-                            <div class="review-photo relative group cursor-pointer" data-url="${u}" onclick="toggleReviewPhoto(this)">
-                                <img src="${u.replace('/upload/', '/upload/c_fill,w_200,h_200/')}" class="w-full aspect-square object-cover rounded-lg border-2 border-primary-500">
-                                <div class="absolute top-1.5 right-1.5 w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-xs font-bold review-check">&#10003;</div>
-                                <div class="review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 hidden"></div>
-                            </div>
-                        `).join('')}
+                        ${photosHtml}
                     </div>
-                    <p id="reviewSimilarWarning" class="hidden text-xs text-amber-600 mt-2 bg-amber-50 rounded-lg p-2"></p>
                 </div>
 
                 <div class="mb-4">
@@ -461,12 +567,12 @@ function publishPost(postId) {
 
                 <div class="mb-4">
                     <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Type</p>
-                    <span id="reviewType" class="text-sm text-gray-700">${post.media_type === 'carousel' ? 'Carousel (' + allUrls.length + ' images)' : post.media_type === 'reel' ? 'Reel' : 'Single Photo'}</span>
+                    <span id="reviewType" class="text-sm text-gray-700">${selCount > 1 ? 'Carousel (' + selCount + ' images)' : selCount === 1 ? 'Single Photo' : 'No photos selected'}</span>
                 </div>
 
                 <div class="flex gap-3 mt-6">
-                    <button id="confirmPublishBtn" onclick="confirmPublish()" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm">
-                        Publish Now
+                    <button id="confirmPublishBtn" onclick="confirmPublish()" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition text-sm" ${selCount === 0 ? 'disabled' : ''}>
+                        Publish ${selCount > 1 ? selCount + ' Photos' : 'Now'}
                     </button>
                     <button onclick="document.getElementById('publishReviewOverlay').remove()" class="flex-1 px-4 py-2.5 bg-surface-100 text-gray-600 font-semibold rounded-xl hover:bg-surface-200 transition text-sm">
                         Cancel
@@ -495,80 +601,13 @@ function toggleReviewPhoto(el) {
     }
 
     const count = reviewSelectedUrls.length;
-    document.getElementById('reviewPhotoCount').textContent = `(${count} selected)`;
-    document.getElementById('reviewType').textContent = count > 1 ? `Carousel (${count} images)` : count === 1 ? 'Single Photo' : 'No photos selected';
-    document.getElementById('confirmPublishBtn').disabled = count === 0;
-}
-
-function aiReviewPhotos() {
-    const btn = document.getElementById('aiReviewBtn');
-    btn.disabled = true;
-    btn.textContent = 'Analyzing...';
-
     const post = allPosts.find(p => p.id == reviewPostId);
-    const allUrls = post.media_urls || (post.media_url ? [post.media_url] : []);
-
-    fetch('/api/planner/ai-review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: allUrls }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        btn.textContent = 'AI Review';
-        btn.disabled = false;
-        if (data.error) { alert(data.error); return; }
-
-        const photos = document.querySelectorAll('.review-photo');
-        const results = data.results || [];
-        const similarGroups = data.similar_groups || [];
-
-        // Apply scores
-        results.forEach(r => {
-            photos.forEach(el => {
-                if (el.dataset.url === r.url) {
-                    const badge = el.querySelector('.review-badge');
-                    badge.classList.remove('hidden');
-                    const score = r.score.toFixed(1);
-                    if (r.score >= 7) {
-                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-green-500/90 text-white';
-                        badge.textContent = score + ' Best';
-                    } else if (r.score >= 5) {
-                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-yellow-500/90 text-white';
-                        badge.textContent = score + ' OK';
-                    } else {
-                        badge.className = 'review-badge absolute bottom-0 left-0 right-0 rounded-b-lg text-center text-xs font-semibold py-0.5 bg-red-500/90 text-white';
-                        badge.textContent = score + ' Weak';
-                    }
-                }
-            });
-        });
-
-        // Show similar warnings
-        if (similarGroups.length > 0) {
-            const warn = document.getElementById('reviewSimilarWarning');
-            warn.classList.remove('hidden');
-            const groupTexts = similarGroups.map(g => `Photos ${g.photos.join(' & ')} look similar — consider keeping only the best one`);
-            warn.innerHTML = '&#9888; ' + groupTexts.join('<br>&#9888; ');
-
-            // Auto-deselect lower-scored duplicates
-            similarGroups.forEach(g => {
-                if (g.keep_url && g.remove_urls) {
-                    g.remove_urls.forEach(url => {
-                        const el = document.querySelector(`.review-photo[data-url="${url}"]`);
-                        if (el && reviewSelectedUrls.includes(url)) {
-                            toggleReviewPhoto(el);
-                        }
-                    });
-                }
-            });
-        }
-    })
-    .catch(err => {
-        btn.textContent = 'AI Review';
-        btn.disabled = false;
-        alert('AI review failed: ' + err.message);
-    });
+    const total = (post.media_urls || (post.media_url ? [post.media_url] : [])).length;
+    document.getElementById('reviewPhotoCount').textContent = `(${count} of ${total} selected)`;
+    document.getElementById('reviewType').textContent = count > 1 ? `Carousel (${count} images)` : count === 1 ? 'Single Photo' : 'No photos selected';
+    const pubBtn = document.getElementById('confirmPublishBtn');
+    pubBtn.disabled = count === 0;
+    pubBtn.textContent = count > 1 ? `Publish ${count} Photos` : 'Publish Now';
 }
 
 function confirmPublish() {
