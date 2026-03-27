@@ -1872,33 +1872,54 @@ def api_planner_ai_review():
             content.append({"type": "image", "source": {"type": "url", "url": analysis_url}})
             content.append({"type": "text", "text": f"Photo {i+1}"})
 
+        n = len(urls[:10])
         content.append({
             "type": "text",
-            "text": f"""You are a strict Instagram curator. You MUST eliminate duplicates and weak photos.
+            "text": f"""You are a strict Instagram curator. Analyze these {n} photos.
 
-I have {len(urls[:10])} photos. You MUST NOT recommend all of them. Your job is to CUT photos.
+TASK: Find the best 3-5 UNIQUE photos for an Instagram carousel. Remove all duplicates, similar shots, and weak photos.
 
-RULES:
-1. Score each photo 1-10 for Instagram quality
-2. Screenshots, ads, text-heavy images = score 2-3 (NOT Instagram content)
-3. If multiple photos show the same subject/scene/category (e.g. multiple food shots, multiple selfies, multiple screenshots), they are SIMILAR — keep only the BEST ONE from each group
-4. Remove everything below score 6
-5. Final selection MUST be 3-6 photos maximum with DIFFERENT subjects
-6. You MUST recommend FEWER photos than the total. If given 11 photos, recommend 3-5.
+CRITICAL DUPLICATE DETECTION:
+- Compare EVERY photo against EVERY other photo. If two photos show the same person, same scene, same product, or same composition — they are duplicates. This includes:
+  - Same person from different crops/angles
+  - Same food table from different angles
+  - Same screenshot or UI
+  - Same model/subject even if slightly different pose
+- Put ALL duplicates in the same group, not separate groups
 
-Example: If I give you 5 food photos, 3 screenshots, 2 portraits, 1 group photo:
-- similar_groups: food[1,2,3,4,5] keep best, screenshots[6,7,8] keep best, portraits[9,10] keep best
-- recommended: [best_food, best_portrait, group_photo] = 3 photos
+SCORING:
+- 8-10: Stunning, Instagram-worthy (great lighting, composition, subject)
+- 5-7: Decent but not standout
+- 1-4: Bad for Instagram (screenshots, ads, blurry, text-heavy, dark)
 
-Return ONLY valid JSON:
-{{"scores":[{{"photo":1,"score":7.5,"feedback":"Nice food flatlay"}}],"similar_groups":[{{"photos":[1,5,7],"reason":"All food shots","keep":1}}],"recommended":[1,2,4],"recommendation_reason":"Kept 3 diverse photos from 11"}}""",
+SELECTION:
+- From each group of similar photos, keep ONLY the single best one
+- Remove all photos scoring below 6
+- Final recommended list: 3-5 diverse photos, each showing something DIFFERENT
+
+First, list all {n} photos and what you see in each. Then group duplicates. Then pick the best.
+
+Return ONLY valid JSON (all numbers as integers, not strings):
+{{"scores":[{{"photo":1,"score":8,"feedback":"Beautiful food flatlay with great lighting"}}],"similar_groups":[{{"photos":[1,5,7],"reason":"All show the same dinner table","keep":1}}],"recommended":[1,2,8],"recommendation_reason":"Kept 3 unique photos: 1 food, 1 portrait, 1 group shot. Removed 6 duplicates and 2 screenshots."}}""",
         })
 
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2048,
-            messages=[{"role": "user", "content": content}],
-        )
+        # Try Sonnet first (better vision), fall back to Haiku
+        models = ["claude-sonnet-4-5-20241022", "claude-haiku-4-5-20251001"]
+        response = None
+        for model in models:
+            try:
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=2048,
+                    messages=[{"role": "user", "content": content}],
+                )
+                print(f"[AI Review] Used model: {model}")
+                break
+            except Exception as model_err:
+                print(f"[AI Review] Model {model} failed: {model_err}")
+                continue
+        if not response:
+            return jsonify({"error": "All AI models failed"}), 500
 
         import re
         raw = response.content[0].text.strip()
