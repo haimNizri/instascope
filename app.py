@@ -1920,13 +1920,19 @@ Return ONLY valid JSON:
                 score = float(score) if score else 5.0
                 results.append({"url": urls[idx], "score": score, "feedback": s.get("feedback", "")})
 
+        def safe_int(v, default=0):
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                return default
+
         similar_groups = []
         for g in ai_result.get("similar_groups", []):
-            photo_nums = [int(n) for n in g.get("photos", [])]
-            keep_num = int(g.get("keep", photo_nums[0] if photo_nums else 1))
+            photo_nums = [safe_int(n) for n in g.get("photos", []) if safe_int(n) > 0]
+            keep_num = safe_int(g.get("keep"), photo_nums[0] if photo_nums else 1)
             keep_idx = keep_num - 1
             keep_url = urls[keep_idx] if 0 <= keep_idx < len(urls) else None
-            remove_urls = [urls[int(n) - 1] for n in photo_nums if int(n) != keep_num and 0 <= int(n) - 1 < len(urls)]
+            remove_urls = [urls[n - 1] for n in photo_nums if n != keep_num and 0 <= n - 1 < len(urls)]
             similar_groups.append({
                 "photos": photo_nums,
                 "reason": g.get("reason", "Similar photos"),
@@ -1935,7 +1941,7 @@ Return ONLY valid JSON:
             })
 
         # Build recommended URLs list from AI's selection
-        recommended_nums = [int(n) for n in ai_result.get("recommended", [])]
+        recommended_nums = [safe_int(n) for n in ai_result.get("recommended", []) if safe_int(n) > 0]
         recommended_urls = [urls[n - 1] for n in recommended_nums if 0 <= n - 1 < len(urls)]
 
         # Fallback only if AI returned empty recommended list
