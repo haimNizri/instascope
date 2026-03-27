@@ -103,7 +103,7 @@ class User(UserMixin, db.Model):
         if used >= limit:
             return False, 0
         self.ai_generations_used = used + 1
-        return True, limit - self.ai_generations_used
+        return True, limit - (used + 1)
 
     def has_used_trial(self, feature):
         """Check if user already used their free trial for a feature."""
