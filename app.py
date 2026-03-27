@@ -1950,6 +1950,7 @@ Return ONLY valid JSON (all numbers as integers, not strings):
                 return jsonify({"error": "All AI models failed"}), 500
 
         print(f"[AI Review] Raw response: {raw[:500]}")
+        import re
         match = re.search(r'\{[\s\S]*\}', raw)
         if not match:
             return jsonify({"error": "AI returned invalid response"}), 500
