@@ -1974,13 +1974,23 @@ Return ONLY valid JSON (all numbers as integers, not strings):
             except (TypeError, ValueError):
                 return default
 
+        # Build score lookup: photo_num -> score
+        score_map = {}
+        for r in results:
+            idx = urls.index(r["url"]) + 1 if r["url"] in urls else 0
+            if idx > 0:
+                score_map[idx] = r["score"]
+
         similar_groups = []
         for g in ai_result.get("similar_groups", []):
             photo_nums = [safe_int(n) for n in g.get("photos", []) if safe_int(n) > 0]
-            keep_num = safe_int(g.get("keep"), photo_nums[0] if photo_nums else 1)
-            keep_idx = keep_num - 1
+            if not photo_nums:
+                continue
+            # Override AI's keep choice: always pick the highest-scored photo in the group
+            best_in_group = max(photo_nums, key=lambda n: score_map.get(n, 0))
+            keep_idx = best_in_group - 1
             keep_url = urls[keep_idx] if 0 <= keep_idx < len(urls) else None
-            remove_urls = [urls[n - 1] for n in photo_nums if n != keep_num and 0 <= n - 1 < len(urls)]
+            remove_urls = [urls[n - 1] for n in photo_nums if n != best_in_group and 0 <= n - 1 < len(urls)]
             similar_groups.append({
                 "photos": photo_nums,
                 "reason": g.get("reason", "Similar photos"),
@@ -1988,13 +1998,26 @@ Return ONLY valid JSON (all numbers as integers, not strings):
                 "remove_urls": remove_urls,
             })
 
-        # Build recommended URLs list from AI's selection
-        recommended_nums = [safe_int(n) for n in ai_result.get("recommended", []) if safe_int(n) > 0]
-        recommended_urls = [urls[n - 1] for n in recommended_nums if 0 <= n - 1 < len(urls)]
+        # Build recommended list: start with AI's picks, then fix with score data
+        # Collect all URLs that should be removed (duplicates + weak)
+        remove_set = set()
+        for g in similar_groups:
+            for u in g.get("remove_urls", []):
+                remove_set.add(u)
+        # Also remove anything scoring below 6
+        for r in results:
+            if r["score"] < 6:
+                remove_set.add(r["url"])
 
-        # Fallback only if AI returned empty recommended list
+        # Recommended = all photos NOT in remove set, sorted by score descending
+        recommended_urls = [r["url"] for r in sorted(results, key=lambda x: x["score"], reverse=True) if r["url"] not in remove_set]
+
+        # Cap at 6 max
+        recommended_urls = recommended_urls[:6]
+
+        # Fallback: always keep at least one
         if not recommended_urls:
-            recommended_urls = [urls[0]]
+            recommended_urls = [results[0]["url"]] if results else [urls[0]]
 
         recommendation_reason = ai_result.get("recommendation_reason", "")
 
