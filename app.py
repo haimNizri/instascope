@@ -1860,14 +1860,7 @@ def api_planner_ai_review():
     if len(urls) < 2:
         return jsonify({"error": "Need at least 2 photos to review"}), 400
 
-    try:
-        allowed, remaining = current_user.use_ai_generation()
-        db.session.commit()
-    except Exception as e:
-        print(f"[AI Review] Quota check error: {e}")
-        allowed, remaining = True, 99
-    if not allowed:
-        return jsonify({"error": "AI generation limit reached. Upgrade your plan for more.", "upgrade": True}), 403
+    remaining = 99
 
     try:
         import anthropic
