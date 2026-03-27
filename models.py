@@ -87,23 +87,25 @@ class User(UserMixin, db.Model):
     def ai_remaining(self):
         """AI generations remaining this month."""
         current_month = datetime.utcnow().strftime("%Y-%m")
+        limit = int(self.ai_limit or 3)
         if self.ai_reset_month != current_month:
-            return self.ai_limit
-        return max(0, self.ai_limit - (self.ai_generations_used or 0))
+            return limit
+        used = int(self.ai_generations_used or 0)
+        return max(0, limit - used)
 
     def use_ai_generation(self):
         """Consume one AI generation. Returns (allowed, remaining)."""
         current_month = datetime.utcnow().strftime("%Y-%m")
+        limit = int(self.ai_limit or 3)
         # Reset counter on new month
         if self.ai_reset_month != current_month:
             self.ai_reset_month = current_month
             self.ai_generations_used = 0
         used = int(self.ai_generations_used or 0)
-        limit = int(self.ai_limit or 3)
         if used >= limit:
             return False, 0
         self.ai_generations_used = used + 1
-        return True, limit - (used + 1)
+        return True, max(0, limit - used - 1)
 
     def has_used_trial(self, feature):
         """Check if user already used their free trial for a feature."""
