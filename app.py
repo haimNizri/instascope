@@ -1863,19 +1863,10 @@ def api_planner_ai_review():
     remaining = 99
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
-
-        content = []
-        for i, url in enumerate(urls[:10]):
-            analysis_url = url.replace("/upload/", "/upload/w_600,q_70/")
-            content.append({"type": "image", "source": {"type": "url", "url": analysis_url}})
-            content.append({"type": "text", "text": f"Photo {i+1}"})
-
+        import requests as http_requests
         n = len(urls[:10])
-        content.append({
-            "type": "text",
-            "text": f"""You are a strict Instagram curator. Analyze these {n} photos.
+
+        prompt_text = f"""You are a strict Instagram curator. Analyze these {n} photos.
 
 TASK: Find the best 3-5 UNIQUE photos for an Instagram carousel. Remove all duplicates, similar shots, and weak photos.
 
@@ -1900,29 +1891,64 @@ SELECTION:
 First, list all {n} photos and what you see in each. Then group duplicates. Then pick the best.
 
 Return ONLY valid JSON (all numbers as integers, not strings):
-{{"scores":[{{"photo":1,"score":8,"feedback":"Beautiful food flatlay with great lighting"}}],"similar_groups":[{{"photos":[1,5,7],"reason":"All show the same dinner table","keep":1}}],"recommended":[1,2,8],"recommendation_reason":"Kept 3 unique photos: 1 food, 1 portrait, 1 group shot. Removed 6 duplicates and 2 screenshots."}}""",
-        })
+{{"scores":[{{"photo":1,"score":8,"feedback":"Beautiful food flatlay with great lighting"}}],"similar_groups":[{{"photos":[1,5,7],"reason":"All show the same dinner table","keep":1}}],"recommended":[1,2,8],"recommendation_reason":"Kept 3 unique photos: 1 food, 1 portrait, 1 group shot. Removed 6 duplicates and 2 screenshots."}}"""
 
-        # Try Sonnet first (better vision), fall back to Haiku
-        models = ["claude-sonnet-4-5-20241022", "claude-haiku-4-5-20251001"]
-        response = None
-        for model in models:
+        raw = None
+        gemini_key = os.environ.get("GEMINI_API_KEY", "")
+
+        # Try Gemini first (best vision for photo comparison)
+        if gemini_key:
             try:
+                from google import genai
+                gemini_client = genai.Client(api_key=gemini_key)
+
+                # Build parts with images
+                parts = []
+                for i, url in enumerate(urls[:10]):
+                    img_url = url.replace("/upload/", "/upload/w_600,q_70/")
+                    # Download image for Gemini
+                    img_resp = http_requests.get(img_url, timeout=10)
+                    if img_resp.status_code == 200:
+                        import base64
+                        content_type = img_resp.headers.get("content-type", "image/jpeg")
+                        parts.append(genai.types.Part.from_bytes(data=img_resp.content, mime_type=content_type))
+                        parts.append(genai.types.Part.from_text(text=f"Photo {i+1}"))
+
+                parts.append(genai.types.Part.from_text(text=prompt_text))
+
+                gemini_response = gemini_client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=parts,
+                )
+                raw = gemini_response.text.strip()
+                print(f"[AI Review] Used model: gemini-2.0-flash")
+            except Exception as gemini_err:
+                print(f"[AI Review] Gemini failed: {gemini_err}")
+                raw = None
+
+        # Fallback to Claude Haiku
+        if not raw:
+            try:
+                import anthropic
+                client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+                content = []
+                for i, url in enumerate(urls[:10]):
+                    analysis_url = url.replace("/upload/", "/upload/w_600,q_70/")
+                    content.append({"type": "image", "source": {"type": "url", "url": analysis_url}})
+                    content.append({"type": "text", "text": f"Photo {i+1}"})
+                content.append({"type": "text", "text": prompt_text})
+
                 response = client.messages.create(
-                    model=model,
+                    model="claude-haiku-4-5-20251001",
                     max_tokens=2048,
                     messages=[{"role": "user", "content": content}],
                 )
-                print(f"[AI Review] Used model: {model}")
-                break
-            except Exception as model_err:
-                print(f"[AI Review] Model {model} failed: {model_err}")
-                continue
-        if not response:
-            return jsonify({"error": "All AI models failed"}), 500
+                raw = response.content[0].text.strip()
+                print(f"[AI Review] Used model: claude-haiku")
+            except Exception as claude_err:
+                print(f"[AI Review] Claude also failed: {claude_err}")
+                return jsonify({"error": "All AI models failed"}), 500
 
-        import re
-        raw = response.content[0].text.strip()
         print(f"[AI Review] Raw response: {raw[:500]}")
         match = re.search(r'\{[\s\S]*\}', raw)
         if not match:
