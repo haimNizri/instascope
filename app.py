@@ -1914,17 +1914,19 @@ Return ONLY valid JSON:
         # Map results back to URLs
         results = []
         for s in ai_result.get("scores", []):
-            idx = s.get("photo", 0) - 1
+            idx = int(s.get("photo", 0)) - 1
             if 0 <= idx < len(urls):
-                results.append({"url": urls[idx], "score": s.get("score", 5), "feedback": s.get("feedback", "")})
+                score = s.get("score", 5)
+                score = float(score) if score else 5.0
+                results.append({"url": urls[idx], "score": score, "feedback": s.get("feedback", "")})
 
         similar_groups = []
         for g in ai_result.get("similar_groups", []):
-            photo_nums = g.get("photos", [])
-            keep_num = g.get("keep", photo_nums[0] if photo_nums else 1)
+            photo_nums = [int(n) for n in g.get("photos", [])]
+            keep_num = int(g.get("keep", photo_nums[0] if photo_nums else 1))
             keep_idx = keep_num - 1
             keep_url = urls[keep_idx] if 0 <= keep_idx < len(urls) else None
-            remove_urls = [urls[n - 1] for n in photo_nums if n != keep_num and 0 <= n - 1 < len(urls)]
+            remove_urls = [urls[int(n) - 1] for n in photo_nums if int(n) != keep_num and 0 <= int(n) - 1 < len(urls)]
             similar_groups.append({
                 "photos": photo_nums,
                 "reason": g.get("reason", "Similar photos"),
@@ -1933,7 +1935,7 @@ Return ONLY valid JSON:
             })
 
         # Build recommended URLs list from AI's selection
-        recommended_nums = ai_result.get("recommended", [])
+        recommended_nums = [int(n) for n in ai_result.get("recommended", [])]
         recommended_urls = [urls[n - 1] for n in recommended_nums if 0 <= n - 1 < len(urls)]
 
         # Fallback only if AI returned empty recommended list
